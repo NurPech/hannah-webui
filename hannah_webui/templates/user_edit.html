@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}User bearbeiten{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('users') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← User</a>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-100 mb-5">User bearbeiten</h2>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+  <form method="post" action="{{ url_for('edit_user', user_id=user.id) }}">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1">Username</label>
+        <input type="text" value="{{ user.user_name }}" disabled
+               class="w-full bg-gray-800/50 border border-gray-800 text-gray-500 rounded-lg px-3 py-2 text-sm cursor-not-allowed">
+        <div class="text-xs text-gray-500 mt-1">Username kann nicht geändert werden.</div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1">Anzeigename</label>
+        <input type="text" name="display_name" value="{{ user.display_name }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1">E-Mail</label>
+        <input type="email" name="email" value="{{ user.email }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1">Neues Passwort</label>
+        <input type="password" name="password" placeholder="Leer lassen = unverändert"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1">Typ</label>
+        <select name="type"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+          {% for t in types %}
+          <option value="{{ t }}" {% if user.type == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1">Trust-Level</label>
+        <input type="number" name="trust_level" min="0" max="10" value="{{ user.trust_level }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="flex flex-col gap-2 sm:col-span-2">
+        <label for="is_active" class="flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" name="is_active" id="is_active" {% if user.active %}checked{% endif %} class="accent-emerald-500">
+          Aktiv
+        </label>
+        <label for="system_messages" class="flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" name="system_messages" id="system_messages" {% if user.system_messages %}checked{% endif %} class="accent-emerald-500">
+          System-Benachrichtigungen
+        </label>
+      </div>
+    </div>
+
+    <div class="flex gap-2 mt-5">
+      <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
+      <a href="{{ url_for('users') }}"
+         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

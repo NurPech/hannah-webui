@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Routine {{ 'bearbeiten' if routine else 'anlegen' }}{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('routines') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Routinen</a>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-100 mb-5">Routine {{ 'bearbeiten' if routine else 'anlegen' }}</h2>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+  <form method="post"
+        action="{{ url_for('save_routine', routine_id=routine.id) if routine else url_for('create_routine') }}">
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Name</label>
+      <input type="text" name="name" value="{{ routine.name if routine else '' }}" required
+             class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Trigger-Phrasen <span class="text-gray-500">(eine pro Zeile, z.B. "gute nacht")</span></label>
+      <textarea name="triggers" rows="3"
+                class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ triggers_text }}</textarea>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Antwort beim Auslösen <span class="text-gray-500">(optional)</span></label>
+      <input type="text" name="reply" value="{{ routine.reply if routine else '' }}"
+             class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+    </div>
+
+    <label class="block text-xs font-medium text-gray-400 mb-1">Aktionen</label>
+    <div class="text-xs text-gray-500 mb-2">
+      Pro Zeile per "Typ" wählen: <span class="text-gray-400">Gerät setzen</span> (Topic + Wert) oder
+      <span class="text-gray-400">Ansage</span> (Text + Raum). Die jeweils andere Hälfte wird ignoriert.
+    </div>
+    {% for i in action_rows %}
+    {% set a = actions[i] if i < actions|length else {} %}
+    <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Typ</label>
+        <select name="action_type"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+          <option value="topic" {% if not a.get('say') %}selected{% endif %}>Gerät setzen</option>
+          <option value="say" {% if a.get('say') %}selected{% endif %}>Ansage</option>
+        </select>
+      </div>
+      <div class="sm:col-span-4">
+        <label class="block text-xs text-gray-500 mb-1">Topic</label>
+        <input type="text" name="action_topic" value="{{ a.get('topic', '') }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Wert</label>
+        <input type="text" name="action_value" value="{{ a.get('value', '') }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">Ansage-Text</label>
+        <input type="text" name="action_say" value="{{ a.get('say', '') }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-1">
+        <label class="block text-xs text-gray-500 mb-1">Raum</label>
+        <input type="text" name="action_room" value="{{ a.get('room', '') }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="flex gap-2 mt-4">
+      <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
+      <a href="{{ url_for('routines') }}"
+         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

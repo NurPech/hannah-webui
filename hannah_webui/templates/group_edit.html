@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Gruppe bearbeiten{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('groups') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Gruppen</a>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-100 mb-5">Gruppe bearbeiten</h2>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+  <form method="post" action="{{ url_for('save_group', group_id=group.group_id) }}">
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Name</label>
+      <input type="text" name="display_name" value="{{ group.display_name }}" required
+             class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      <div class="text-xs text-gray-500 mt-1">ID: <span class="font-mono">{{ group.group_id }}</span></div>
+    </div>
+
+    <div class="mb-5">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Räume</label>
+      {% if rooms %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+        {% for room in rooms %}
+        <label for="room_{{ room.room_id }}" class="flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" name="room_ids" value="{{ room.room_id }}" id="room_{{ room.room_id }}"
+                 {% if room.room_id in selected_room_ids %}checked{% endif %}
+                 class="accent-emerald-500">
+          {{ room.display_name }}
+          <span class="text-xs text-gray-500">{{ room.room_id }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-xs text-gray-500">Keine Räume verfügbar – erst ioBroker-Adapter verbinden.</div>
+      {% endif %}
+    </div>
+
+    <div class="flex gap-2">
+      <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
+      <a href="{{ url_for('groups') }}"
+         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

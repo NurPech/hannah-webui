@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Anmelden{% endblock %}
+{% block content %}
+<div class="mt-16 flex justify-center">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-8 w-full max-w-sm">
+    <h2 class="text-lg font-semibold text-gray-100 mb-6 text-center">Anmelden</h2>
+    {% if error %}
+    <div class="mb-4 rounded-lg border px-4 py-3 text-sm bg-rose-500/10 text-rose-300 border-rose-500/25">{{ error }}</div>
+    {% endif %}
+    <form method="post" class="flex flex-col gap-3">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Username</label>
+        <input type="text" name="username" autofocus required
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Passwort</label>
+        <input type="password" name="password" required
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <button type="submit"
+              class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg py-2 text-sm font-medium transition-colors mt-1">Anmelden</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

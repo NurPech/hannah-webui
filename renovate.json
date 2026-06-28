@@ -1,0 +1,60 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    "mergeConfidence:all-badges"
+  ],
+  "git-submodules": {
+    "enabled": true
+  },
+  "labels": [
+    "renovate"
+  ],
+  "assignees": [
+    "NurPech"
+  ],
+  "dependencyDashboard": true,
+  "osvVulnerabilityAlerts": true,
+  "packageRules": [
+    {
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "commitMessagePrefix": "feat(deps):"
+    },
+    {
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "commitMessagePrefix": "chore(dev-deps):"
+    },
+    {
+      "matchManagers": [
+        "git-submodules"
+      ],
+      "commitMessagePrefix": "chore(submodule):"
+    },
+    {
+      "matchUpdateTypes": [
+        "patch",
+        "pin"
+      ],
+      "minimumReleaseAge": "3 days",
+      "automerge": true
+    },
+    {
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "matchManagers": [
+        "npm",
+        "gomod",
+        "cargo",
+        "dockerfile",
+        "gitlabci",
+        "gitlabci-include"
+      ],
+      "automerge": true
+    }
+  ]
+}

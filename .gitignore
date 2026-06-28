@@ -1,0 +1,12 @@
+.env
+.mcp.json
+config.yaml
+__pycache__/
+**/__pycache__/
+*.pyc
+venv/
+.pytest_cache/
+*.db
+*.db-journal
+.claude/*
+!.claude/skills/

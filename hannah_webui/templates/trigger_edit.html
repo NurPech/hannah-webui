@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Trigger {{ 'bearbeiten' if trigger else 'anlegen' }}{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('triggers') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Trigger</a>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-100 mb-5">Trigger {{ 'bearbeiten' if trigger else 'anlegen' }}</h2>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+  <form method="post"
+        action="{{ url_for('save_trigger', trigger_id=trigger.id) if trigger else url_for('create_trigger') }}">
+
+    {% if not trigger %}
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">ID <span class="text-gray-500">(Slug, z.B. "aussentuer_abend")</span></label>
+      <input type="text" name="id" required
+             class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+    </div>
+    {% endif %}
+
+    <label class="block text-xs font-medium text-gray-400 mb-1">Wenn <span class="text-gray-500">(eine Bedingung reicht — ODER-verknüpft)</span></label>
+    {% set weekdays = [('mon', 'Montag'), ('tue', 'Dienstag'), ('wed', 'Mittwoch'), ('thu', 'Donnerstag'), ('fri', 'Freitag'), ('sat', 'Samstag'), ('sun', 'Sonntag')] %}
+    {% for row in when_rows %}
+    {% set row_days = row.days.split(',') %}
+    <div class="when-row mb-2 pb-2 border-b border-gray-800">
+      <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end">
+        <div class="sm:col-span-2">
+          <label class="block text-xs text-gray-500 mb-1">Typ</label>
+          <select name="when_type"
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+            <option value="state" {% if row.type != 'time' %}selected{% endif %}>Zustand</option>
+            <option value="time" {% if row.type == 'time' %}selected{% endif %}>Uhrzeit</option>
+          </select>
+        </div>
+        <div class="sm:col-span-4">
+          <label class="block text-xs text-gray-500 mb-1">State-ID</label>
+          <input type="text" name="when_state" value="{{ row.state }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
+          <select name="when_cmp"
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+            <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
+            <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
+            <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-xs text-gray-500 mb-1">Wert</label>
+          <input type="text" name="when_value" value="{{ row.value }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-xs text-gray-500 mb-1">Uhrzeit</label>
+          <input type="text" name="when_time" placeholder="HH:MM" value="{{ row.time }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+      </div>
+      <div class="mt-2">
+        <label class="block text-xs text-gray-500 mb-1">Tage <span class="text-gray-600">(nur für Uhrzeit-Bedingungen, leer = jeden Tag)</span></label>
+        <input type="hidden" name="when_days" value="{{ row.days }}" class="when-days-input">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          {% for code, label in weekdays %}
+          <label class="flex items-center gap-1.5 text-xs text-gray-300">
+            <input type="checkbox" value="{{ code }}" class="day-chip accent-emerald-500" {% if code in row_days %}checked{% endif %}>
+            {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <label class="block text-xs font-medium text-gray-400 mt-4 mb-1">Und <span class="text-gray-500">(optional, gilt für jede Wenn-Bedingung)</span></label>
+    <div class="mb-2">
+      <select name="also_op"
+              class="w-56 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        <option value="and" {% if also_op != 'or' %}selected{% endif %}>UND (alle müssen zutreffen)</option>
+        <option value="or" {% if also_op == 'or' %}selected{% endif %}>ODER (eine reicht)</option>
+      </select>
+    </div>
+    {% for row in also_rows %}
+    <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+      <div class="sm:col-span-5">
+        <label class="block text-xs text-gray-500 mb-1">State-ID</label>
+        <input type="text" name="also_state" value="{{ row.state }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-4">
+        <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
+        <select name="also_cmp"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+          <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
+          <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
+          <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
+        </select>
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">Wert</label>
+        <input type="text" name="also_value" value="{{ row.value }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+    </div>
+    {% endfor %}
+
+    <details class="mb-4">
+      <summary class="text-xs font-medium text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">Außer wenn <span class="text-gray-500">(optional, sperrt das Auslösen)</span></summary>
+      {% for row in unless_rows %}
+      <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 mt-2 border-b border-gray-800">
+        <div class="sm:col-span-5">
+          <label class="block text-xs text-gray-500 mb-1">State-ID</label>
+          <input type="text" name="unless_state" value="{{ row.state }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+        <div class="sm:col-span-4">
+          <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
+          <select name="unless_cmp"
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+            <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
+            <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
+            <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
+          </select>
+        </div>
+        <div class="sm:col-span-3">
+          <label class="block text-xs text-gray-500 mb-1">Wert</label>
+          <input type="text" name="unless_value" value="{{ row.value }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+      </div>
+      {% endfor %}
+    </details>
+
+    <label class="block text-xs font-medium text-gray-400 mb-1">Dann</label>
+    <div class="text-xs text-gray-500 mb-2">
+      Pro Zeile per "Typ" wählen: <span class="text-gray-400">Ansage</span> (Text + Raum) oder
+      <span class="text-gray-400">Gerät setzen</span> (State-ID + Wert).
+    </div>
+    {% for row in action_rows %}
+    <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Typ</label>
+        <select name="action_type"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+          <option value="say" {% if row.type != 'state' %}selected{% endif %}>Ansage</option>
+          <option value="state" {% if row.type == 'state' %}selected{% endif %}>Gerät setzen</option>
+        </select>
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">Ansage-Text</label>
+        <input type="text" name="action_say" value="{{ row.say }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Raum</label>
+        <input type="text" name="action_room" value="{{ row.room }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">State-ID</label>
+        <input type="text" name="action_state_id" value="{{ row.state_id }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Wert</label>
+        <input type="text" name="action_state_value" value="{{ row.state_value }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 mt-4">
+      <div class="sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">Raum</label>
+        <input type="text" name="room" value="{{ trigger.room if trigger else 'all' }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">Cooldown (Sekunden)</label>
+        <input type="number" name="cooldown" value="{{ trigger.cooldown if trigger else 3600 }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">Delay <span class="text-gray-500">(z.B. "5h", "30m")</span></label>
+        <input type="text" name="delay" value="{{ trigger.delay if trigger else '' }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-3 flex items-end">
+        <label for="rephrase" class="flex items-center gap-2 text-xs text-gray-300">
+          <input type="checkbox" name="rephrase" id="rephrase" {% if trigger and trigger.rephrase %}checked{% endif %} class="accent-emerald-500">
+          LLM-Umformulierung
+        </label>
+      </div>
+    </div>
+
+    <details class="mt-4 mb-3">
+      <summary class="text-xs font-medium text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">Erweitert <span class="text-gray-500">(Frage + Antwortregeln)</span></summary>
+      <div class="mb-2 mt-2">
+        <label class="block text-xs text-gray-500 mb-1">Frage (statt Ansage) <span class="text-gray-500">(optional)</span></label>
+        <input type="text" name="ask" value="{{ trigger.ask if trigger else '' }}"
+               class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="mb-2">
+        <label class="block text-xs text-gray-500 mb-1">Antwortregeln (JSON) <span class="text-gray-500">(on_response, siehe trigger_engine.py)</span></label>
+        <textarea name="on_response_json" rows="4"
+                  class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ on_response_text }}</textarea>
+      </div>
+    </details>
+
+    <div class="flex gap-2 mt-4">
+      <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
+      <a href="{{ url_for('triggers') }}"
+         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
+    </div>
+  </form>
+</div>
+
+<script>
+document.querySelectorAll('.when-row').forEach(function (row) {
+  var hidden = row.querySelector('.when-days-input');
+  row.querySelectorAll('.day-chip').forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () {
+      var checked = row.querySelectorAll('.day-chip:checked');
+      hidden.value = Array.prototype.map.call(checked, function (c) { return c.value; }).join(',');
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% macro pill(text, color='gray') %}
+{%- if color == 'gray' -%}
+<span class="text-xs px-1.5 py-px rounded bg-gray-800 text-gray-400 border border-gray-700 mr-1">{{ text }}</span>
+{%- else -%}
+<span class="text-xs px-1.5 py-px rounded bg-{{ color }}-500/10 text-{{ color }}-400 border border-{{ color }}-500/25 mr-1">{{ text }}</span>
+{%- endif -%}
+{% endmacro %}

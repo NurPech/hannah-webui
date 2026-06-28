@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hannah – {% block title %}WebUI{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+{% if session.get('user_id') %}
+<header class="sticky top-0 z-20 bg-gray-900/80 backdrop-blur border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center gap-4">
+  <a href="/" class="flex items-center gap-2.5 mr-2">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]"></span>
+    <span class="font-bold tracking-tight text-sm">Hannah</span>
+  </a>
+
+  <button type="button" onclick="document.getElementById('nav-links').classList.toggle('hidden')"
+          class="ml-auto sm:hidden bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg p-1.5 transition-colors text-gray-400 hover:text-gray-200">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+    </svg>
+  </button>
+
+  <nav id="nav-links" class="hidden sm:flex sm:items-center gap-1 w-full sm:w-auto basis-full sm:basis-auto order-3 sm:order-none mr-auto">
+    <a href="{{ url_for('rooms') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'rooms' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Räume</a>
+    <a href="{{ url_for('groups') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('groups', 'edit_group') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Gruppen</a>
+    <a href="{{ url_for('satellites') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'satellites' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Satelliten</a>
+    <a href="{{ url_for('settings') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'settings' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Settings</a>
+    <a href="{{ url_for('routines') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('routines', 'new_routine', 'edit_routine') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Routinen</a>
+    <a href="{{ url_for('triggers') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('triggers', 'new_trigger', 'edit_trigger') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Trigger</a>
+    <a href="{{ url_for('users') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('users', 'create_user', 'edit_user') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">User</a>
+  </nav>
+
+  <div class="hidden sm:flex items-center gap-3">
+    <span class="text-xs text-gray-500 font-mono">{{ session.get('display_name') }}</span>
+    <a href="{{ url_for('logout') }}"
+       class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs transition-colors text-gray-400 hover:text-gray-200">Abmelden</a>
+  </div>
+</header>
+{% endif %}
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+  {% set flash_colors = {'danger': 'rose', 'success': 'emerald', 'warning': 'amber', 'info': 'blue'} %}
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+  {% set color = flash_colors.get(category, 'blue') %}
+  <div class="mb-4 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm bg-{{ color }}-500/10 text-{{ color }}-300 border-{{ color }}-500/25">
+    <span class="flex-1">{{ message }}</span>
+    <button type="button" onclick="this.closest('div').remove()" class="text-{{ color }}-400 hover:text-{{ color }}-200">&times;</button>
+  </div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</div>
+</body>
+</html>
