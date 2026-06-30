@@ -4,6 +4,8 @@
     ## **WORK IN PROGRESS**
 -->
 
+## 1.2.0
+* Satellite management: assign a satellite to a Person (User) as its owner, independent of its room — new "Besitzer" dropdown in `satellites.html`, backed by the new `SetSatelliteOwner` RPC (Core #31). Refs #4
 
 ## 1.1.1
 * Delete links (`Löschen`) in `groups.html`, `routines.html`, `triggers.html` and `users.html` are now red by default instead of only on hover, for better visibility.

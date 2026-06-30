@@ -88,6 +88,11 @@ class HannahClient:
         )
         return resp.ok
 
+    def set_satellite_owner(self, device_id: str, user_id: int) -> bool:
+        assert self._stub, "call connect() first"
+        resp = self._stub.SetSatelliteOwner(hannah_pb2.SetSatelliteOwnerRequest(device_id=device_id, user_id=user_id))
+        return resp.ok
+
     def get_settings(self) -> tuple[list["hannah_pb2.Category"], list["hannah_pb2.Setting"]]:
         assert self._stub, "call connect() first"
         resp = self._stub.GetSettings(hannah_pb2.Empty())

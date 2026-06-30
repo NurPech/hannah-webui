@@ -344,7 +344,8 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
             "live_room_display": room_display_names.get(sat.room, sat.room),
         } for sat in sats]
         sats_view.sort(key=lambda v: v["sat"].device_id)
-        return render_template("satellites.html", satellites=sats_view, rooms=rooms)
+        users = [u for u in hannah.get_users() if u.active]
+        return render_template("satellites.html", satellites=sats_view, rooms=rooms, users=users)
 
     @app.route("/satellites/<device_id>/room", methods=["POST"])
     @login_required
@@ -358,6 +359,13 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
         display_name = request.form.get("display_name", "").strip()
         if display_name:
             hannah.set_satellite_display_name(device_id, display_name)
+        return redirect(url_for("satellites"))
+
+    @app.route("/satellites/<device_id>/owner", methods=["POST"])
+    @login_required
+    def set_satellite_owner(device_id: str):
+        user_id = int(request.form.get("user_id") or 0)
+        hannah.set_satellite_owner(device_id, user_id)
         return redirect(url_for("satellites"))
 
     @app.route("/settings")

@@ -16,6 +16,7 @@
         <th class="text-left px-4 py-3">Gerät</th>
         <th class="text-left px-4 py-3">Anzeigename</th>
         <th class="text-left px-4 py-3">Zugewiesener Raum</th>
+        <th class="text-left px-4 py-3">Besitzer</th>
         <th class="text-left px-4 py-3">Zuletzt gesehen</th>
       </tr>
     </thead>
@@ -56,6 +57,21 @@
           {% if sat.connected and sat.room_mismatch %}
           <span class="block mt-1 text-xs text-amber-400">Meldet sich als: <em>{{ v.live_room_display }}</em></span>
           {% endif %}
+        </td>
+
+        <td class="px-4 py-3">
+          <form method="post" action="{{ url_for('set_satellite_owner', device_id=sat.device_id) }}" class="flex gap-1 items-center">
+            <select name="user_id"
+                    class="w-36 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+              <option value="0">– kein Besitzer –</option>
+              {% for user in users %}
+              <option value="{{ user.id }}" {% if sat.owner_user_id == user.id %}selected{% endif %}>
+                {{ user.display_name or user.user_name }}
+              </option>
+              {% endfor %}
+            </select>
+            <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-2 py-1 text-xs font-medium transition-colors">Setzen</button>
+          </form>
         </td>
 
         <td class="px-4 py-3 text-xs text-gray-500">{{ sat.last_seen or '–' }}</td>

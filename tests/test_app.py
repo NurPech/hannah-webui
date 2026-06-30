@@ -62,6 +62,14 @@ class TestSatellites:
         logged_in_client.post("/satellites/kueche-esp/name", data={"display_name": "NeuerName"})
         assert hannah._satellites["kueche-esp"]["display_name"] == "NeuerName"
 
+    def test_set_satellite_owner(self, logged_in_client, hannah):
+        logged_in_client.post("/satellites/kueche-esp/owner", data={"user_id": "1"})
+        assert hannah._satellites["kueche-esp"]["owner_user_id"] == 1
+
+    def test_satellites_shows_owner_options(self, logged_in_client):
+        resp = logged_in_client.get("/satellites")
+        assert "Leonie" in resp.get_data(as_text=True)
+
 
 class TestSettings:
     def test_settings_lists_seeded_category_and_value(self, logged_in_client):

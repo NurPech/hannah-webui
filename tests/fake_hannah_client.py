@@ -23,6 +23,7 @@ class FakeHannahClient:
                 "live_room": "kueche",
                 "last_seen": "2026-06-27 12:00:00",
                 "connected": True,
+                "owner_user_id": 0,
             },
         }
         self._users = {"claude": "claude"}
@@ -114,6 +115,8 @@ class FakeHannahClient:
         for device_id, sat in self._satellites.items():
             room_id = sat.get("room_id") or ""
             live_room = sat.get("live_room", "")
+            owner_user_id = sat.get("owner_user_id") or 0
+            owner = self._user_records.get(owner_user_id)
             result.append(hannah_pb2.Satellite(
                 device_id=device_id,
                 room=live_room,
@@ -123,6 +126,8 @@ class FakeHannahClient:
                 last_seen=sat.get("last_seen") or "",
                 connected=sat.get("connected", False),
                 room_mismatch=sat.get("connected", False) and live_room != room_id,
+                owner_user_id=owner_user_id,
+                owner_display_name=owner["display_name"] if owner else "",
             ))
         return result
 
@@ -136,6 +141,12 @@ class FakeHannahClient:
         if device_id not in self._satellites:
             return False
         self._satellites[device_id]["display_name"] = display_name
+        return True
+
+    def set_satellite_owner(self, device_id, user_id):
+        if device_id not in self._satellites:
+            return False
+        self._satellites[device_id]["owner_user_id"] = user_id or 0
         return True
 
     def get_settings(self):

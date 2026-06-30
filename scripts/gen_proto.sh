@@ -39,7 +39,7 @@ echo "Nutze Python: $PYTHON"
 echo "→ proto/"
 "$PYTHON" -m grpc_tools.protoc \
     -I "$PROTO" \
-    --python_out="$REPO_ROOT/proto" \
+    --python_out="$REPO_ROOT/hannah_webui/proto" \
     --grpc_python_out="$REPO_ROOT/hannah_webui/proto" \
     "$PROTO/hannah.proto"
 
