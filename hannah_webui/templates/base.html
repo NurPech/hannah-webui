@@ -46,7 +46,7 @@
 </header>
 {% endif %}
 
-<div class="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
   {% set flash_colors = {'danger': 'rose', 'success': 'emerald', 'warning': 'amber', 'info': 'blue'} %}
   {% for category, message in get_flashed_messages(with_categories=true) %}
   {% set color = flash_colors.get(category, 'blue') %}

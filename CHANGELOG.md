@@ -4,6 +4,8 @@
     ## **WORK IN PROGRESS**
 -->
 
+## 1.3.1
+* Adjust page width for better alignment
 
 ## 1.3.0
 * Satellite management: delete a satellite from the database — new "Löschen" button (with confirmation dialog) in `satellites.html`, backed by the new `DeleteSatellite` RPC. Flash message on success/failure. Refs #5
