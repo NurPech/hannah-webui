@@ -4,6 +4,10 @@
     ## **WORK IN PROGRESS**
 -->
 
+
+## 1.3.0
+* Satellite management: delete a satellite from the database — new "Löschen" button (with confirmation dialog) in `satellites.html`, backed by the new `DeleteSatellite` RPC. Flash message on success/failure. Refs #5
+
 ## 1.2.0
 * Satellite management: assign a satellite to a Person (User) as its owner, independent of its room — new "Besitzer" dropdown in `satellites.html`, backed by the new `SetSatelliteOwner` RPC (Core #31). Refs #4
 

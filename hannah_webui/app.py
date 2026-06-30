@@ -360,6 +360,16 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
         if display_name:
             hannah.set_satellite_display_name(device_id, display_name)
         return redirect(url_for("satellites"))
+    
+    @app.route("/satellites/<device_id>/delete", methods=["POST"])
+    @login_required
+    def delete_satellite(device_id: str):
+        ok = hannah.delete_satellite(device_id=device_id)
+        if ok:
+            flash("Satellit gelöscht.", "success")
+        else:
+            flash("Satellit konnte nicht gelöscht werden.", "danger")
+        return redirect(url_for("satellites"))
 
     @app.route("/satellites/<device_id>/owner", methods=["POST"])
     @login_required

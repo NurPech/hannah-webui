@@ -87,6 +87,13 @@ class HannahClient:
             hannah_pb2.SetSatelliteDisplayNameRequest(device_id=device_id, display_name=display_name)
         )
         return resp.ok
+    
+    def delete_satellite(self, device_id: str) -> bool:
+        assert self._stub, "call connect() first"
+        resp = self._stub.DeleteSatellite(
+            hannah_pb2.DeleteSatelliteRequest(device_id=device_id)
+        )
+        return resp.ok
 
     def set_satellite_owner(self, device_id: str, user_id: int) -> bool:
         assert self._stub, "call connect() first"
