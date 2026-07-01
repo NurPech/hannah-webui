@@ -5,6 +5,9 @@
 -->
 
 
+## 1.6.2
+* Fix: `oauth.telegram.org`'s link-based auth flow (introduced in 1.6.1) appends the signed result as a URL fragment (`#tgAuthResult=...`), not a query string — fragments never reach the server, so every Telegram (re-)linking failed with "ungültige oder abgelaufene Signatur." `/me` now has a small inline script that decodes the fragment client-side and forwards it to the callback as a proper query string. Refs #11
+
 ## 1.6.1
 * Fix: the Telegram Login Widget's `data-auth-url` rendered as `http://` instead of `https://` in production (gunicorn behind a TLS-terminating reverse proxy, no `ProxyFix`/`X-Forwarded-Proto` handling) — Telegram silently rejects non-HTTPS auth-urls for public domains, so linking looked like it worked but never actually called back. Forces `https` explicitly on that one URL now. Refs #9
 * `/me`'s password-change and linked-accounts cards moved into a two-column grid instead of full-width stacked cards; password inputs no longer stretch edge to edge. Replaced the default Telegram Login Widget (a cross-origin iframe with no color control) with Telegram's link-based auth flow (`oauth.telegram.org/auth`) so the trigger button can be styled to match the dark theme. Refs #7

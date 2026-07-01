@@ -54,4 +54,19 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+(function () {
+  var m = /^#tgAuthResult=(.+)$/.exec(window.location.hash);
+  if (!m) return;
+  history.replaceState(null, "", window.location.pathname);
+  var b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+  b64 += "==".slice(0, (4 - b64.length % 4) % 4);
+  try {
+    var data = JSON.parse(atob(b64));
+    var params = new URLSearchParams(data);
+    window.location.href = "{{ url_for('telegram_callback') }}?" + params.toString();
+  } catch (e) {}
+})();
+</script>
 {% endblock %}

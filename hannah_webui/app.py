@@ -353,12 +353,16 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
         linked_accounts = user.linked_accounts if user else {}
         telegram_login_url = None
         if telegram_bot_token and telegram_bot_username:
-            auth_url = url_for("telegram_callback", _external=True, _scheme="https")
-            origin = "{0.scheme}://{0.netloc}".format(urlsplit(auth_url))
+            # Telegram appends the signed result as a URL *fragment* (#tgAuthResult=...) on
+            # return_to, not a query string — fragments never reach the server, so return_to
+            # must be a real page (this one) whose JS decodes it and forwards to the callback
+            # route as a proper query string. See the inline script in me.html.
+            me_url = url_for("me", _external=True, _scheme="https")
+            origin = "{0.scheme}://{0.netloc}".format(urlsplit(me_url))
             bot_id = telegram_bot_token.split(":", 1)[0]
             telegram_login_url = (
                 f"https://oauth.telegram.org/auth?bot_id={quote(bot_id)}&origin={quote(origin, safe='')}"
-                f"&request_access=write&return_to={quote(auth_url, safe='')}"
+                f"&request_access=write&return_to={quote(me_url, safe='')}"
             )
         return render_template(
             "me.html", display_name=session.get("display_name"),

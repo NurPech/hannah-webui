@@ -67,13 +67,21 @@ class TestTelegramLinking:
         assert "Trennen" in body
         assert "telegram-widget.js" not in body
 
-    def test_login_link_uses_https_return_to(self, telegram_client):
+    def test_login_link_uses_https_return_to_me_page(self, telegram_client):
         """Telegram silently rejects non-HTTPS return_to urls on public domains — this must
         hold even though gunicorn itself serves plain HTTP behind a TLS-terminating
-        reverse proxy that doesn't forward X-Forwarded-Proto."""
+        reverse proxy that doesn't forward X-Forwarded-Proto. return_to must point at /me
+        (not /me/telegram/callback) because Telegram appends the result as a URL *fragment*,
+        which never reaches the server — only a real page with the tgAuthResult-decoding
+        script (below) can pick it up client-side."""
         body = telegram_client.get("/me").get_data(as_text=True)
         assert "oauth.telegram.org/auth?" in body
-        assert "return_to=https%3A%2F%2F" in body
+        assert "return_to=https%3A%2F%2Flocalhost%2Fme" in body
+
+    def test_me_page_decodes_tg_auth_result_fragment(self, telegram_client):
+        body = telegram_client.get("/me").get_data(as_text=True)
+        assert "tgAuthResult" in body
+        assert "/me/telegram/callback" in body
 
     def test_unlink_removes_account(self, telegram_client):
         data = _sign_telegram_data({"id": "555", "first_name": "Claude", "auth_date": str(int(time.time()))})
