@@ -64,7 +64,16 @@ class TestTelegramLinking:
         resp = telegram_client.get("/me/telegram/callback", query_string=data)
         assert resp.status_code == 302
         body = telegram_client.get("/me").get_data(as_text=True)
-        assert "Telegram: verknüpft" in body
+        assert "Trennen" in body
+        assert "telegram-widget.js" not in body
+
+    def test_login_link_uses_https_return_to(self, telegram_client):
+        """Telegram silently rejects non-HTTPS return_to urls on public domains — this must
+        hold even though gunicorn itself serves plain HTTP behind a TLS-terminating
+        reverse proxy that doesn't forward X-Forwarded-Proto."""
+        body = telegram_client.get("/me").get_data(as_text=True)
+        assert "oauth.telegram.org/auth?" in body
+        assert "return_to=https%3A%2F%2F" in body
 
     def test_unlink_removes_account(self, telegram_client):
         data = _sign_telegram_data({"id": "555", "first_name": "Claude", "auth_date": str(int(time.time()))})
@@ -72,7 +81,7 @@ class TestTelegramLinking:
 
         telegram_client.post("/me/telegram/unlink")
         body = telegram_client.get("/me").get_data(as_text=True)
-        assert "Telegram: verknüpft" not in body
+        assert "Trennen" not in body
 
 
 class TestMe:

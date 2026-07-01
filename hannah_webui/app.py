@@ -12,6 +12,7 @@ import os
 import re
 import time
 from functools import wraps
+from urllib.parse import quote, urlsplit
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 
@@ -350,9 +351,18 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
     def me():
         user = next((u for u in hannah.get_users() if u.id == session["user_id"]), None)
         linked_accounts = user.linked_accounts if user else {}
+        telegram_login_url = None
+        if telegram_bot_token and telegram_bot_username:
+            auth_url = url_for("telegram_callback", _external=True, _scheme="https")
+            origin = "{0.scheme}://{0.netloc}".format(urlsplit(auth_url))
+            bot_id = telegram_bot_token.split(":", 1)[0]
+            telegram_login_url = (
+                f"https://oauth.telegram.org/auth?bot_id={quote(bot_id)}&origin={quote(origin, safe='')}"
+                f"&request_access=write&return_to={quote(auth_url, safe='')}"
+            )
         return render_template(
             "me.html", display_name=session.get("display_name"),
-            linked_accounts=linked_accounts, telegram_bot_username=telegram_bot_username,
+            linked_accounts=linked_accounts, telegram_login_url=telegram_login_url,
         )
 
     @app.route("/me/telegram/callback")

@@ -5,6 +5,10 @@
 -->
 
 
+## 1.6.1
+* Fix: the Telegram Login Widget's `data-auth-url` rendered as `http://` instead of `https://` in production (gunicorn behind a TLS-terminating reverse proxy, no `ProxyFix`/`X-Forwarded-Proto` handling) — Telegram silently rejects non-HTTPS auth-urls for public domains, so linking looked like it worked but never actually called back. Forces `https` explicitly on that one URL now. Refs #9
+* `/me`'s password-change and linked-accounts cards moved into a two-column grid instead of full-width stacked cards; password inputs no longer stretch edge to edge. Replaced the default Telegram Login Widget (a cross-origin iframe with no color control) with Telegram's link-based auth flow (`oauth.telegram.org/auth`) so the trigger button can be styled to match the dark theme. Refs #7
+
 ## 1.6.0
 * Account linking: `/me` now has a "Verknüpfte Konten" section to link/unlink a Telegram account via the [Telegram Login Widget](https://core.telegram.org/widgets/login). The WebUI verifies the HMAC signature itself (new `telegram_bot_token`/`telegram_bot_username` config) and only reports the already-verified `account_id` to Core via `LinkAccount` — replaces the insecure bot-side `/verknuepfen <name>` trust model (gessinger/voice/hannah#70) for Telegram. Refs #7
 
