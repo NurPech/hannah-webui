@@ -249,7 +249,7 @@ class FakeHannahClient:
         self._user_records[user_id]["linked_accounts"][service] = account_id
         return True
 
-    def unlink_account(self, user_id, service):
+    def unlink_account(self, user_id, service, requestor_id):
         if user_id not in self._user_records:
             return False
         self._user_records[user_id]["linked_accounts"].pop(service, None)

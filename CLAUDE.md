@@ -43,6 +43,7 @@ hannah-webui/
 | Route | Funktion |
 |---|---|
 | `/login`, `/logout` | Auth |
+| `/me`, `/me/password` | Self-Service-Startseite (ersetzt die alte Index-Page): Begrüßung, eigenes Passwort ändern — kein Trust-Level-Gate, wirkt nur auf die eigene `session["user_id"]`. `/` redirected dorthin. |
 | `/rooms` | Read-only Liste |
 | `/groups`, `/groups/create`, `/groups/<id>/edit`, `/groups/<id>/delete` | Gruppen-CRUD |
 | `/satellites`, `/satellites/<id>/room`, `/satellites/<id>/name` | Satelliten-Zuordnung (kein Delete — keine `DeleteSatellite`-RPC) |
@@ -61,7 +62,7 @@ hannah-webui/
 
 Zwei unabhängige Wege, **kein Auto-Update beim Container-Pfad**:
 
-1. **systemd** (`deploy/install.sh` + `deploy/hannah-webui.service`) — lädt Releases vom [Hannah Update Server](https://hannah-update.sgessinger.de) (Channel `webui-stable`), Python-venv, gunicorn als User `hannah` (siehe Deploy-Konventionen im Monorepo — alle Services laufen als gemeinsamer User `hannah`). Bind-Adresse/Worker-Anzahl steht in der `.service`-Unit, nicht in `config.yaml` (gunicorn bindet den Socket vor dem WSGI-App-Import).
+1. **systemd** (`deploy/install.sh` + `deploy/hannah-webui.service`) — lädt Releases vom [Hannah Update Server](https://hannah-update.sgessinger.de) (Channel `webui-stable`), Python-venv, gunicorn als User `hannah` (siehe Deploy-Konventionen im Monorepo — alle Services laufen als gemeinsamer User `hannah`). Bind-Adresse/Worker-Anzahl steht in der `.service`-Unit, nicht in `config.yaml` (gunicorn bindet den Socket vor dem WSGI-App-Import). `install.sh` ist nur für Erst-Install/manuelle Reinstalls — im laufenden Betrieb hält AutoDeploy (`hannah-autodeploy`, generischer Update-Agent für alle Hannah-Komponenten, siehe Monorepo) die Installation automatisch aktuell: pollt den Update Server auf Channel `webui-stable`, tauscht bei neuer Version die Dateien, führt den `post_install`-Hook (`pip install -r requirements.txt`) aus und restartet `hannah-webui.service`.
 2. **Docker** — Multi-Arch-Image (amd64/arm64, Kaniko-Build in der CI), Push in die eigene Container Registry (`registry.dev.kernstock.net/gessinger/voice/hannah-webui`), getaggt mit Versionsnummer + `latest`. Konfiguration ausschließlich per Env-Vars (`HANNAH_WEBUI_HOST`/`PORT`/`SECRET_KEY`/`GRPC_HOST`/`GRPC_PORT`), da kein `config.yaml` im Image liegt.
 
 `secret_key` muss über alle gunicorn-Worker und Neustarts hinweg stabil sein, sonst zufälliger Logout (siehe CHANGELOG, war ein Produktionsbug in der Monorepo-Phase).

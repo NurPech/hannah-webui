@@ -4,6 +4,10 @@
     ## **WORK IN PROGRESS**
 -->
 
+
+## 1.5.0
+* New `/me` page replaces the old index page as the logged-in landing page: greeting plus self-service password change (`/me/password`), no trust-level gate — only affects the logged-in user's own account. `/` now redirects to `/me`. First step towards hosting account-linking (Telegram/OAuth) there too. Refs #8
+
 ## 1.4.0
 * Role-based access control: pages and actions are now gated by the logged-in user's `trust_level`. Regular users (trust ≥ 5) see Index, Rooms, Routines and Triggers (editing routines/triggers requires trust ≥ 7); everything else (Groups, Settings, Users, satellite ownership/deletion) requires trust ≥ 10 ("Admin"). Nav links and list/detail action buttons are hidden client-side to match; enforcement itself is server-side via a new `trust_level_required` decorator. Refs #6
 * Satellites: regular users (trust ≥ 5) can now open the Satellites page, but only see satellites they own and can only reassign the room — deleting a satellite or changing its owner still requires trust ≥ 10. `SetSatelliteRoom`/`SetSatelliteDisplayName`/`SetSatelliteOwner`/`DeleteSatellite` now send a `requestor_id`, validated against ownership/trust-level by Core. Refs #6

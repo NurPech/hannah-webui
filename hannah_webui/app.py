@@ -294,7 +294,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
             def wrapped(*args, **kwargs):
                 if session.get("trust_level", 0) < min_level:
                     flash("Zugriff verweigert: unzureichende Berechtigungen.", "danger")
-                    return redirect(url_for("index"))
+                    return redirect(url_for("me"))
                 return view(*args, **kwargs)
             return wrapped
         return decorator
@@ -310,7 +310,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
                 session["user_id"] = user.id
                 session["display_name"] = user.display_name or user.user_name
                 session["trust_level"] = user.trust_level
-                return redirect(url_for("index"))
+                return redirect(url_for("me"))
             error = "Ungültige Zugangsdaten."
         return render_template("login.html", error=error)
 
@@ -322,7 +322,31 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
     @app.route("/")
     @login_required
     def index():
-        return render_template("index.html", display_name=session.get("display_name"))
+        return redirect(url_for("me"))
+
+    @app.route("/me")
+    @login_required
+    def me():
+        return render_template("me.html", display_name=session.get("display_name"))
+
+    @app.route("/me/password", methods=["POST"])
+    @login_required
+    def update_my_password():
+        password = request.form.get("password", "").strip()
+        confirm = request.form.get("password_confirm", "").strip()
+        if not password:
+            flash("Passwort darf nicht leer sein.", "danger")
+            return redirect(url_for("me"))
+        if password != confirm:
+            flash("Passwörter stimmen nicht überein.", "danger")
+            return redirect(url_for("me"))
+        user = next((u for u in hannah.get_users() if u.id == session["user_id"]), None)
+        if user is None:
+            flash("User nicht gefunden.", "danger")
+            return redirect(url_for("me"))
+        ok, message = hannah.update_user(user.id, user.display_name, user.email, user.type, user.active, password)
+        flash(message if not ok else "Passwort geändert.", "danger" if not ok else "success")
+        return redirect(url_for("me"))
 
     @app.route("/rooms")
     @login_required
@@ -766,7 +790,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
     @login_required
     @trust_level_required(TRUST_LEVELS["link_resident"])
     def unlink_resident(user_id: int):
-        hannah.unlink_account(user_id, "residents")
+        hannah.unlink_account(user_id, "residents", session.get("user_id"))
         return redirect(url_for("users"))
 
     return app

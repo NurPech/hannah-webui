@@ -170,9 +170,11 @@ class HannahClient:
         ))
         return resp.ok
 
-    def unlink_account(self, user_id: int, service: str) -> bool:
+    def unlink_account(self, user_id: int, service: str, requestor_id: int) -> bool:
         assert self._stub, "call connect() first"
-        resp = self._stub.UnlinkAccount(hannah_pb2.UnlinkAccountRequest(user_id=user_id, service=service))
+        resp = self._stub.UnlinkAccount(hannah_pb2.UnlinkAccountRequest(
+            user_id=user_id, service=service, requestor_id=requestor_id,
+        ))
         return resp.ok
 
     def get_routines(self) -> list["hannah_pb2.Routine"]:

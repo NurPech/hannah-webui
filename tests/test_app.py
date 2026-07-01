@@ -4,15 +4,32 @@ class TestLogin:
         assert resp.status_code == 302
         assert "/login" in resp.headers["Location"]
 
-    def test_login_success_redirects_to_index(self, client):
+    def test_login_success_redirects_to_me(self, client):
         resp = client.post("/login", data={"username": "claude", "password": "claude"})
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/")
+        assert resp.headers["Location"].endswith("/me")
 
     def test_login_failure_shows_error(self, client):
         resp = client.post("/login", data={"username": "claude", "password": "wrong"})
         assert resp.status_code == 200
         assert "Ungültige Zugangsdaten" in resp.get_data(as_text=True)
+
+
+class TestMe:
+    def test_me_shows_display_name(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "Hallo" in body
+
+    def test_change_password_success(self, logged_in_client):
+        resp = logged_in_client.post("/me/password", data={"password": "newpass123", "password_confirm": "newpass123"})
+        assert resp.status_code == 302
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "Passwort geändert" in body
+
+    def test_change_password_mismatch_rejected(self, logged_in_client):
+        resp = logged_in_client.post("/me/password", data={"password": "abc12345", "password_confirm": "different"})
+        body = logged_in_client.get(resp.headers["Location"]).get_data(as_text=True)
+        assert "stimmen nicht überein" in body
 
 
 class TestRooms:
@@ -97,7 +114,7 @@ class TestSatellitePermissions:
     def test_regular_user_redirected_from_admin_only_route(self, logged_in_client):
         resp = logged_in_client.get("/users")
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/")
+        assert resp.headers["Location"].endswith("/me")
 
 
 class TestSettings:
