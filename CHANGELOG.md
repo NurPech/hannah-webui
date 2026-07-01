@@ -4,6 +4,10 @@
     ## **WORK IN PROGRESS**
 -->
 
+## 1.4.0
+* Role-based access control: pages and actions are now gated by the logged-in user's `trust_level`. Regular users (trust ≥ 5) see Index, Rooms, Routines and Triggers (editing routines/triggers requires trust ≥ 7); everything else (Groups, Settings, Users, satellite ownership/deletion) requires trust ≥ 10 ("Admin"). Nav links and list/detail action buttons are hidden client-side to match; enforcement itself is server-side via a new `trust_level_required` decorator. Refs #6
+* Satellites: regular users (trust ≥ 5) can now open the Satellites page, but only see satellites they own and can only reassign the room — deleting a satellite or changing its owner still requires trust ≥ 10. `SetSatelliteRoom`/`SetSatelliteDisplayName`/`SetSatelliteOwner`/`DeleteSatellite` now send a `requestor_id`, validated against ownership/trust-level by Core. Refs #6
+
 ## 1.3.1
 * Adjust page width for better alignment
 

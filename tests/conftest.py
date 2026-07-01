@@ -24,5 +24,13 @@ def client(app):
 
 @pytest.fixture
 def logged_in_client(client):
+    """Trust_level 7 — a regular roomie, not an admin."""
     client.post("/login", data={"username": "claude", "password": "claude"})
+    return client
+
+
+@pytest.fixture
+def admin_client(client):
+    """Trust_level 10 — required for group/settings/user/satellite-admin routes."""
+    client.post("/login", data={"username": "admin", "password": "admin"})
     return client

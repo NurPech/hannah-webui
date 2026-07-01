@@ -26,7 +26,7 @@ class FakeHannahClient:
                 "owner_user_id": 0,
             },
         }
-        self._users = {"claude": "claude"}
+        self._users = {"claude": "claude", "admin": "admin"}
         self._user_records = {
             1: {
                 "user_name": "leonie", "display_name": "Leonie", "email": "leonie@example.com",
@@ -68,10 +68,13 @@ class FakeHannahClient:
         pass
 
     def login(self, username, password):
-        if self._users.get(username) == password:
+        if self._users.get(username) != password:
+            return False, None
+        if username == "admin":
+            user = hannah_pb2.User(id=2, user_name=username, display_name="Admin", trust_level=10, active=True)
+        else:
             user = hannah_pb2.User(id=1, user_name=username, display_name=username, trust_level=7, active=True)
-            return True, user
-        return False, None
+        return True, user
 
     def get_rooms(self):
         return [hannah_pb2.Room(room_id=rid, display_name=name) for rid, name in self._rooms.items()]
@@ -131,23 +134,26 @@ class FakeHannahClient:
             ))
         return result
 
-    def set_satellite_room(self, device_id, room_id):
+    def set_satellite_room(self, device_id, room_id, requestor_id):
         if device_id not in self._satellites:
-            return False
+            return False, "satellite not found"
         self._satellites[device_id]["room_id"] = room_id or ""
-        return True
+        return True, "updated"
 
-    def set_satellite_display_name(self, device_id, display_name):
+    def set_satellite_display_name(self, device_id, display_name, requestor_id):
         if device_id not in self._satellites:
-            return False
+            return False, "satellite not found"
         self._satellites[device_id]["display_name"] = display_name
-        return True
+        return True, "updated"
 
-    def set_satellite_owner(self, device_id, user_id):
+    def set_satellite_owner(self, device_id, user_id, requestor_id):
         if device_id not in self._satellites:
-            return False
+            return False, "satellite not found"
         self._satellites[device_id]["owner_user_id"] = user_id or 0
-        return True
+        return True, "updated"
+
+    def delete_satellite(self, device_id, requestor_id):
+        return (True, "deleted") if self._satellites.pop(device_id, None) is not None else (False, "satellite not found")
 
     def get_settings(self):
         categories = [hannah_pb2.Category(id=cid, name=name) for cid, name in self._categories.items()]

@@ -22,20 +22,35 @@
   </button>
 
   <nav id="nav-links" class="hidden sm:flex sm:items-center gap-1 w-full sm:w-auto basis-full sm:basis-auto order-3 sm:order-none mr-auto">
+    {% set trust = session.get('trust_level', 0) %}
+    {% if trust >= trust_levels['list_rooms'] %}
     <a href="{{ url_for('rooms') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'rooms' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Räume</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_groups'] %}
     <a href="{{ url_for('groups') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('groups', 'edit_group') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Gruppen</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_satellites'] %}
     <a href="{{ url_for('satellites') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'satellites' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Satelliten</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_settings'] %}
     <a href="{{ url_for('settings') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'settings' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Settings</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_routines'] %}
     <a href="{{ url_for('routines') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('routines', 'new_routine', 'edit_routine') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Routinen</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_triggers'] %}
     <a href="{{ url_for('triggers') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('triggers', 'new_trigger', 'edit_trigger') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Trigger</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_users'] %}
     <a href="{{ url_for('users') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('users', 'create_user', 'edit_user') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">User</a>
+    {% endif %}
   </nav>
 
   <div class="hidden sm:flex items-center gap-3">

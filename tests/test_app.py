@@ -24,32 +24,32 @@ class TestRooms:
 
 
 class TestGroups:
-    def test_create_group_then_visible(self, logged_in_client):
-        logged_in_client.post("/groups/create", data={"display_name": "Obergeschoss"})
-        resp = logged_in_client.get("/groups")
+    def test_create_group_then_visible(self, admin_client):
+        admin_client.post("/groups/create", data={"display_name": "Obergeschoss"})
+        resp = admin_client.get("/groups")
         assert "Obergeschoss" in resp.get_data(as_text=True)
 
-    def test_edit_group_renames_and_sets_rooms(self, logged_in_client):
-        logged_in_client.post(
+    def test_edit_group_renames_and_sets_rooms(self, admin_client):
+        admin_client.post(
             "/groups/erdgeschoss/edit",
             data={"display_name": "EG", "room_ids": "bad"},
         )
-        resp = logged_in_client.get("/groups")
+        resp = admin_client.get("/groups")
         body = resp.get_data(as_text=True)
         assert "EG" in body
         assert "Bad" in body
 
-    def test_delete_group(self, logged_in_client):
-        logged_in_client.post("/groups/erdgeschoss/delete")
-        resp = logged_in_client.get("/groups")
+    def test_delete_group(self, admin_client):
+        admin_client.post("/groups/erdgeschoss/delete")
+        resp = admin_client.get("/groups")
         # erdgeschoss is the only seeded group, so its removal should hit the empty state.
         # "Erdgeschoss" itself isn't a safe needle here: the create-form placeholder uses it as an example.
         assert "Noch keine Gruppen angelegt" in resp.get_data(as_text=True)
 
 
 class TestSatellites:
-    def test_satellites_lists_seeded_satellite(self, logged_in_client):
-        resp = logged_in_client.get("/satellites")
+    def test_satellites_lists_seeded_satellite(self, admin_client):
+        resp = admin_client.get("/satellites")
         body = resp.get_data(as_text=True)
         assert "kueche-esp" in body
         assert "Küche01" in body
@@ -62,41 +62,70 @@ class TestSatellites:
         logged_in_client.post("/satellites/kueche-esp/name", data={"display_name": "NeuerName"})
         assert hannah._satellites["kueche-esp"]["display_name"] == "NeuerName"
 
-    def test_set_satellite_owner(self, logged_in_client, hannah):
-        logged_in_client.post("/satellites/kueche-esp/owner", data={"user_id": "1"})
+    def test_set_satellite_owner(self, admin_client, hannah):
+        admin_client.post("/satellites/kueche-esp/owner", data={"user_id": "1"})
         assert hannah._satellites["kueche-esp"]["owner_user_id"] == 1
 
-    def test_satellites_shows_owner_options(self, logged_in_client):
-        resp = logged_in_client.get("/satellites")
+    def test_satellites_shows_owner_options(self, admin_client):
+        resp = admin_client.get("/satellites")
         assert "Leonie" in resp.get_data(as_text=True)
 
 
+class TestSatellitePermissions:
+    """Row-level Sichtbarkeit: reguläre User (trust_level 7) sehen nur eigene
+    Satelliten, Admins (trust_level 10) sehen alle."""
+
+    def test_regular_user_only_sees_own_satellite(self, logged_in_client, hannah):
+        hannah._satellites["kueche-esp"]["owner_user_id"] = 1  # == logged_in_client's session user_id
+        hannah._satellites["wz-esp"] = {
+            "display_name": "Wohnzimmer01", "room_id": "wohnzimmer", "live_room": "wohnzimmer",
+            "last_seen": "", "connected": False, "owner_user_id": 99,
+        }
+        body = logged_in_client.get("/satellites").get_data(as_text=True)
+        assert "kueche-esp" in body
+        assert "wz-esp" not in body
+
+    def test_admin_sees_all_satellites(self, admin_client, hannah):
+        hannah._satellites["wz-esp"] = {
+            "display_name": "Wohnzimmer01", "room_id": "wohnzimmer", "live_room": "wohnzimmer",
+            "last_seen": "", "connected": False, "owner_user_id": 99,
+        }
+        body = admin_client.get("/satellites").get_data(as_text=True)
+        assert "kueche-esp" in body
+        assert "wz-esp" in body
+
+    def test_regular_user_redirected_from_admin_only_route(self, logged_in_client):
+        resp = logged_in_client.get("/users")
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/")
+
+
 class TestSettings:
-    def test_settings_lists_seeded_category_and_value(self, logged_in_client):
-        resp = logged_in_client.get("/settings")
+    def test_settings_lists_seeded_category_and_value(self, admin_client):
+        resp = admin_client.get("/settings")
         body = resp.get_data(as_text=True)
         assert "nlu" in body
         assert "turn_on_words" in body
         assert "einschalten" in body
 
-    def test_update_setting(self, logged_in_client, hannah):
-        logged_in_client.post("/settings/1/update", data={"value": '["an"]'})
+    def test_update_setting(self, admin_client, hannah):
+        admin_client.post("/settings/1/update", data={"value": '["an"]'})
         assert hannah._settings[1]["value"] == ["an"]
 
-    def test_update_setting_invalid_json_is_rejected(self, logged_in_client, hannah):
-        resp = logged_in_client.post(
+    def test_update_setting_invalid_json_is_rejected(self, admin_client, hannah):
+        resp = admin_client.post(
             "/settings/1/update", data={"value": "not json"}, follow_redirects=True
         )
         assert "invalid JSON" in resp.get_data(as_text=True)
         assert hannah._settings[1]["value"] == ["an", "einschalten"]
 
-    def test_create_setting_then_visible(self, logged_in_client):
-        logged_in_client.post("/settings/1/create", data={"name": "query_words", "value": '["wie"]'})
-        resp = logged_in_client.get("/settings")
+    def test_create_setting_then_visible(self, admin_client):
+        admin_client.post("/settings/1/create", data={"name": "query_words", "value": '["wie"]'})
+        resp = admin_client.get("/settings")
         assert "query_words" in resp.get_data(as_text=True)
 
-    def test_delete_setting(self, logged_in_client, hannah):
-        logged_in_client.post("/settings/1/delete")
+    def test_delete_setting(self, admin_client, hannah):
+        admin_client.post("/settings/1/delete")
         assert 1 not in hannah._settings
 
 
@@ -242,30 +271,30 @@ class TestTriggers:
 
 
 class TestUsers:
-    def test_users_lists_seeded_user(self, logged_in_client):
-        resp = logged_in_client.get("/users")
+    def test_users_lists_seeded_user(self, admin_client):
+        resp = admin_client.get("/users")
         body = resp.get_data(as_text=True)
         assert "Leonie" in body
         assert "leonie" in body
 
-    def test_create_user_then_visible(self, logged_in_client):
-        logged_in_client.post("/users/create", data={
+    def test_create_user_then_visible(self, admin_client):
+        admin_client.post("/users/create", data={
             "username": "hannah", "password": "secret", "email": "hannah@example.com",
             "display_name": "Hannah", "type": "roomie",
         })
-        resp = logged_in_client.get("/users")
+        resp = admin_client.get("/users")
         assert "Hannah" in resp.get_data(as_text=True)
 
-    def test_create_user_missing_fields_is_rejected(self, logged_in_client, hannah):
+    def test_create_user_missing_fields_is_rejected(self, admin_client, hannah):
         before = len(hannah._user_records)
-        resp = logged_in_client.post(
+        resp = admin_client.post(
             "/users/create", data={"username": "", "password": "", "email": ""}, follow_redirects=True
         )
         assert "Pflicht" in resp.get_data(as_text=True)
         assert len(hannah._user_records) == before
 
-    def test_edit_user_updates_fields(self, logged_in_client, hannah):
-        logged_in_client.post("/users/1/edit", data={
+    def test_edit_user_updates_fields(self, admin_client, hannah):
+        admin_client.post("/users/1/edit", data={
             "display_name": "Leonie G.", "email": "leonie@neu.example.com", "type": "roomie",
             "is_active": "on", "trust_level": "9", "system_messages": "on", "password": "",
         })
@@ -273,15 +302,15 @@ class TestUsers:
         assert hannah._user_records[1]["trust_level"] == 9
         assert hannah._user_records[1]["system_messages"] is True
 
-    def test_delete_user(self, logged_in_client, hannah):
-        logged_in_client.post("/users/1/delete")
+    def test_delete_user(self, admin_client, hannah):
+        admin_client.post("/users/1/delete")
         assert 1 not in hannah._user_records
 
-    def test_link_resident(self, logged_in_client, hannah):
-        logged_in_client.post("/users/1/link-resident", data={"resident_id": "leonie_roomie"})
+    def test_link_resident(self, admin_client, hannah):
+        admin_client.post("/users/1/link-resident", data={"resident_id": "leonie_roomie"})
         assert hannah._user_records[1]["linked_accounts"]["residents"] == "leonie_roomie"
 
-    def test_unlink_resident(self, logged_in_client, hannah):
+    def test_unlink_resident(self, admin_client, hannah):
         hannah._user_records[1]["linked_accounts"]["residents"] = "leonie_roomie"
-        logged_in_client.post("/users/1/unlink-resident")
+        admin_client.post("/users/1/unlink-resident")
         assert "residents" not in hannah._user_records[1]["linked_accounts"]

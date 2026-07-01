@@ -76,29 +76,29 @@ class HannahClient:
         assert self._stub, "call connect() first"
         return list(self._stub.GetSatellites(hannah_pb2.Empty()).satellites)
 
-    def set_satellite_room(self, device_id: str, room_id: str) -> bool:
+    def set_satellite_room(self, device_id: str, room_id: str, requestor_id: int) -> tuple[bool, str]:
         assert self._stub, "call connect() first"
-        resp = self._stub.SetSatelliteRoom(hannah_pb2.SetSatelliteRoomRequest(device_id=device_id, room_id=room_id))
-        return resp.ok
+        resp = self._stub.SetSatelliteRoom(hannah_pb2.SetSatelliteRoomRequest(device_id=device_id, room_id=room_id, requestor_id=requestor_id))
+        return resp.ok, resp.message
 
-    def set_satellite_display_name(self, device_id: str, display_name: str) -> bool:
+    def set_satellite_display_name(self, device_id: str, display_name: str, requestor_id: int) -> tuple[bool, str]:
         assert self._stub, "call connect() first"
         resp = self._stub.SetSatelliteDisplayName(
-            hannah_pb2.SetSatelliteDisplayNameRequest(device_id=device_id, display_name=display_name)
+            hannah_pb2.SetSatelliteDisplayNameRequest(device_id=device_id, display_name=display_name, requestor_id=requestor_id)
         )
-        return resp.ok
-    
-    def delete_satellite(self, device_id: str) -> bool:
+        return resp.ok, resp.message
+
+    def delete_satellite(self, device_id: str, requestor_id: int) -> tuple[bool, str]:
         assert self._stub, "call connect() first"
         resp = self._stub.DeleteSatellite(
-            hannah_pb2.DeleteSatelliteRequest(device_id=device_id)
+            hannah_pb2.DeleteSatelliteRequest(device_id=device_id, requestor_id=requestor_id)
         )
-        return resp.ok
+        return resp.ok, resp.message
 
-    def set_satellite_owner(self, device_id: str, user_id: int) -> bool:
+    def set_satellite_owner(self, device_id: str, user_id: int, requestor_id: int) -> tuple[bool, str]:
         assert self._stub, "call connect() first"
-        resp = self._stub.SetSatelliteOwner(hannah_pb2.SetSatelliteOwnerRequest(device_id=device_id, user_id=user_id))
-        return resp.ok
+        resp = self._stub.SetSatelliteOwner(hannah_pb2.SetSatelliteOwnerRequest(device_id=device_id, user_id=user_id, requestor_id=requestor_id))
+        return resp.ok, resp.message
 
     def get_settings(self) -> tuple[list["hannah_pb2.Category"], list["hannah_pb2.Setting"]]:
         assert self._stub, "call connect() first"

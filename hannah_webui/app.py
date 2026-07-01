@@ -18,6 +18,36 @@ log = logging.getLogger(__name__)
 
 _TEMPLATES = os.path.join(os.path.dirname(__file__), "templates")
 
+TRUST_LEVELS = {
+    "list_rooms": 3,
+    "list_groups": 10,
+    "create_group": 10,
+    "edit_group": 10,
+    "delete_group": 10,
+    "list_satellites": 5,
+    "set_satellite_room": 5,
+    "set_satellite_name": 5,
+    "delete_satellite": 10,
+    "set_satellite_owner": 10,
+    "list_settings": 10,
+    "edit_setting": 10,
+    "create_setting": 10,
+    "delete_setting": 10,
+    "list_routines": 5,
+    "create_routine": 7,
+    "edit_routine": 7,
+    "delete_routine": 7,
+    "list_triggers": 5,
+    "create_trigger": 7,
+    "edit_trigger": 7,
+    "delete_trigger": 7,
+    "list_users": 10,
+    "create_user": 10,
+    "edit_user": 10,
+    "delete_user": 10,
+    "link_resident": 10,
+}
+
 
 def _slugify(s: str) -> str:
     """Einfacher Slug: Kleinbuchstaben, Leerzeichen -> Bindestrich, Sonderzeichen entfernen."""
@@ -246,6 +276,10 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
         secret_key = os.urandom(24)
     app.secret_key = secret_key
 
+    @app.context_processor
+    def inject_trust_levels():
+        return {"trust_levels": TRUST_LEVELS}
+
     def login_required(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
@@ -253,6 +287,17 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
                 return redirect(url_for("login"))
             return view(*args, **kwargs)
         return wrapped
+    
+    def trust_level_required(min_level: int):
+        def decorator(view):
+            @wraps(view)
+            def wrapped(*args, **kwargs):
+                if session.get("trust_level", 0) < min_level:
+                    flash("Zugriff verweigert: unzureichende Berechtigungen.", "danger")
+                    return redirect(url_for("index"))
+                return view(*args, **kwargs)
+            return wrapped
+        return decorator
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -264,6 +309,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
             if found:
                 session["user_id"] = user.id
                 session["display_name"] = user.display_name or user.user_name
+                session["trust_level"] = user.trust_level
                 return redirect(url_for("index"))
             error = "Ungültige Zugangsdaten."
         return render_template("login.html", error=error)
@@ -280,6 +326,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/rooms")
     @login_required
+    @trust_level_required(TRUST_LEVELS["list_rooms"])
     def rooms():
         all_rooms = hannah.get_rooms()
         all_groups = hannah.get_groups()
@@ -292,11 +339,13 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/groups")
     @login_required
+    @trust_level_required(TRUST_LEVELS["list_groups"])
     def groups():
         return render_template("groups.html", groups=hannah.get_groups(), rooms=hannah.get_rooms())
 
     @app.route("/groups/create", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["create_group"])
     def create_group():
         display_name = request.form.get("display_name", "").strip()
         if display_name:
@@ -305,6 +354,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/groups/<group_id>/edit")
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_group"])
     def edit_group(group_id: str):
         group = hannah.get_group(group_id)
         if group is None:
@@ -319,6 +369,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/groups/<group_id>/edit", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_group"])
     def save_group(group_id: str):
         display_name = request.form.get("display_name", "").strip()
         room_ids = request.form.getlist("room_ids")
@@ -329,12 +380,14 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/groups/<group_id>/delete", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["delete_group"])
     def delete_group(group_id: str):
         hannah.delete_group(group_id)
         return redirect(url_for("groups"))
 
     @app.route("/satellites")
     @login_required
+    @trust_level_required(TRUST_LEVELS["list_satellites"])
     def satellites():
         rooms = hannah.get_rooms()
         room_display_names = {r.room_id: r.display_name for r in rooms}
@@ -342,44 +395,57 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
         sats_view = [{
             "sat": sat,
             "live_room_display": room_display_names.get(sat.room, sat.room),
-        } for sat in sats]
+        } for sat in sats
+        if session.get("trust_level", 0) >= TRUST_LEVELS["delete_satellite"]
+            or sat.owner_user_id == session.get("user_id", 0)]
         sats_view.sort(key=lambda v: v["sat"].device_id)
         users = [u for u in hannah.get_users() if u.active]
         return render_template("satellites.html", satellites=sats_view, rooms=rooms, users=users)
 
     @app.route("/satellites/<device_id>/room", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["set_satellite_room"])
     def set_satellite_room(device_id: str):
-        hannah.set_satellite_room(device_id, request.form.get("room_id", ""))
+        ok, message = hannah.set_satellite_room(device_id, request.form.get("room_id", ""), session["user_id"])
+        if not ok:
+            flash(message or "Raum konnte nicht gesetzt werden.", "danger")
         return redirect(url_for("satellites"))
 
     @app.route("/satellites/<device_id>/name", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["set_satellite_name"])
     def set_satellite_name(device_id: str):
         display_name = request.form.get("display_name", "").strip()
         if display_name:
-            hannah.set_satellite_display_name(device_id, display_name)
+            ok, message = hannah.set_satellite_display_name(device_id, display_name, session["user_id"])
+            if not ok:
+                flash(message or "Anzeigename konnte nicht gesetzt werden.", "danger")
         return redirect(url_for("satellites"))
     
     @app.route("/satellites/<device_id>/delete", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["delete_satellite"])
     def delete_satellite(device_id: str):
-        ok = hannah.delete_satellite(device_id=device_id)
+        ok, message = hannah.delete_satellite(device_id=device_id, requestor_id=session["user_id"])
         if ok:
             flash("Satellit gelöscht.", "success")
         else:
-            flash("Satellit konnte nicht gelöscht werden.", "danger")
+            flash(message or "Satellit konnte nicht gelöscht werden.", "danger")
         return redirect(url_for("satellites"))
 
     @app.route("/satellites/<device_id>/owner", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["set_satellite_owner"])
     def set_satellite_owner(device_id: str):
         user_id = int(request.form.get("user_id") or 0)
-        hannah.set_satellite_owner(device_id, user_id)
+        ok, message = hannah.set_satellite_owner(device_id, user_id, session["user_id"])
+        if not ok:
+            flash(message or "Besitzer konnte nicht gesetzt werden.", "danger")
         return redirect(url_for("satellites"))
 
     @app.route("/settings")
     @login_required
+    @trust_level_required(TRUST_LEVELS["list_settings"])
     def settings():
         categories, settings_list = hannah.get_settings()
         categories_sorted = sorted(categories, key=lambda c: c.name)
@@ -397,6 +463,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/settings/<int:setting_id>/update", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_setting"])
     def update_setting(setting_id: int):
         ok, message = hannah.update_setting(setting_id, request.form.get("value", ""))
         if not ok:
@@ -405,6 +472,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/settings/<int:category_id>/create", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["create_setting"])
     def create_setting(category_id: int):
         name = request.form.get("name", "").strip()
         value = request.form.get("value", "")
@@ -416,12 +484,14 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/settings/<int:setting_id>/delete", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["delete_setting"])
     def delete_setting(setting_id: int):
         hannah.delete_setting(setting_id)
         return redirect(url_for("settings"))
 
     @app.route("/routines")
     @login_required
+    @trust_level_required(TRUST_LEVELS["list_routines"])
     def routines():
         routines_view = []
         for r in hannah.get_routines():
@@ -434,6 +504,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/routines/new")
     @login_required
+    @trust_level_required(TRUST_LEVELS["create_routine"])
     def new_routine():
         return render_template(
             "routine_edit.html", routine=None, actions=[], triggers_text="",
@@ -442,6 +513,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/routines/create", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["create_routine"])
     def create_routine():
         name = request.form.get("name", "").strip()
         if name:
@@ -456,6 +528,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/routines/<int:routine_id>/edit")
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_routine"])
     def edit_routine(routine_id: int):
         routine = next((r for r in hannah.get_routines() if r.id == routine_id), None)
         if routine is None:
@@ -472,6 +545,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/routines/<int:routine_id>/edit", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_routine"])
     def save_routine(routine_id: int):
         name = request.form.get("name", "").strip()
         triggers = _parse_lines(request.form.get("triggers", ""))
@@ -484,12 +558,14 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/routines/<int:routine_id>/delete", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["delete_routine"])
     def delete_routine(routine_id: int):
         hannah.delete_routine(routine_id)
         return redirect(url_for("routines"))
 
     @app.route("/triggers")
     @login_required
+    @trust_level_required(TRUST_LEVELS["list_triggers"])
     def triggers():
         triggers_view = []
         for t in hannah.get_triggers():
@@ -506,6 +582,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/triggers/new")
     @login_required
+    @trust_level_required(TRUST_LEVELS["create_trigger"])
     def new_trigger():
         return render_template(
             "trigger_edit.html", trigger=None,
@@ -518,6 +595,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/triggers/create", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["create_trigger"])
     def create_trigger():
         trigger_id = _slugify(request.form.get("id", ""))
         if trigger_id:
@@ -546,6 +624,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/triggers/<trigger_id>/edit")
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_trigger"])
     def edit_trigger(trigger_id: str):
         trigger = next((t for t in hannah.get_triggers() if t.id == trigger_id), None)
         if trigger is None:
@@ -580,6 +659,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/triggers/<trigger_id>/edit", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_trigger"])
     def save_trigger(trigger_id: str):
         also = _parse_also(request.form)
         unless = _parse_state_condition_rows(request.form, "unless") or None
@@ -605,12 +685,14 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/triggers/<trigger_id>/delete", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["delete_trigger"])
     def delete_trigger(trigger_id: str):
         hannah.delete_trigger(trigger_id)
         return redirect(url_for("triggers"))
 
     @app.route("/users")
     @login_required
+    @trust_level_required(TRUST_LEVELS["list_users"])
     def users():
         residents_by_id = {r.id: r for r in hannah.get_residents()}
         users_view = [
@@ -621,6 +703,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/users/create", methods=["GET", "POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["create_user"])
     def create_user():
         if request.method == "POST":
             username = request.form.get("username", "").strip()
@@ -640,6 +723,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["edit_user"])
     def edit_user(user_id: int):
         user = next((u for u in hannah.get_users() if u.id == user_id), None)
         if user is None:
@@ -662,12 +746,14 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/users/<int:user_id>/delete", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["delete_user"])
     def delete_user(user_id: int):
         hannah.delete_user(user_id)
         return redirect(url_for("users"))
 
     @app.route("/users/<int:user_id>/link-resident", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["link_resident"])
     def link_resident(user_id: int):
         resident_id = request.form.get("resident_id", "")
         resident = next((r for r in hannah.get_residents() if r.id == resident_id), None)
@@ -678,6 +764,7 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
 
     @app.route("/users/<int:user_id>/unlink-resident", methods=["POST"])
     @login_required
+    @trust_level_required(TRUST_LEVELS["link_resident"])
     def unlink_resident(user_id: int):
         hannah.unlink_account(user_id, "residents")
         return redirect(url_for("users"))

@@ -9,6 +9,9 @@
 
 <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
   {% if satellites %}
+  {% set trust = session.get('trust_level', 0) %}
+  {% set can_manage_owner = trust >= trust_levels['set_satellite_owner'] %}
+  {% set can_delete = trust >= trust_levels['delete_satellite'] %}
   <table class="w-full text-sm">
     <thead>
       <tr class="border-b border-gray-800 text-gray-500 text-xs">
@@ -18,7 +21,9 @@
         <th class="text-left px-4 py-3">Zugewiesener Raum</th>
         <th class="text-left px-4 py-3">Besitzer</th>
         <th class="text-left px-4 py-3">Zuletzt gesehen</th>
+        {% if can_delete %}
         <th class="px-4 py-3"></th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -61,6 +66,7 @@
         </td>
 
         <td class="px-4 py-3">
+          {% if can_manage_owner %}
           <form method="post" action="{{ url_for('set_satellite_owner', device_id=sat.device_id) }}" class="flex gap-1 items-center">
             <select name="user_id"
                     class="w-36 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
@@ -73,9 +79,13 @@
             </select>
             <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-2 py-1 text-xs font-medium transition-colors">Setzen</button>
           </form>
+          {% else %}
+          <span class="text-xs text-gray-500">{{ sat.owner_display_name or '– kein Besitzer –' }}</span>
+          {% endif %}
         </td>
 
         <td class="px-4 py-3 text-xs text-gray-500">{{ sat.last_seen or '–' }}</td>
+        {% if can_delete %}
         <td class="px-4 py-3">
           <form method="post" action="{{ url_for('delete_satellite', device_id=sat.device_id) }}">
             <button type="submit"
@@ -85,6 +95,7 @@
             </button>
           </form>
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>

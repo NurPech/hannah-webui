@@ -5,7 +5,7 @@ import warnings
 
 from . import hannah_pb2 as hannah__pb2
 
-GRPC_GENERATED_VERSION = '1.81.1'
+GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class HannahServiceStub:
+class HannahServiceStub(object):
     """============================================================
     Hannah gRPC Service
 
@@ -329,7 +329,7 @@ class HannahServiceStub:
                 _registered_method=True)
 
 
-class HannahServiceServicer:
+class HannahServiceServicer(object):
     """============================================================
     Hannah gRPC Service
 
@@ -1029,7 +1029,7 @@ def add_HannahServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class HannahService:
+class HannahService(object):
     """============================================================
     Hannah gRPC Service
 
