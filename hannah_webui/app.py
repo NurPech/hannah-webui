@@ -4,10 +4,13 @@ Hannah WebUI
 Flask app, talks to Hannah Core exclusively via gRPC (no direct DB/file access —
 Core stays the sole owner of all data, see #27).
 """
+import hashlib
+import hmac
 import json
 import logging
 import os
 import re
+import time
 from functools import wraps
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
@@ -59,6 +62,24 @@ def _slugify(s: str) -> str:
 
 def _parse_lines(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+_TELEGRAM_AUTH_MAX_AGE = 300  # Sekunden, gegen Replay alter Callback-URLs
+
+
+def _verify_telegram_auth(data: dict, bot_token: str) -> bool:
+    """Verifiziert die Signatur eines Telegram-Login-Widget-Callbacks.
+    https://core.telegram.org/widgets/login#checking-authorization"""
+    received_hash = data.get("hash", "")
+    if not received_hash or not bot_token:
+        return False
+    check_string = "\n".join(f"{k}={v}" for k, v in sorted(data.items()) if k != "hash")
+    secret_key = hashlib.sha256(bot_token.encode()).digest()
+    computed_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(computed_hash, received_hash):
+        return False
+    auth_date = int(data.get("auth_date", 0))
+    return time.time() - auth_date < _TELEGRAM_AUTH_MAX_AGE
 
 
 _ROUTINE_NEW_ACTION_ROWS = 3
@@ -266,7 +287,7 @@ def _parse_trigger_action_rows(form) -> list[dict]:
     return actions
 
 
-def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
+def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: str = "", telegram_bot_username: str = "") -> Flask:
     app = Flask(__name__, template_folder=_TEMPLATES)
     if not secret_key:
         log.warning(
@@ -327,7 +348,30 @@ def create_app(hannah: HannahClient, secret_key: str = "") -> Flask:
     @app.route("/me")
     @login_required
     def me():
-        return render_template("me.html", display_name=session.get("display_name"))
+        user = next((u for u in hannah.get_users() if u.id == session["user_id"]), None)
+        linked_accounts = user.linked_accounts if user else {}
+        return render_template(
+            "me.html", display_name=session.get("display_name"),
+            linked_accounts=linked_accounts, telegram_bot_username=telegram_bot_username,
+        )
+
+    @app.route("/me/telegram/callback")
+    @login_required
+    def telegram_callback():
+        data = request.args.to_dict()
+        if not _verify_telegram_auth(data, telegram_bot_token):
+            flash("Telegram-Verknüpfung fehlgeschlagen: ungültige oder abgelaufene Signatur.", "danger")
+            return redirect(url_for("me"))
+        ok = hannah.link_account(session["user_id"], "telegram", data["id"], json.dumps(data))
+        flash("Telegram-Konto verknüpft." if ok else "Verknüpfung fehlgeschlagen.", "success" if ok else "danger")
+        return redirect(url_for("me"))
+
+    @app.route("/me/telegram/unlink", methods=["POST"])
+    @login_required
+    def telegram_unlink():
+        hannah.unlink_account(session["user_id"], "telegram", session["user_id"])
+        flash("Telegram-Konto getrennt.", "success")
+        return redirect(url_for("me"))
 
     @app.route("/me/password", methods=["POST"])
     @login_required

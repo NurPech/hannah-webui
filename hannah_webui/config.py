@@ -19,6 +19,8 @@ class Config:
     host: str = "127.0.0.1"
     port: int = 5000
     secret_key: str = ""
+    telegram_bot_token: str = ""
+    telegram_bot_username: str = ""
     grpc: GrpcConfig = field(default_factory=GrpcConfig)
 
 
@@ -29,6 +31,8 @@ def _load_from_env() -> Config:
         host=os.environ.get("HANNAH_WEBUI_HOST", "127.0.0.1"),
         port=int(os.environ.get("HANNAH_WEBUI_PORT", "5000")),
         secret_key=os.environ.get("HANNAH_WEBUI_SECRET_KEY", ""),
+        telegram_bot_token=os.environ.get("HANNAH_WEBUI_TELEGRAM_BOT_TOKEN", ""),
+        telegram_bot_username=os.environ.get("HANNAH_WEBUI_TELEGRAM_BOT_USERNAME", ""),
         grpc=GrpcConfig(
             host=os.environ.get("HANNAH_WEBUI_GRPC_HOST", "127.0.0.1"),
             port=int(os.environ.get("HANNAH_WEBUI_GRPC_PORT", "50051")),
@@ -52,5 +56,7 @@ def load(path: str | Path = "config.yaml") -> Config:
         host=raw.get("host", "127.0.0.1"),
         port=raw.get("port", 5000),
         secret_key=raw.get("secret_key", ""),
+        telegram_bot_token=raw.get("telegram_bot_token", ""),
+        telegram_bot_username=raw.get("telegram_bot_username", ""),
         grpc=_section(GrpcConfig, "grpc"),
     )

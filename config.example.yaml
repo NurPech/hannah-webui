@@ -7,6 +7,11 @@ port: 5000
 #   python3 -c "import secrets; print(secrets.token_hex(32))"
 secret_key: "IHR_SECRET_KEY"
 
+# Telegram Login Widget (Account-Verknüpfung in /me) — Bot-Token via @BotFather,
+# Domain muss dort per /setdomain auf diese WebUI-Instanz freigeschaltet sein.
+telegram_bot_token: ""
+telegram_bot_username: ""
+
 # Hannah Core, per gRPC
 grpc:
   host: "127.0.0.1"

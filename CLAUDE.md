@@ -43,7 +43,7 @@ hannah-webui/
 | Route | Funktion |
 |---|---|
 | `/login`, `/logout` | Auth |
-| `/me`, `/me/password` | Self-Service-Startseite (ersetzt die alte Index-Page): Begrüßung, eigenes Passwort ändern — kein Trust-Level-Gate, wirkt nur auf die eigene `session["user_id"]`. `/` redirected dorthin. |
+| `/me`, `/me/password`, `/me/telegram/callback`, `/me/telegram/unlink` | Self-Service-Startseite (ersetzt die alte Index-Page): Begrüßung, eigenes Passwort ändern, Telegram-Konto verknüpfen/trennen — kein Trust-Level-Gate, wirkt nur auf die eigene `session["user_id"]`. `/` redirected dorthin. Telegram-Verknüpfung läuft über das [Login Widget](https://core.telegram.org/widgets/login); die WebUI verifiziert die HMAC-Signatur selbst (eigener `telegram_bot_token`/`telegram_bot_username` in der Config) und meldet Core nur die bereits verifizierte `account_id` per `LinkAccount` — Core/TelegramAdapter bekommen die Rohdaten nie zu Gesicht. |
 | `/rooms` | Read-only Liste |
 | `/groups`, `/groups/create`, `/groups/<id>/edit`, `/groups/<id>/delete` | Gruppen-CRUD |
 | `/satellites`, `/satellites/<id>/room`, `/satellites/<id>/name` | Satelliten-Zuordnung (kein Delete — keine `DeleteSatellite`-RPC) |

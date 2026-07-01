@@ -15,6 +15,66 @@ class TestLogin:
         assert "Ungültige Zugangsdaten" in resp.get_data(as_text=True)
 
 
+import hashlib
+import hmac as hmac_mod
+import time
+
+from tests.conftest import TELEGRAM_BOT_TOKEN
+
+
+def _sign_telegram_data(data, bot_token=TELEGRAM_BOT_TOKEN):
+    data = dict(data)
+    check_string = "\n".join(f"{k}={v}" for k, v in sorted(data.items()))
+    secret_key = hashlib.sha256(bot_token.encode()).digest()
+    data["hash"] = hmac_mod.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
+    return data
+
+
+class TestTelegramAuthVerification:
+    def test_valid_signature_accepted(self):
+        from hannah_webui.app import _verify_telegram_auth
+        data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": str(int(time.time()))})
+        assert _verify_telegram_auth(data, TELEGRAM_BOT_TOKEN) is True
+
+    def test_tampered_payload_rejected(self):
+        from hannah_webui.app import _verify_telegram_auth
+        data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": str(int(time.time()))})
+        data["id"] = "999"
+        assert _verify_telegram_auth(data, TELEGRAM_BOT_TOKEN) is False
+
+    def test_expired_auth_date_rejected(self):
+        from hannah_webui.app import _verify_telegram_auth
+        data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": "1000000000"})
+        assert _verify_telegram_auth(data, TELEGRAM_BOT_TOKEN) is False
+
+    def test_wrong_bot_token_rejected(self):
+        from hannah_webui.app import _verify_telegram_auth
+        data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": str(int(time.time()))})
+        assert _verify_telegram_auth(data, "other-secret") is False
+
+
+class TestTelegramLinking:
+    def test_callback_with_invalid_hash_shows_error(self, telegram_client):
+        resp = telegram_client.get("/me/telegram/callback?id=123&first_name=Claude&auth_date=1&hash=bogus")
+        body = telegram_client.get(resp.headers["Location"]).get_data(as_text=True)
+        assert "ungültige oder abgelaufene Signatur" in body
+
+    def test_callback_with_valid_hash_links_account(self, telegram_client):
+        data = _sign_telegram_data({"id": "555", "first_name": "Claude", "auth_date": str(int(time.time()))})
+        resp = telegram_client.get("/me/telegram/callback", query_string=data)
+        assert resp.status_code == 302
+        body = telegram_client.get("/me").get_data(as_text=True)
+        assert "Telegram: verknüpft" in body
+
+    def test_unlink_removes_account(self, telegram_client):
+        data = _sign_telegram_data({"id": "555", "first_name": "Claude", "auth_date": str(int(time.time()))})
+        telegram_client.get("/me/telegram/callback", query_string=data)
+
+        telegram_client.post("/me/telegram/unlink")
+        body = telegram_client.get("/me").get_data(as_text=True)
+        assert "Telegram: verknüpft" not in body
+
+
 class TestMe:
     def test_me_shows_display_name(self, logged_in_client):
         body = logged_in_client.get("/me").get_data(as_text=True)

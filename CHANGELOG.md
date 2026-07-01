@@ -5,6 +5,9 @@
 -->
 
 
+## 1.6.0
+* Account linking: `/me` now has a "Verknüpfte Konten" section to link/unlink a Telegram account via the [Telegram Login Widget](https://core.telegram.org/widgets/login). The WebUI verifies the HMAC signature itself (new `telegram_bot_token`/`telegram_bot_username` config) and only reports the already-verified `account_id` to Core via `LinkAccount` — replaces the insecure bot-side `/verknuepfen <name>` trust model (gessinger/voice/hannah#70) for Telegram. Refs #7
+
 ## 1.5.0
 * New `/me` page replaces the old index page as the logged-in landing page: greeting plus self-service password change (`/me/password`), no trust-level gate — only affects the logged-in user's own account. `/` now redirects to `/me`. First step towards hosting account-linking (Telegram/OAuth) there too. Refs #8
 

@@ -34,3 +34,15 @@ def admin_client(client):
     """Trust_level 10 — required for group/settings/user/satellite-admin routes."""
     client.post("/login", data={"username": "admin", "password": "admin"})
     return client
+
+
+TELEGRAM_BOT_TOKEN = "test-bot-token"
+
+
+@pytest.fixture
+def telegram_client(hannah):
+    flask_app = create_app(hannah, telegram_bot_token=TELEGRAM_BOT_TOKEN, telegram_bot_username="SmartHomeRene_bot")
+    flask_app.config.update(TESTING=True)
+    c = flask_app.test_client()
+    c.post("/login", data={"username": "claude", "password": "claude"})
+    return c
