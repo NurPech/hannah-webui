@@ -456,3 +456,14 @@ class TestUsers:
         hannah._user_records[1]["linked_accounts"]["residents"] = "leonie_roomie"
         admin_client.post("/users/1/unlink-resident")
         assert "residents" not in hannah._user_records[1]["linked_accounts"]
+
+
+class TestVersion:
+    def test_version_endpoint_returns_json_without_login(self, client):
+        resp = client.get("/version")
+        assert resp.status_code == 200
+        assert resp.get_json() == {"version": "dev"}
+
+    def test_me_shows_version_badge(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "dev" in body

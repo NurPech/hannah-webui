@@ -5,6 +5,9 @@
 -->
 
 
+## 1.7.1
+* The WebUI now knows its own version: CI stamps a `VERSION` file at build time (both the Docker image and the systemd tarball, next to `main.py`) instead of committing it to git history — `release.js` bumps the changelog before the tag exists, so it can't be the source of truth. New `/version` JSON endpoint and a small version badge next to the "Hannah" logo in the header; local dev without a CI-stamped file shows "dev". Refs #14
+
 ## 1.7.0
 * CI: new `test:changelog` job fails MR pipelines that touch `hannah_webui/`, `proto/`, or the deploy/entrypoint files without also touching `CHANGELOG.md` — enforces git workflow rule 2 (CLAUDE.md) instead of relying on remembering it.
 * Alarm/Wecker management: `/me` now has a third card listing the logged-in user's own alarms (time, weekdays or one-off date, label, satellite, enable/disable toggle, delete) plus a form to create new ones (one-off vs. recurring), backed by the new `GetAlarms`/`CreateAlarm`/`UpdateAlarm`/`DeleteAlarm` RPCs (Core #4). Personal data scoped to `session['user_id']` like the rest of `/me` — no trust-level gate, no new nav entry. Refs #13

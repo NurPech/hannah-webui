@@ -2,6 +2,12 @@ FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a279
 
 WORKDIR /app
 
+# Version, stamped by CI (see .build-container in .gitlab-ci.yml) — read at
+# runtime by hannah_webui/version.py, exposed via the /version endpoint and
+# the header badge. "dev" for local `docker build` without --build-arg.
+ARG VERSION=dev
+RUN echo "${VERSION#v}" > VERSION
+
 # System packages: git is required for config backup/restore
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*

@@ -12,6 +12,7 @@
   <a href="/" class="flex items-center gap-2.5 mr-2">
     <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]"></span>
     <span class="font-bold tracking-tight text-sm">Hannah</span>
+    <span class="text-xs text-gray-600 font-mono" title="WebUI-Version">{{ 'v' + app_version if app_version != 'dev' else app_version }}</span>
   </a>
 
   <button type="button" onclick="document.getElementById('nav-links').classList.toggle('hidden')"

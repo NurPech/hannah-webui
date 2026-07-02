@@ -14,9 +14,10 @@ import time
 from functools import wraps
 from urllib.parse import quote, urlsplit
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 
 from hannah_webui.grpc_client import HannahClient
+from hannah_webui.version import get_version
 
 log = logging.getLogger(__name__)
 
@@ -299,9 +300,15 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
         secret_key = os.urandom(24)
     app.secret_key = secret_key
 
+    app_version = get_version()
+
     @app.context_processor
     def inject_trust_levels():
-        return {"trust_levels": TRUST_LEVELS}
+        return {"trust_levels": TRUST_LEVELS, "app_version": app_version}
+
+    @app.route("/version")
+    def version():
+        return jsonify({"version": app_version})
 
     def login_required(view):
         @wraps(view)
