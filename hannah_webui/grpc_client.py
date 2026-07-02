@@ -32,14 +32,13 @@ class HannahClient:
             self._channel.close()
 
     def login(self, username: str, password: str) -> tuple[bool, Optional["hannah_pb2.User"]]:
-        """Verifies credentials against Core's user registry. Returns (found, user_or_None)."""
+        """Verifies credentials against Core's user registry. Returns (found, user_or_None).
+        grpc.RpcError (Core unreachable) is deliberately not caught here — it would otherwise
+        look identical to a wrong password ("Ungültige Zugangsdaten") on the login page.
+        Left to propagate to app.py's global grpc.RpcError handler instead."""
         assert self._stub, "call connect() first"
-        try:
-            resp = self._stub.Login(hannah_pb2.LoginRequest(username=username, password=password))
-            return resp.found, (resp.user if resp.found else None)
-        except grpc.RpcError as exc:
-            log.error("Login gRPC error: %s", exc)
-            return False, None
+        resp = self._stub.Login(hannah_pb2.LoginRequest(username=username, password=password))
+        return resp.found, (resp.user if resp.found else None)
 
     def get_rooms(self) -> list["hannah_pb2.Room"]:
         assert self._stub, "call connect() first"

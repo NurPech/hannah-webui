@@ -14,7 +14,9 @@ import time
 from functools import wraps
 from urllib.parse import quote, urlsplit
 
+import grpc
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
+from werkzeug.exceptions import HTTPException
 
 from hannah_webui.grpc_client import HannahClient
 from hannah_webui.version import get_version
@@ -305,6 +307,9 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
         )
         secret_key = os.urandom(24)
     app.secret_key = secret_key
+    # Error handlers below must run even with TESTING=True (used by the test suite's
+    # fixtures) — otherwise Flask re-raises instead of rendering error.html.
+    app.config["PROPAGATE_EXCEPTIONS"] = False
 
     app_version = get_version()
 
@@ -315,6 +320,33 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
     @app.route("/version")
     def version():
         return jsonify({"version": app_version})
+
+    @app.errorhandler(grpc.RpcError)
+    def handle_grpc_error(error):
+        log.error("gRPC error: %s", error)
+        return render_template(
+            "error.html", title="Hannah Core nicht erreichbar",
+            message="Hannah Core antwortet gerade nicht. Bitte versuche es in Kürze erneut.",
+        ), 503
+
+    @app.errorhandler(404)
+    def handle_not_found(error):
+        return render_template(
+            "error.html", title="Seite nicht gefunden",
+            message="Diese Seite gibt es nicht (mehr).",
+        ), 404
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(error):
+        # Other HTTPExceptions (405, 400, …) already render sensibly via Werkzeug —
+        # only truly unexpected exceptions get the generic error page.
+        if isinstance(error, HTTPException):
+            return error
+        log.exception("Unhandled error: %s", error)
+        return render_template(
+            "error.html", title="Unerwarteter Fehler",
+            message="Da ist etwas schiefgelaufen. Bitte versuche es erneut.",
+        ), 500
 
     def login_required(view):
         @wraps(view)

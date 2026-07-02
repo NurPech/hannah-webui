@@ -529,3 +529,33 @@ class TestVersion:
     def test_me_shows_version_badge(self, logged_in_client):
         body = logged_in_client.get("/me").get_data(as_text=True)
         assert "dev" in body
+
+
+import grpc
+
+
+class TestErrorPages:
+    def test_grpc_error_shows_friendly_503_page(self, logged_in_client, hannah):
+        hannah.get_rooms = lambda: (_ for _ in ()).throw(grpc.RpcError())
+        resp = logged_in_client.get("/rooms")
+        assert resp.status_code == 503
+        assert "nicht erreichbar" in resp.get_data(as_text=True)
+
+    def test_unknown_route_shows_friendly_404_page(self, client):
+        resp = client.get("/this-route-does-not-exist")
+        assert resp.status_code == 404
+        assert "nicht gefunden" in resp.get_data(as_text=True)
+
+    def test_login_when_core_down_shows_friendly_error_not_wrong_password(self, client, hannah):
+        hannah.login = lambda username, password: (_ for _ in ()).throw(grpc.RpcError())
+        resp = client.post("/login", data={"username": "claude", "password": "claude"})
+        assert resp.status_code == 503
+        body = resp.get_data(as_text=True)
+        assert "nicht erreichbar" in body
+        assert "Ungültige Zugangsdaten" not in body
+
+    def test_unexpected_error_shows_friendly_500_page(self, logged_in_client, hannah):
+        hannah.get_rooms = lambda: (_ for _ in ()).throw(ValueError("boom"))
+        resp = logged_in_client.get("/rooms")
+        assert resp.status_code == 500
+        assert "schiefgelaufen" in resp.get_data(as_text=True)

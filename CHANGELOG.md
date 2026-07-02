@@ -5,6 +5,9 @@
 -->
 
 
+## 1.8.1
+* Friendly error pages instead of Flask's default 500: an unreachable Hannah Core (`grpc.RpcError`) now renders a dark-theme "Core nicht erreichbar" page (503), unknown routes get a themed 404, and any other unhandled exception gets a generic 500 page instead of a raw traceback/default error text. Also fixes `HannahClient.login()` swallowing `grpc.RpcError` into a misleading "Ungültige Zugangsdaten" — Core being down now shows the "not reachable" page instead of looking like a wrong password. Refs #18
+
 ## 1.8.0
 * Fix: the alarm creation form on `/me` (#13) offered an "Alle" (all satellites) option for the satellite dropdown — Core's `CreateAlarm` RPC requires a concrete `satellite_id` and rejects that. Dropdown is now required with no empty option; `create_alarm()` also validates server-side since the browser's `required` isn't the only line of defense. Refs #15
 * BLE-Tags and Cars get their own admin pages (`/ble-tags`, `/cars`) instead of the generic Settings JSON-textarea, backed by Core's new dedicated models (Core #115): `GetBleTags`/`CreateBleTag`/`UpdateBleTag`/`DeleteBleTag` and `GetCars`/`CreateCar`/`UpdateCar`/`DeleteCar`. BLE-Tags are a single-page row list (MAC/label/owner); Cars are a card list + a dedicated edit page for the owner checkboxes (`owner_user_ids` is a list). Both admin-only (trust level 10), same as Settings. **Breaking (internal only):** `CreateSetting`/`DeleteSetting` were removed from Core along with this — the generic "create a new setting" and "delete a setting" UI in `/settings` is gone, since `ble.tags`/`cars` were the only settings ever created/deleted that way; the remaining settings (`nlu`, `iobroker.state_names`, `llm.system_prompt`) are always pre-seeded. Refs #12
