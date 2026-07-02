@@ -76,6 +76,7 @@ test → container-build → upload → release
 ```
 
 - **test** — pytest gegen `FakeHannahClient`
+- **test:changelog** — nur in MR-Pipelines: bricht ab, wenn `hannah_webui/`, `proto/`, `main.py`, `wsgi.py`, `gunicorn.conf.py`, `config.example.yaml`, `deploy/` oder `Dockerfile` geändert wurden, aber `CHANGELOG.md` nicht — erzwingt Git-Workflow-Regel 2 (weiter unten)
 - **container-build** — `.build-container` (Kaniko) als Matrix-Template für `build-container:amd64`/`:arm64`, dann `merge-manifests` (multi-arch Manifest). Läuft auf jedem Tag — **keine Change-Detection nötig**, jeder Commit in diesem Repo ist per Definition eine WebUI-Änderung (genau das war der Grund für die Extraktion aus dem Monorepo, siehe #105/#106 dort)
 - **upload** — Tarball zum Update Server (Channel `webui-stable`) + Release-Notes aus `CHANGELOG.md`
 - **release** — GitLab Release mit Changelog-Auszug

@@ -109,6 +109,54 @@ class TestMe:
         assert "stimmen nicht überein" in body
 
 
+class TestAlarms:
+    def test_me_lists_own_seeded_alarm(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "06:30" in body
+        assert "Aufstehen" in body
+
+    def test_create_recurring_alarm(self, logged_in_client, hannah):
+        resp = logged_in_client.post("/me/alarms/create", data={
+            "time": "07:00", "satellite_id": "kueche-esp", "label": "Test",
+            "alarm_type": "recurring", "weekdays": ["0", "2"],
+        })
+        assert resp.status_code == 302
+        alarms = hannah.get_alarms(1)
+        created = next(a for a in alarms if a.label == "Test")
+        assert created.time == "07:00"
+        assert list(created.weekdays) == [0, 2]
+        assert created.one_shot_date == ""
+
+    def test_create_once_alarm(self, logged_in_client, hannah):
+        logged_in_client.post("/me/alarms/create", data={
+            "time": "08:00", "alarm_type": "once", "one_shot_date": "2026-07-10",
+        })
+        alarms = hannah.get_alarms(1)
+        created = next(a for a in alarms if a.time == "08:00")
+        assert created.one_shot_date == "2026-07-10"
+        assert list(created.weekdays) == []
+
+    def test_create_alarm_without_time_is_rejected(self, logged_in_client, hannah):
+        logged_in_client.post("/me/alarms/create", data={"alarm_type": "once"})
+        assert len(hannah.get_alarms(1)) == 1  # nur der geseedete Alarm, keiner angelegt
+
+    def test_toggle_alarm(self, logged_in_client, hannah):
+        logged_in_client.post("/me/alarms/1/toggle")
+        assert hannah._alarms[1]["enabled"] is False
+
+    def test_delete_alarm(self, logged_in_client, hannah):
+        logged_in_client.post("/me/alarms/1/delete")
+        assert 1 not in hannah._alarms
+
+    def test_cannot_toggle_or_delete_other_users_alarm(self, admin_client, hannah):
+        """Alarme sind personenbezogen (user_id) — Alarm 1 gehört user_id 1 (claude),
+        admin (user_id 2) darf ihn weder togglen noch löschen."""
+        admin_client.post("/me/alarms/1/toggle")
+        assert hannah._alarms[1]["enabled"] is True
+        admin_client.post("/me/alarms/1/delete")
+        assert 1 in hannah._alarms
+
+
 class TestRooms:
     def test_rooms_lists_seeded_rooms_and_group_badge(self, logged_in_client):
         resp = logged_in_client.get("/rooms")

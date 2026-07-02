@@ -60,6 +60,13 @@ class FakeHannahClient:
                 "room": "all", "cooldown": 3600, "delay": "",
             },
         }
+        self._alarms = {
+            1: {
+                "satellite_id": "kueche-esp", "time": "06:30", "weekdays": [0, 1, 2, 3, 4],
+                "skip_dates": [], "one_shot_date": "", "enabled": True, "label": "Aufstehen", "user_id": 1,
+            },
+        }
+        self._next_alarm_id = 2
 
     def connect(self) -> None:
         pass
@@ -313,3 +320,39 @@ class FakeHannahClient:
 
     def delete_trigger(self, trigger_id):
         return self._triggers.pop(trigger_id, None) is not None
+
+    def get_alarms(self, user_id=None):
+        alarms = [
+            hannah_pb2.Alarm(
+                id=aid, satellite_id=a["satellite_id"], time=a["time"], weekdays=a["weekdays"],
+                skip_dates=a["skip_dates"], one_shot_date=a["one_shot_date"], enabled=a["enabled"],
+                label=a["label"], user_id=a["user_id"],
+            )
+            for aid, a in self._alarms.items()
+        ]
+        if user_id is not None:
+            alarms = [a for a in alarms if a.user_id == user_id]
+        return alarms
+
+    def create_alarm(self, satellite_id, time, weekdays, one_shot_date, label, user_id):
+        alarm_id = self._next_alarm_id
+        self._next_alarm_id += 1
+        self._alarms[alarm_id] = {
+            "satellite_id": satellite_id, "time": time, "weekdays": list(weekdays),
+            "skip_dates": [], "one_shot_date": one_shot_date, "enabled": True,
+            "label": label, "user_id": user_id,
+        }
+        return True, "created"
+
+    def update_alarm(self, alarm_id, satellite_id, time, weekdays, skip_dates, one_shot_date, enabled, label):
+        if alarm_id not in self._alarms:
+            return False, "not found"
+        self._alarms[alarm_id] = {
+            "satellite_id": satellite_id, "time": time, "weekdays": list(weekdays),
+            "skip_dates": list(skip_dates), "one_shot_date": one_shot_date, "enabled": enabled,
+            "label": label, "user_id": self._alarms[alarm_id]["user_id"],
+        }
+        return True, "updated"
+
+    def delete_alarm(self, alarm_id):
+        return self._alarms.pop(alarm_id, None) is not None

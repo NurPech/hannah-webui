@@ -85,6 +85,7 @@ def _verify_telegram_auth(data: dict, bot_token: str) -> bool:
 
 _ROUTINE_NEW_ACTION_ROWS = 3
 _USER_TYPES = ("roomie", "guest", "pet")
+_WEEKDAY_NAMES = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
 
 def _parse_action_rows(form) -> list[dict]:
@@ -364,9 +365,11 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
                 f"https://oauth.telegram.org/auth?bot_id={quote(bot_id)}&origin={quote(origin, safe='')}"
                 f"&request_access=write&return_to={quote(me_url, safe='')}"
             )
+        alarms = sorted(hannah.get_alarms(session["user_id"]), key=lambda a: a.time)
         return render_template(
             "me.html", display_name=session.get("display_name"),
             linked_accounts=linked_accounts, telegram_login_url=telegram_login_url,
+            alarms=alarms, satellites=hannah.get_satellites(), weekday_names=_WEEKDAY_NAMES,
         )
 
     @app.route("/me/telegram/callback")
@@ -404,6 +407,48 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
             return redirect(url_for("me"))
         ok, message = hannah.update_user(user.id, user.display_name, user.email, user.type, user.active, password)
         flash(message if not ok else "Passwort geändert.", "danger" if not ok else "success")
+        return redirect(url_for("me"))
+
+    @app.route("/me/alarms/create", methods=["POST"])
+    @login_required
+    def create_alarm():
+        time_str = request.form.get("time", "").strip()
+        if not time_str:
+            flash("Uhrzeit ist Pflicht.", "danger")
+            return redirect(url_for("me"))
+        satellite_id = request.form.get("satellite_id", "").strip()
+        label = request.form.get("label", "").strip()
+        one_shot_date = ""
+        weekdays: list[int] = []
+        if request.form.get("alarm_type", "once") == "recurring":
+            weekdays = sorted({int(d) for d in request.form.getlist("weekdays")})
+        else:
+            one_shot_date = request.form.get("one_shot_date", "").strip()
+        ok, message = hannah.create_alarm(satellite_id, time_str, weekdays, one_shot_date, label, session["user_id"])
+        if not ok:
+            flash(message, "danger")
+        return redirect(url_for("me"))
+
+    @app.route("/me/alarms/<int:alarm_id>/toggle", methods=["POST"])
+    @login_required
+    def toggle_alarm(alarm_id: int):
+        alarm = next((a for a in hannah.get_alarms(session["user_id"]) if a.id == alarm_id), None)
+        if alarm is None:
+            return redirect(url_for("me"))
+        ok, message = hannah.update_alarm(
+            alarm_id, alarm.satellite_id, alarm.time, list(alarm.weekdays), list(alarm.skip_dates),
+            alarm.one_shot_date, not alarm.enabled, alarm.label,
+        )
+        if not ok:
+            flash(message, "danger")
+        return redirect(url_for("me"))
+
+    @app.route("/me/alarms/<int:alarm_id>/delete", methods=["POST"])
+    @login_required
+    def delete_alarm(alarm_id: int):
+        alarm = next((a for a in hannah.get_alarms(session["user_id"]) if a.id == alarm_id), None)
+        if alarm is not None:
+            hannah.delete_alarm(alarm_id)
         return redirect(url_for("me"))
 
     @app.route("/rooms")

@@ -228,3 +228,36 @@ class HannahClient:
         assert self._stub, "call connect() first"
         resp = self._stub.DeleteTrigger(hannah_pb2.DeleteTriggerRequest(id=trigger_id))
         return resp.ok
+
+    def get_alarms(self, user_id: Optional[int] = None) -> list["hannah_pb2.Alarm"]:
+        """GetAlarms returns every alarm — Core has no user_id filter on the RPC — so
+        callers scoping to a single user (i.e. /me, where alarms are personal data)
+        filter client-side."""
+        assert self._stub, "call connect() first"
+        alarms = list(self._stub.GetAlarms(hannah_pb2.Empty()).alarms)
+        if user_id is not None:
+            alarms = [a for a in alarms if a.user_id == user_id]
+        return alarms
+
+    def create_alarm(self, satellite_id: str, time: str, weekdays: list[int], one_shot_date: str,
+                      label: str, user_id: int) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.CreateAlarm(hannah_pb2.CreateAlarmRequest(
+            satellite_id=satellite_id, time=time, weekdays=weekdays,
+            one_shot_date=one_shot_date, label=label, user_id=user_id,
+        ))
+        return resp.ok, resp.message
+
+    def update_alarm(self, alarm_id: int, satellite_id: str, time: str, weekdays: list[int],
+                      skip_dates: list[str], one_shot_date: str, enabled: bool, label: str) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.UpdateAlarm(hannah_pb2.UpdateAlarmRequest(
+            id=alarm_id, satellite_id=satellite_id, time=time, weekdays=weekdays,
+            skip_dates=skip_dates, one_shot_date=one_shot_date, enabled=enabled, label=label,
+        ))
+        return resp.ok, resp.message
+
+    def delete_alarm(self, alarm_id: int) -> bool:
+        assert self._stub, "call connect() first"
+        resp = self._stub.DeleteAlarm(hannah_pb2.DeleteAlarmRequest(id=alarm_id))
+        return resp.ok

@@ -5,6 +5,10 @@
 -->
 
 
+## 1.7.0
+* CI: new `test:changelog` job fails MR pipelines that touch `hannah_webui/`, `proto/`, or the deploy/entrypoint files without also touching `CHANGELOG.md` — enforces git workflow rule 2 (CLAUDE.md) instead of relying on remembering it.
+* Alarm/Wecker management: `/me` now has a third card listing the logged-in user's own alarms (time, weekdays or one-off date, label, satellite, enable/disable toggle, delete) plus a form to create new ones (one-off vs. recurring), backed by the new `GetAlarms`/`CreateAlarm`/`UpdateAlarm`/`DeleteAlarm` RPCs (Core #4). Personal data scoped to `session['user_id']` like the rest of `/me` — no trust-level gate, no new nav entry. Refs #13
+
 ## 1.6.2
 * Fix: `oauth.telegram.org`'s link-based auth flow (introduced in 1.6.1) appends the signed result as a URL fragment (`#tgAuthResult=...`), not a query string — fragments never reach the server, so every Telegram (re-)linking failed with "ungültige oder abgelaufene Signatur." `/me` now has a small inline script that decodes the fragment client-side and forwards it to the callback as a proper query string. Refs #11
 
