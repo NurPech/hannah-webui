@@ -98,9 +98,9 @@
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">Satellit</label>
-          <select name="satellite_id"
+          <select name="satellite_id" required
                   class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
-            <option value="">Alle</option>
+            <option value="" disabled selected>– Satellit wählen –</option>
             {% for sat in satellites %}
             <option value="{{ sat.device_id }}">{{ sat.display_name or sat.device_id }}</option>
             {% endfor %}

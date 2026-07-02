@@ -5,6 +5,10 @@
 -->
 
 
+## 1.8.0
+* Fix: the alarm creation form on `/me` (#13) offered an "Alle" (all satellites) option for the satellite dropdown — Core's `CreateAlarm` RPC requires a concrete `satellite_id` and rejects that. Dropdown is now required with no empty option; `create_alarm()` also validates server-side since the browser's `required` isn't the only line of defense. Refs #15
+* BLE-Tags and Cars get their own admin pages (`/ble-tags`, `/cars`) instead of the generic Settings JSON-textarea, backed by Core's new dedicated models (Core #115): `GetBleTags`/`CreateBleTag`/`UpdateBleTag`/`DeleteBleTag` and `GetCars`/`CreateCar`/`UpdateCar`/`DeleteCar`. BLE-Tags are a single-page row list (MAC/label/owner); Cars are a card list + a dedicated edit page for the owner checkboxes (`owner_user_ids` is a list). Both admin-only (trust level 10), same as Settings. **Breaking (internal only):** `CreateSetting`/`DeleteSetting` were removed from Core along with this — the generic "create a new setting" and "delete a setting" UI in `/settings` is gone, since `ble.tags`/`cars` were the only settings ever created/deleted that way; the remaining settings (`nlu`, `iobroker.state_names`, `llm.system_prompt`) are always pre-seeded. Refs #12
+
 ## 1.7.1
 * The WebUI now knows its own version: CI stamps a `VERSION` file at build time (both the Docker image and the systemd tarball, next to `main.py`) instead of committing it to git history — `release.js` bumps the changelog before the tag exists, so it can't be the source of truth. New `/version` JSON endpoint and a small version badge next to the "Hannah" logo in the header; local dev without a CI-stamped file shows "dev". Refs #14
 

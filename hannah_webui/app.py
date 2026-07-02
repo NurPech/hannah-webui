@@ -36,8 +36,14 @@ TRUST_LEVELS = {
     "set_satellite_owner": 10,
     "list_settings": 10,
     "edit_setting": 10,
-    "create_setting": 10,
-    "delete_setting": 10,
+    "list_ble_tags": 10,
+    "create_ble_tag": 10,
+    "edit_ble_tag": 10,
+    "delete_ble_tag": 10,
+    "list_cars": 10,
+    "create_car": 10,
+    "edit_car": 10,
+    "delete_car": 10,
     "list_routines": 5,
     "create_routine": 7,
     "edit_routine": 7,
@@ -424,6 +430,9 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
             flash("Uhrzeit ist Pflicht.", "danger")
             return redirect(url_for("me"))
         satellite_id = request.form.get("satellite_id", "").strip()
+        if not satellite_id:
+            flash("Satellit ist Pflicht — ein Wecker kann nicht auf allen Satelliten gleichzeitig klingeln.", "danger")
+            return redirect(url_for("me"))
         label = request.form.get("label", "").strip()
         one_shot_date = ""
         weekdays: list[int] = []
@@ -604,24 +613,96 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
             flash(message, "danger")
         return redirect(url_for("settings"))
 
-    @app.route("/settings/<int:category_id>/create", methods=["POST"])
+    @app.route("/ble-tags")
     @login_required
-    @trust_level_required(TRUST_LEVELS["create_setting"])
-    def create_setting(category_id: int):
-        name = request.form.get("name", "").strip()
-        value = request.form.get("value", "")
-        if name:
-            ok, message = hannah.create_setting(category_id, name, value)
+    @trust_level_required(TRUST_LEVELS["list_ble_tags"])
+    def ble_tags():
+        users = [u for u in hannah.get_users() if u.active]
+        return render_template("ble_tags.html", tags=hannah.get_ble_tags(), users=users)
+
+    @app.route("/ble-tags/create", methods=["POST"])
+    @login_required
+    @trust_level_required(TRUST_LEVELS["create_ble_tag"])
+    def create_ble_tag():
+        mac_address = request.form.get("mac_address", "").strip()
+        label = request.form.get("label", "").strip()
+        user_id = int(request.form.get("user_id") or 0)
+        if mac_address:
+            ok, message = hannah.create_ble_tag(mac_address, label, user_id)
             if not ok:
                 flash(message, "danger")
-        return redirect(url_for("settings"))
+        return redirect(url_for("ble_tags"))
 
-    @app.route("/settings/<int:setting_id>/delete", methods=["POST"])
+    @app.route("/ble-tags/<int:tag_id>/edit", methods=["POST"])
     @login_required
-    @trust_level_required(TRUST_LEVELS["delete_setting"])
-    def delete_setting(setting_id: int):
-        hannah.delete_setting(setting_id)
-        return redirect(url_for("settings"))
+    @trust_level_required(TRUST_LEVELS["edit_ble_tag"])
+    def edit_ble_tag(tag_id: int):
+        mac_address = request.form.get("mac_address", "").strip()
+        label = request.form.get("label", "").strip()
+        user_id = int(request.form.get("user_id") or 0)
+        ok, message = hannah.update_ble_tag(tag_id, mac_address, label, user_id)
+        if not ok:
+            flash(message, "danger")
+        return redirect(url_for("ble_tags"))
+
+    @app.route("/ble-tags/<int:tag_id>/delete", methods=["POST"])
+    @login_required
+    @trust_level_required(TRUST_LEVELS["delete_ble_tag"])
+    def delete_ble_tag(tag_id: int):
+        hannah.delete_ble_tag(tag_id)
+        return redirect(url_for("ble_tags"))
+
+    @app.route("/cars")
+    @login_required
+    @trust_level_required(TRUST_LEVELS["list_cars"])
+    def cars():
+        users_by_id = {u.id: u for u in hannah.get_users()}
+        cars_view = [
+            {"car": c, "owners": [users_by_id[uid] for uid in c.owner_user_ids if uid in users_by_id]}
+            for c in hannah.get_cars()
+        ]
+        return render_template("cars.html", cars=cars_view)
+
+    @app.route("/cars/create", methods=["POST"])
+    @login_required
+    @trust_level_required(TRUST_LEVELS["create_car"])
+    def create_car():
+        topic_prefix = request.form.get("topic_prefix", "").strip()
+        home_address = request.form.get("home_address", "").strip()
+        if topic_prefix:
+            ok, message = hannah.create_car(topic_prefix, home_address, [])
+            if not ok:
+                flash(message, "danger")
+        return redirect(url_for("cars"))
+
+    @app.route("/cars/<int:car_id>/edit")
+    @login_required
+    @trust_level_required(TRUST_LEVELS["edit_car"])
+    def edit_car(car_id: int):
+        car = next((c for c in hannah.get_cars() if c.id == car_id), None)
+        if car is None:
+            return redirect(url_for("cars"))
+        users = [u for u in hannah.get_users() if u.active]
+        return render_template("car_edit.html", car=car, users=users, selected_owner_ids=set(car.owner_user_ids))
+
+    @app.route("/cars/<int:car_id>/edit", methods=["POST"])
+    @login_required
+    @trust_level_required(TRUST_LEVELS["edit_car"])
+    def save_car(car_id: int):
+        topic_prefix = request.form.get("topic_prefix", "").strip()
+        home_address = request.form.get("home_address", "").strip()
+        owner_user_ids = [int(uid) for uid in request.form.getlist("owner_user_ids")]
+        ok, message = hannah.update_car(car_id, topic_prefix, home_address, owner_user_ids)
+        if not ok:
+            flash(message, "danger")
+        return redirect(url_for("cars"))
+
+    @app.route("/cars/<int:car_id>/delete", methods=["POST"])
+    @login_required
+    @trust_level_required(TRUST_LEVELS["delete_car"])
+    def delete_car(car_id: int):
+        hannah.delete_car(car_id)
+        return redirect(url_for("cars"))
 
     @app.route("/routines")
     @login_required

@@ -40,6 +40,14 @@
     <a href="{{ url_for('settings') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'settings' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Settings</a>
     {% endif %}
+    {% if trust >= trust_levels['list_ble_tags'] %}
+    <a href="{{ url_for('ble_tags') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'ble_tags' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">BLE-Tags</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_cars'] %}
+    <a href="{{ url_for('cars') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('cars', 'edit_car') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Cars</a>
+    {% endif %}
     {% if trust >= trust_levels['list_routines'] %}
     <a href="{{ url_for('routines') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('routines', 'new_routine', 'edit_routine') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Routinen</a>

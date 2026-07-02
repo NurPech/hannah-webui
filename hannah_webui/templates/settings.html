@@ -21,37 +21,12 @@
       <div class="flex gap-2 items-start">
         <textarea name="value" rows="3"
                   class="w-full max-w-xl bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ item.pretty_value }}</textarea>
-        <div class="flex flex-col gap-1.5">
-          <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Speichern</button>
-          <button type="submit"
-                  formaction="{{ url_for('delete_setting', setting_id=setting.id) }}"
-                  onclick="return confirm('Setting {{ setting.name }} löschen?')"
-                  class="bg-rose-600 hover:bg-rose-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Löschen</button>
-        </div>
+        <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Speichern</button>
       </div>
     </form>
     {% else %}
     <div class="text-xs text-gray-500">Noch keine Settings in dieser Kategorie.</div>
     {% endfor %}
-
-    <div class="border-t border-gray-800 pt-4">
-      <form method="post" action="{{ url_for('create_setting', category_id=category.id) }}"
-            class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto] gap-3 items-start">
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Name</label>
-          <input type="text" name="name" required
-                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
-        </div>
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Wert (JSON)</label>
-          <textarea name="value" rows="2" required
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors resize-y"></textarea>
-        </div>
-        <div class="flex sm:h-[calc(100%-1.25rem)] items-end">
-          <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Anlegen</button>
-        </div>
-      </form>
-    </div>
   </div>
 </div>
 {% endfor %}

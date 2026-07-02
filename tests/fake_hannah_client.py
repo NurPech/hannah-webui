@@ -42,7 +42,6 @@ class FakeHannahClient:
         self._settings = {
             1: {"category_id": 1, "name": "turn_on_words", "value": ["an", "einschalten"]},
         }
-        self._next_setting_id = 2
         self._routines = {
             1: {
                 "name": "Gute Nacht",
@@ -67,6 +66,14 @@ class FakeHannahClient:
             },
         }
         self._next_alarm_id = 2
+        self._ble_tags = {
+            1: {"mac_address": "aa:bb:cc:dd:ee:ff", "label": "Schlüsselanhänger", "user_id": 1},
+        }
+        self._next_ble_tag_id = 2
+        self._cars = {
+            1: {"topic_prefix": "vwconnect/golf", "home_address": "Musterstraße 1", "owner_user_ids": [1]},
+        }
+        self._next_car_id = 2
 
     def connect(self) -> None:
         pass
@@ -179,21 +186,6 @@ class FakeHannahClient:
             return False, f"invalid JSON for setting {setting_id}: {e}"
         self._settings[setting_id]["value"] = value
         return True, "updated"
-
-    def create_setting(self, category_id, name, value_json):
-        try:
-            value = json.loads(value_json) if value_json else None
-        except json.JSONDecodeError as e:
-            return False, f"invalid JSON: {e}"
-        if any(s["category_id"] == category_id and s["name"] == name for s in self._settings.values()):
-            return False, "name existiert bereits in dieser Kategorie"
-        setting_id = self._next_setting_id
-        self._next_setting_id += 1
-        self._settings[setting_id] = {"category_id": category_id, "name": name, "value": value}
-        return True, "created"
-
-    def delete_setting(self, setting_id):
-        return self._settings.pop(setting_id, None) is not None
 
     def get_users(self, include_inactive=True):
         users = []
@@ -356,3 +348,50 @@ class FakeHannahClient:
 
     def delete_alarm(self, alarm_id):
         return self._alarms.pop(alarm_id, None) is not None
+
+    def get_ble_tags(self):
+        return [
+            hannah_pb2.BleTag(id=tid, mac_address=t["mac_address"], label=t["label"], user_id=t["user_id"])
+            for tid, t in self._ble_tags.items()
+        ]
+
+    def create_ble_tag(self, mac_address, label, user_id):
+        tag_id = self._next_ble_tag_id
+        self._next_ble_tag_id += 1
+        self._ble_tags[tag_id] = {"mac_address": mac_address, "label": label, "user_id": user_id}
+        return True, "created"
+
+    def update_ble_tag(self, tag_id, mac_address, label, user_id):
+        if tag_id not in self._ble_tags:
+            return False, "not found"
+        self._ble_tags[tag_id] = {"mac_address": mac_address, "label": label, "user_id": user_id}
+        return True, "updated"
+
+    def delete_ble_tag(self, tag_id):
+        return self._ble_tags.pop(tag_id, None) is not None
+
+    def get_cars(self):
+        return [
+            hannah_pb2.Car(id=cid, topic_prefix=c["topic_prefix"], home_address=c["home_address"],
+                            owner_user_ids=c["owner_user_ids"])
+            for cid, c in self._cars.items()
+        ]
+
+    def create_car(self, topic_prefix, home_address, owner_user_ids):
+        car_id = self._next_car_id
+        self._next_car_id += 1
+        self._cars[car_id] = {
+            "topic_prefix": topic_prefix, "home_address": home_address, "owner_user_ids": list(owner_user_ids),
+        }
+        return True, "created"
+
+    def update_car(self, car_id, topic_prefix, home_address, owner_user_ids):
+        if car_id not in self._cars:
+            return False, "not found"
+        self._cars[car_id] = {
+            "topic_prefix": topic_prefix, "home_address": home_address, "owner_user_ids": list(owner_user_ids),
+        }
+        return True, "updated"
+
+    def delete_car(self, car_id):
+        return self._cars.pop(car_id, None) is not None

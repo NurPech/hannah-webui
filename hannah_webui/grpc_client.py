@@ -112,18 +112,6 @@ class HannahClient:
         ))
         return resp.ok, resp.message
 
-    def create_setting(self, category_id: int, name: str, value_json: str) -> tuple[bool, str]:
-        assert self._stub, "call connect() first"
-        resp = self._stub.CreateSetting(
-            hannah_pb2.CreateSettingRequest(category_id=category_id, name=name, value=value_json)
-        )
-        return resp.ok, resp.message
-
-    def delete_setting(self, setting_id: int) -> bool:
-        assert self._stub, "call connect() first"
-        resp = self._stub.DeleteSetting(hannah_pb2.DeleteSettingRequest(setting_id=setting_id))
-        return resp.ok
-
     def get_users(self, include_inactive: bool = True) -> list["hannah_pb2.User"]:
         assert self._stub, "call connect() first"
         resp = self._stub.GetUsers(hannah_pb2.GetUsersRequest(include_inactive=include_inactive))
@@ -260,4 +248,50 @@ class HannahClient:
     def delete_alarm(self, alarm_id: int) -> bool:
         assert self._stub, "call connect() first"
         resp = self._stub.DeleteAlarm(hannah_pb2.DeleteAlarmRequest(id=alarm_id))
+        return resp.ok
+
+    def get_ble_tags(self) -> list["hannah_pb2.BleTag"]:
+        assert self._stub, "call connect() first"
+        return list(self._stub.GetBleTags(hannah_pb2.Empty()).tags)
+
+    def create_ble_tag(self, mac_address: str, label: str, user_id: int) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.CreateBleTag(hannah_pb2.CreateBleTagRequest(
+            mac_address=mac_address, label=label, user_id=user_id,
+        ))
+        return resp.ok, resp.message
+
+    def update_ble_tag(self, tag_id: int, mac_address: str, label: str, user_id: int) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.UpdateBleTag(hannah_pb2.UpdateBleTagRequest(
+            id=tag_id, mac_address=mac_address, label=label, user_id=user_id,
+        ))
+        return resp.ok, resp.message
+
+    def delete_ble_tag(self, tag_id: int) -> bool:
+        assert self._stub, "call connect() first"
+        resp = self._stub.DeleteBleTag(hannah_pb2.DeleteBleTagRequest(id=tag_id))
+        return resp.ok
+
+    def get_cars(self) -> list["hannah_pb2.Car"]:
+        assert self._stub, "call connect() first"
+        return list(self._stub.GetCars(hannah_pb2.Empty()).cars)
+
+    def create_car(self, topic_prefix: str, home_address: str, owner_user_ids: list[int]) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.CreateCar(hannah_pb2.CreateCarRequest(
+            topic_prefix=topic_prefix, home_address=home_address, owner_user_ids=owner_user_ids,
+        ))
+        return resp.ok, resp.message
+
+    def update_car(self, car_id: int, topic_prefix: str, home_address: str, owner_user_ids: list[int]) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.UpdateCar(hannah_pb2.UpdateCarRequest(
+            id=car_id, topic_prefix=topic_prefix, home_address=home_address, owner_user_ids=owner_user_ids,
+        ))
+        return resp.ok, resp.message
+
+    def delete_car(self, car_id: int) -> bool:
+        assert self._stub, "call connect() first"
+        resp = self._stub.DeleteCar(hannah_pb2.DeleteCarRequest(id=car_id))
         return resp.ok

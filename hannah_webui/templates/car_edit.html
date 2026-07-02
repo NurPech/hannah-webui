@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Car bearbeiten{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('cars') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Cars</a>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-100 mb-5">Car bearbeiten</h2>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+  <form method="post" action="{{ url_for('save_car', car_id=car.id) }}">
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Topic-Prefix</label>
+      <input type="text" name="topic_prefix" value="{{ car.topic_prefix }}" required
+             class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Heimadresse</label>
+      <input type="text" name="home_address" value="{{ car.home_address }}"
+             class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+    </div>
+
+    <div class="mb-5">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Owner</label>
+      {% if users %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+        {% for user in users %}
+        <label for="owner_{{ user.id }}" class="flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" name="owner_user_ids" value="{{ user.id }}" id="owner_{{ user.id }}"
+                 {% if user.id in selected_owner_ids %}checked{% endif %}
+                 class="accent-emerald-500">
+          {{ user.display_name or user.user_name }}
+        </label>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-xs text-gray-500">Keine aktiven User verfügbar.</div>
+      {% endif %}
+    </div>
+
+    <div class="flex gap-2">
+      <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
+      <a href="{{ url_for('cars') }}"
+         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

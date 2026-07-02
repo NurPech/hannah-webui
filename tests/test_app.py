@@ -129,7 +129,7 @@ class TestAlarms:
 
     def test_create_once_alarm(self, logged_in_client, hannah):
         logged_in_client.post("/me/alarms/create", data={
-            "time": "08:00", "alarm_type": "once", "one_shot_date": "2026-07-10",
+            "time": "08:00", "satellite_id": "kueche-esp", "alarm_type": "once", "one_shot_date": "2026-07-10",
         })
         alarms = hannah.get_alarms(1)
         created = next(a for a in alarms if a.time == "08:00")
@@ -137,8 +137,15 @@ class TestAlarms:
         assert list(created.weekdays) == []
 
     def test_create_alarm_without_time_is_rejected(self, logged_in_client, hannah):
-        logged_in_client.post("/me/alarms/create", data={"alarm_type": "once"})
+        logged_in_client.post("/me/alarms/create", data={"satellite_id": "kueche-esp", "alarm_type": "once"})
         assert len(hannah.get_alarms(1)) == 1  # nur der geseedete Alarm, keiner angelegt
+
+    def test_create_alarm_without_satellite_is_rejected(self, logged_in_client, hannah):
+        resp = logged_in_client.post(
+            "/me/alarms/create", data={"time": "09:00", "alarm_type": "once"}, follow_redirects=True
+        )
+        assert len(hannah.get_alarms(1)) == 1  # nur der geseedete Alarm, keiner angelegt
+        assert "Satellit ist Pflicht" in resp.get_data(as_text=True)
 
     def test_toggle_alarm(self, logged_in_client, hannah):
         logged_in_client.post("/me/alarms/1/toggle")
@@ -261,14 +268,69 @@ class TestSettings:
         assert "invalid JSON" in resp.get_data(as_text=True)
         assert hannah._settings[1]["value"] == ["an", "einschalten"]
 
-    def test_create_setting_then_visible(self, admin_client):
-        admin_client.post("/settings/1/create", data={"name": "query_words", "value": '["wie"]'})
-        resp = admin_client.get("/settings")
-        assert "query_words" in resp.get_data(as_text=True)
 
-    def test_delete_setting(self, admin_client, hannah):
-        admin_client.post("/settings/1/delete")
-        assert 1 not in hannah._settings
+class TestBleTags:
+    def test_ble_tags_lists_seeded_tag(self, admin_client):
+        resp = admin_client.get("/ble-tags")
+        body = resp.get_data(as_text=True)
+        assert "aa:bb:cc:dd:ee:ff" in body
+        assert "Schlüsselanhänger" in body
+
+    def test_create_ble_tag_then_visible(self, admin_client, hannah):
+        admin_client.post("/ble-tags/create", data={"mac_address": "11:22:33:44:55:66", "label": "Auto", "user_id": "1"})
+        created = next(t for t in hannah._ble_tags.values() if t["mac_address"] == "11:22:33:44:55:66")
+        assert created["label"] == "Auto"
+        assert created["user_id"] == 1
+
+    def test_edit_ble_tag(self, admin_client, hannah):
+        admin_client.post("/ble-tags/1/edit", data={"mac_address": "aa:bb:cc:dd:ee:ff", "label": "Neu", "user_id": "0"})
+        assert hannah._ble_tags[1]["label"] == "Neu"
+        assert hannah._ble_tags[1]["user_id"] == 0
+
+    def test_delete_ble_tag(self, admin_client, hannah):
+        admin_client.post("/ble-tags/1/delete")
+        assert 1 not in hannah._ble_tags
+
+    def test_regular_user_redirected_from_ble_tags(self, logged_in_client):
+        resp = logged_in_client.get("/ble-tags")
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/me")
+
+
+class TestCars:
+    def test_cars_lists_seeded_car_and_owner(self, admin_client):
+        resp = admin_client.get("/cars")
+        body = resp.get_data(as_text=True)
+        assert "vwconnect/golf" in body
+        assert "Leonie" in body
+
+    def test_create_car_then_visible(self, admin_client, hannah):
+        admin_client.post("/cars/create", data={"topic_prefix": "vwconnect/id3", "home_address": "Musterweg 2"})
+        created = next(c for c in hannah._cars.values() if c["topic_prefix"] == "vwconnect/id3")
+        assert created["home_address"] == "Musterweg 2"
+        assert created["owner_user_ids"] == []
+
+    def test_edit_car_form_prefills_existing_data(self, admin_client):
+        resp = admin_client.get("/cars/1/edit")
+        body = resp.get_data(as_text=True)
+        assert "vwconnect/golf" in body
+        assert 'checked' in body
+
+    def test_save_car_updates_fields_and_owners(self, admin_client, hannah):
+        admin_client.post("/cars/1/edit", data={
+            "topic_prefix": "vwconnect/golf", "home_address": "Neue Adresse", "owner_user_ids": [],
+        })
+        assert hannah._cars[1]["home_address"] == "Neue Adresse"
+        assert hannah._cars[1]["owner_user_ids"] == []
+
+    def test_delete_car(self, admin_client, hannah):
+        admin_client.post("/cars/1/delete")
+        assert 1 not in hannah._cars
+
+    def test_regular_user_redirected_from_cars(self, logged_in_client):
+        resp = logged_in_client.get("/cars")
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/me")
 
 
 class TestRoutines:
