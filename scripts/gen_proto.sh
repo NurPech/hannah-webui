@@ -41,12 +41,13 @@ echo "→ proto/"
     -I "$PROTO" \
     --python_out="$REPO_ROOT/hannah_webui/proto" \
     --grpc_python_out="$REPO_ROOT/hannah_webui/proto" \
-    "$PROTO/hannah.proto"
+    "$PROTO"/*.proto
 
-# protoc erzeugt absolute Imports in *_grpc.py — innerhalb eines Python-Packages
-# müssen diese relativ sein, sonst gibt es ModuleNotFoundError beim Import.
-echo "→ Absolute Imports in *_grpc.py auf relativ patchen"
-sed -i 's/^import hannah_pb2 as hannah__pb2$/from . import hannah_pb2 as hannah__pb2/' \
-    "$REPO_ROOT/hannah_webui/proto/hannah_pb2_grpc.py"
+# protoc erzeugt absolute Imports zwischen den generierten Modulen (jedes .proto wird zu
+# einem eigenen *_pb2.py, die sich gegenseitig importieren) — innerhalb eines Python-Packages
+# müssen die relativ sein, sonst gibt es ModuleNotFoundError beim Import.
+echo "→ Absolute Imports auf relativ patchen"
+sed -i -E 's/^import ([a-zA-Z_][a-zA-Z0-9_]*_pb2) as /from . import \1 as /' \
+    "$REPO_ROOT"/hannah_webui/proto/*_pb2.py "$REPO_ROOT"/hannah_webui/proto/*_pb2_grpc.py
 
 echo "Fertig."

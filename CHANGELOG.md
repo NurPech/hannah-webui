@@ -5,6 +5,9 @@
 -->
 
 
+## 1.9.3
+* Fix `scripts/gen_proto.sh` after Core split `hannah.proto` into multiple scope files (`proto/*.proto` synced from `gessinger/voice/hannah#44`): two quoting bugs left the glob unexpanded and broke stub generation entirely. Also ports Core's `hannah/proto/__init__.py` re-export patch to `hannah_webui/proto/__init__.py`, so `hannah_pb2.Car`/`hannah_pb2.User`/etc. keep working even though those messages now live in `control_pb2`/`user_registry_pb2`/etc. — no call sites in `app.py`/`grpc_client.py` needed to change. Refs #23
+
 ## 1.9.2
 * Cars get their own `name` field instead of showing the technical `topic_prefix` (e.g. `javascript/0/virtualDevice/Auto/Leonie/Auto1`) as the card title — display name now on top, `topic_prefix` as a small mono line below. New name field in `car_edit.html` and the "New Car" form. Requires Core's new `Car.name` field (`proto/hannah.proto` synced, `gessinger/voice/hannah#123`). Refs #22
 

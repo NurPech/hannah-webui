@@ -6,7 +6,7 @@ Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/v
 
 **Historie:** ursprünglich In-Process-Teil von Hannah Core (`hannah/webui.py`), dann eigener Service `webui/` im Hannah-Monorepo (#27), seit 2026-06-28 eigenständiges Repo (#106 im Monorepo). Architektur-Hintergrund zu Hannah Core/Protokoll/Satelliten: siehe `CLAUDE.md` im Hannah-Monorepo (`gessinger/voice/hannah`).
 
-**Eigenständig, kein Submodule-Link zum Monorepo.** Einzige Abhängigkeit: `proto/hannah.proto` ist eine Kopie aus `core/proto/hannah.proto` (Source of Truth liegt im Monorepo) — bei Protokoll-Änderungen dort manuell synchronisieren, dann `scripts/gen_proto.sh` laufen lassen.
+**Eigenständig, kein Submodule-Link zum Monorepo.** Einzige Abhängigkeit: `proto/*.proto` ist eine Kopie aus `core/proto/*.proto` (Source of Truth liegt im Monorepo) — bei Protokoll-Änderungen dort manuell synchronisieren, dann `scripts/gen_proto.sh` laufen lassen. Seit `gessinger/voice/hannah#44` ist das Proto nach Scope in 12 Dateien gesplittet (`hannah.proto` enthält nur noch den Service, Messages liegen in `control.proto`/`user_registry.proto`/`shared.proto`/etc.) — `hannah_webui/proto/__init__.py` patcht beim Import alle Message-Typen der Scope-Module zurück auf `hannah_pb2`, damit bestehender Code weiterhin `hannah_pb2.Car`/`hannah_pb2.User`/etc. verwenden kann (gleicher Ansatz wie `core/hannah/proto/__init__.py`).
 
 ---
 
@@ -19,10 +19,10 @@ hannah-webui/
 │   ├── grpc_client.py    ← HannahClient — synchroner gRPC-Client (kein grpc.aio, Flask ist synchron)
 │   ├── config.py         ← Config-Loader: config.yaml ODER Env-Vars (12-factor, für Container-Deploy)
 │   ├── templates/         ← Jinja2-Templates (ein File pro Seite, bewusst keine Single-File/Vanilla-JS-Architektur)
-│   └── proto/             ← generierte gRPC-Stubs (hannah_pb2.py, hannah_pb2_grpc.py)
-├── proto/hannah.proto     ← Kopie aus core/proto/hannah.proto (Monorepo) — Source of Truth dort
+│   └── proto/             ← generierte gRPC-Stubs (hannah_pb2.py + 11 weitere *_pb2.py/*_pb2_grpc.py, __init__.py patcht sie auf hannah_pb2 zurück)
+├── proto/*.proto          ← Kopie aus core/proto/*.proto (Monorepo) — Source of Truth dort, 12 Dateien seit gessinger/voice/hannah#44
 ├── scripts/
-│   ├── gen_proto.sh       ← regeneriert hannah_webui/proto/* aus proto/hannah.proto
+│   ├── gen_proto.sh       ← regeneriert hannah_webui/proto/* aus proto/*.proto
 │   └── release.js
 ├── tests/                 ← pytest + FakeHannahClient (In-Memory-Stand-in, keine echte Core/kein Netzwerk nötig)
 ├── deploy/
@@ -111,4 +111,4 @@ Aktueller Stand: siehe `CHANGELOG.md`. Offene Bugs/Features: GitLab Issues in di
 ## Bekannte Probleme & Workarounds
 
 - **gunicorn ≥ 26 hat den `eventlet`-Worker entfernt** (`SUPPORTED_WORKERS` enthält ihn nicht mehr, eventlet selbst ist upstream deprecated). Falls async Worker mal nötig werden: `gevent`/`gevent_wsgi`/`gevent_pywsgi` sind noch unterstützt, `eventlet` nicht. Aktuell laufen sync-Worker — kein konkreter Bedarf für async identifiziert (keine SSE/Streaming-Seiten, kleiner Nutzerkreis).
-- **Proto-Sync:** `proto/hannah.proto` muss nach Änderungen an `core/proto/hannah.proto` im Monorepo manuell kopiert werden, dann `scripts/gen_proto.sh`.
+- **Proto-Sync:** `proto/*.proto` (12 Dateien, seit `gessinger/voice/hannah#44` nach Scope gesplittet) muss nach Änderungen an `core/proto/*.proto` im Monorepo manuell kopiert werden, dann `scripts/gen_proto.sh`. Neue Scope-Datei in Core? Muss zusätzlich in `hannah_webui/proto/__init__.py`s Import-/Patch-Listen ergänzt werden, sonst fehlen deren Message-Typen auf `hannah_pb2`.
