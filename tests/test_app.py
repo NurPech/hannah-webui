@@ -346,24 +346,39 @@ class TestCars:
         assert "vwconnect/golf" in body
         assert "Leonie" in body
 
+    def test_cars_shows_name_as_title_and_topic_prefix_as_subline(self, admin_client):
+        resp = admin_client.get("/cars")
+        body = resp.get_data(as_text=True)
+        assert "Golf" in body
+        assert "vwconnect/golf" in body
+
     def test_create_car_then_visible(self, admin_client, hannah):
         admin_client.post("/cars/create", data={"topic_prefix": "vwconnect/id3", "home_address": "Musterweg 2"})
         created = next(c for c in hannah._cars.values() if c["topic_prefix"] == "vwconnect/id3")
         assert created["home_address"] == "Musterweg 2"
         assert created["owner_user_ids"] == []
 
+    def test_create_car_with_name(self, admin_client, hannah):
+        admin_client.post("/cars/create", data={
+            "topic_prefix": "vwconnect/id4", "home_address": "Musterweg 3", "name": "Auto Leonie",
+        })
+        created = next(c for c in hannah._cars.values() if c["topic_prefix"] == "vwconnect/id4")
+        assert created["name"] == "Auto Leonie"
+
     def test_edit_car_form_prefills_existing_data(self, admin_client):
         resp = admin_client.get("/cars/1/edit")
         body = resp.get_data(as_text=True)
         assert "vwconnect/golf" in body
+        assert 'value="Golf"' in body
         assert 'checked' in body
 
     def test_save_car_updates_fields_and_owners(self, admin_client, hannah):
         admin_client.post("/cars/1/edit", data={
-            "topic_prefix": "vwconnect/golf", "home_address": "Neue Adresse", "owner_user_ids": [],
+            "topic_prefix": "vwconnect/golf", "home_address": "Neue Adresse", "name": "Golf GTI", "owner_user_ids": [],
         })
         assert hannah._cars[1]["home_address"] == "Neue Adresse"
         assert hannah._cars[1]["owner_user_ids"] == []
+        assert hannah._cars[1]["name"] == "Golf GTI"
 
     def test_delete_car(self, admin_client, hannah):
         admin_client.post("/cars/1/delete")

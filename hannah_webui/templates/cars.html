@@ -12,7 +12,10 @@
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
     <div class="flex items-start justify-between gap-2">
       <div>
-        <div class="font-semibold text-gray-100 font-mono text-sm">{{ car.topic_prefix }}</div>
+        <div class="font-semibold text-gray-100">{{ car.name or car.topic_prefix }}</div>
+        {% if car.name %}
+        <div class="font-mono text-xs text-gray-500">{{ car.topic_prefix }}</div>
+        {% endif %}
         <div class="text-xs text-gray-500">{{ car.home_address or '– keine Heimadresse –' }}</div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
@@ -40,7 +43,12 @@
 <div class="bg-gray-900 border border-gray-800 rounded-xl">
   <div class="border-b border-gray-800 px-4 py-2.5 text-sm text-gray-300">Neues Car</div>
   <div class="p-4">
-    <form method="post" action="{{ url_for('create_car') }}" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+    <form method="post" action="{{ url_for('create_car') }}" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Name</label>
+        <input type="text" name="name" placeholder="z.B. Auto Leonie"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">Topic-Prefix</label>
         <input type="text" name="topic_prefix" placeholder="z.B. vwconnect/golf" required

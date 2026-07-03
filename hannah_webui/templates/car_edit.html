@@ -10,6 +10,12 @@
 <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
   <form method="post" action="{{ url_for('save_car', car_id=car.id) }}">
     <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Name</label>
+      <input type="text" name="name" value="{{ car.name }}" placeholder="z.B. Auto Leonie"
+             class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+    </div>
+
+    <div class="mb-4">
       <label class="block text-xs font-medium text-gray-400 mb-1">Topic-Prefix</label>
       <input type="text" name="topic_prefix" value="{{ car.topic_prefix }}" required
              class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors">

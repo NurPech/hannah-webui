@@ -5,6 +5,9 @@
 -->
 
 
+## 1.9.2
+* Cars get their own `name` field instead of showing the technical `topic_prefix` (e.g. `javascript/0/virtualDevice/Auto/Leonie/Auto1`) as the card title — display name now on top, `topic_prefix` as a small mono line below. New name field in `car_edit.html` and the "New Car" form. Requires Core's new `Car.name` field (`proto/hannah.proto` synced, `gessinger/voice/hannah#123`). Refs #22
+
 ## 1.9.1
 * Settings bekommen typspezifische No-Code-Editoren statt eines rohen JSON-Textareas: der Render-Typ wird rein clientseitig aus der Form des JSON-decodierten Werts abgeleitet (kein neues Core-Feld) — ein String wird zum Text-Editor mit echten Zeilenumbrüchen (behebt das kaputte `\n`-Escaping bei `llm.system_prompt`), eine Liste von Strings zum Zeilen-Builder (`nlu.*`), ein Objekt mit String-Values zum Key-Value-Grid (`iobroker.state_names`). Alles andere fällt weiterhin auf das rohe JSON-Textarea zurück ("Erweitert"). Refs #21
 

@@ -73,7 +73,7 @@ class FakeHannahClient:
         }
         self._next_ble_tag_id = 2
         self._cars = {
-            1: {"topic_prefix": "vwconnect/golf", "home_address": "Musterstraße 1", "owner_user_ids": [1]},
+            1: {"topic_prefix": "vwconnect/golf", "home_address": "Musterstraße 1", "owner_user_ids": [1], "name": "Golf"},
         }
         self._next_car_id = 2
 
@@ -375,23 +375,25 @@ class FakeHannahClient:
     def get_cars(self):
         return [
             hannah_pb2.Car(id=cid, topic_prefix=c["topic_prefix"], home_address=c["home_address"],
-                            owner_user_ids=c["owner_user_ids"])
+                            owner_user_ids=c["owner_user_ids"], name=c.get("name", ""))
             for cid, c in self._cars.items()
         ]
 
-    def create_car(self, topic_prefix, home_address, owner_user_ids):
+    def create_car(self, topic_prefix, home_address, owner_user_ids, name=""):
         car_id = self._next_car_id
         self._next_car_id += 1
         self._cars[car_id] = {
             "topic_prefix": topic_prefix, "home_address": home_address, "owner_user_ids": list(owner_user_ids),
+            "name": name,
         }
         return True, "created"
 
-    def update_car(self, car_id, topic_prefix, home_address, owner_user_ids):
+    def update_car(self, car_id, topic_prefix, home_address, owner_user_ids, name=""):
         if car_id not in self._cars:
             return False, "not found"
         self._cars[car_id] = {
             "topic_prefix": topic_prefix, "home_address": home_address, "owner_user_ids": list(owner_user_ids),
+            "name": name,
         }
         return True, "updated"
 

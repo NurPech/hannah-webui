@@ -739,8 +739,9 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
     def create_car():
         topic_prefix = request.form.get("topic_prefix", "").strip()
         home_address = request.form.get("home_address", "").strip()
+        name = request.form.get("name", "").strip()
         if topic_prefix:
-            ok, message = hannah.create_car(topic_prefix, home_address, [])
+            ok, message = hannah.create_car(topic_prefix, home_address, [], name)
             if not ok:
                 flash(message, "danger")
         return redirect(url_for("cars"))
@@ -761,8 +762,9 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
     def save_car(car_id: int):
         topic_prefix = request.form.get("topic_prefix", "").strip()
         home_address = request.form.get("home_address", "").strip()
+        name = request.form.get("name", "").strip()
         owner_user_ids = [int(uid) for uid in request.form.getlist("owner_user_ids")]
-        ok, message = hannah.update_car(car_id, topic_prefix, home_address, owner_user_ids)
+        ok, message = hannah.update_car(car_id, topic_prefix, home_address, owner_user_ids, name)
         if not ok:
             flash(message, "danger")
         return redirect(url_for("cars"))

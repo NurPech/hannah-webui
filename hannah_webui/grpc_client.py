@@ -276,17 +276,17 @@ class HannahClient:
         assert self._stub, "call connect() first"
         return list(self._stub.GetCars(hannah_pb2.Empty()).cars)
 
-    def create_car(self, topic_prefix: str, home_address: str, owner_user_ids: list[int]) -> tuple[bool, str]:
+    def create_car(self, topic_prefix: str, home_address: str, owner_user_ids: list[int], name: str = "") -> tuple[bool, str]:
         assert self._stub, "call connect() first"
         resp = self._stub.CreateCar(hannah_pb2.CreateCarRequest(
-            topic_prefix=topic_prefix, home_address=home_address, owner_user_ids=owner_user_ids,
+            topic_prefix=topic_prefix, home_address=home_address, owner_user_ids=owner_user_ids, name=name,
         ))
         return resp.ok, resp.message
 
-    def update_car(self, car_id: int, topic_prefix: str, home_address: str, owner_user_ids: list[int]) -> tuple[bool, str]:
+    def update_car(self, car_id: int, topic_prefix: str, home_address: str, owner_user_ids: list[int], name: str = "") -> tuple[bool, str]:
         assert self._stub, "call connect() first"
         resp = self._stub.UpdateCar(hannah_pb2.UpdateCarRequest(
-            id=car_id, topic_prefix=topic_prefix, home_address=home_address, owner_user_ids=owner_user_ids,
+            id=car_id, topic_prefix=topic_prefix, home_address=home_address, owner_user_ids=owner_user_ids, name=name,
         ))
         return resp.ok, resp.message
 
