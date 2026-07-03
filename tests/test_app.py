@@ -257,6 +257,23 @@ class TestSettings:
         assert "turn_on_words" in body
         assert "einschalten" in body
 
+    def test_settings_renders_list_type_as_line_inputs(self, admin_client):
+        resp = admin_client.get("/settings")
+        body = resp.get_data(as_text=True)
+        assert 'name="list_item" value="an"' in body
+        assert 'name="list_item" value="einschalten"' in body
+
+    def test_settings_renders_text_type_with_real_newline(self, admin_client):
+        resp = admin_client.get("/settings")
+        body = resp.get_data(as_text=True)
+        assert "Du bist Hannah.\nDeine Antworten" in body
+
+    def test_settings_renders_keyvalue_type_as_kv_inputs(self, admin_client):
+        resp = admin_client.get("/settings")
+        body = resp.get_data(as_text=True)
+        assert 'name="kv_key" value="on"' in body
+        assert 'name="kv_value" value="on"' in body
+
     def test_update_setting(self, admin_client, hannah):
         admin_client.post("/settings/1/update", data={"value": '["an"]'})
         assert hannah._settings[1]["value"] == ["an"]
@@ -267,6 +284,31 @@ class TestSettings:
         )
         assert "invalid JSON" in resp.get_data(as_text=True)
         assert hannah._settings[1]["value"] == ["an", "einschalten"]
+
+    def test_update_setting_list_type_drops_blank_rows(self, admin_client, hannah):
+        admin_client.post(
+            "/settings/1/update",
+            data={"value_type": "list", "list_item": ["an", "", "aus", "  "]},
+        )
+        assert hannah._settings[1]["value"] == ["an", "aus"]
+
+    def test_update_setting_text_type_normalizes_crlf(self, admin_client, hannah):
+        admin_client.post(
+            "/settings/2/update",
+            data={"value_type": "text", "text_value": "Zeile 1\r\nZeile 2"},
+        )
+        assert hannah._settings[2]["value"] == "Zeile 1\nZeile 2"
+
+    def test_update_setting_keyvalue_type_drops_blank_keys(self, admin_client, hannah):
+        admin_client.post(
+            "/settings/3/update",
+            data={
+                "value_type": "keyvalue",
+                "kv_key": ["on", "", "level"],
+                "kv_value": ["an", "ignored", "stufe"],
+            },
+        )
+        assert hannah._settings[3]["value"] == {"on": "an", "level": "stufe"}
 
 
 class TestBleTags:

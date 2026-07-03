@@ -38,9 +38,11 @@ class FakeHannahClient:
         self._residents = {
             "leonie_roomie": {"roomie_id": "leonie", "display_name": "Leonie", "type": "roomie", "home": True},
         }
-        self._categories = {1: "nlu"}
+        self._categories = {1: "nlu", 2: "llm", 3: "iobroker"}
         self._settings = {
             1: {"category_id": 1, "name": "turn_on_words", "value": ["an", "einschalten"]},
+            2: {"category_id": 2, "name": "system_prompt", "value": "Du bist Hannah.\nDeine Antworten werden per Sprachausgabe vorgelesen."},
+            3: {"category_id": 3, "name": "state_names", "value": {"on": "on", "level": "level"}},
         }
         self._routines = {
             1: {

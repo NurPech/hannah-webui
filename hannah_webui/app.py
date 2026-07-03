@@ -93,6 +93,7 @@ def _verify_telegram_auth(data: dict, bot_token: str) -> bool:
 
 
 _ROUTINE_NEW_ACTION_ROWS = 3
+_SETTINGS_NEW_ROWS = 2
 _USER_TYPES = ("roomie", "guest", "pet")
 _WEEKDAY_NAMES = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
@@ -296,6 +297,34 @@ def _parse_trigger_action_rows(form) -> list[dict]:
                 value = state_values[i].strip() if i < len(state_values) else ""
                 actions.append({"set_state": {"id": state_id, "value": value or "true"}})
     return actions
+
+
+def _prepare_setting_row(s) -> dict:
+    """Leitet den No-Code-Render-Typ aus der Form des JSON-decodierten Werts ab, ohne dass
+    Core einen Typ mitschicken muss: ein String wird zum Text-Editor, eine Liste von Strings
+    zum Zeilen-Builder, ein Objekt mit String-Values zum Key-Value-Grid. Alles andere
+    (verschachtelt, gemischte Typen) fällt auf das rohe JSON-Textarea zurück."""
+    try:
+        parsed = json.loads(s.value)
+    except (json.JSONDecodeError, TypeError):
+        parsed = None
+
+    if isinstance(parsed, str):
+        return {"setting": s, "value_type": "text", "text_value": parsed}
+
+    if isinstance(parsed, list) and all(isinstance(x, str) for x in parsed):
+        return {"setting": s, "value_type": "list", "list_rows": parsed + [""] * _SETTINGS_NEW_ROWS}
+
+    if isinstance(parsed, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in parsed.items()):
+        rows = list(parsed.items()) + [("", "")] * _SETTINGS_NEW_ROWS
+        return {"setting": s, "value_type": "keyvalue", "kv_rows": rows}
+
+    pretty_value = s.value
+    try:
+        pretty_value = json.dumps(json.loads(s.value), indent=2, ensure_ascii=False)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return {"setting": s, "value_type": "json", "pretty_value": pretty_value}
 
 
 def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: str = "", telegram_bot_username: str = "") -> Flask:
@@ -626,12 +655,7 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
         categories_sorted = sorted(categories, key=lambda c: c.name)
         settings_by_cat: dict[int, list] = {c.id: [] for c in categories}
         for s in settings_list:
-            pretty_value = s.value
-            try:
-                pretty_value = json.dumps(json.loads(s.value), indent=2, ensure_ascii=False)
-            except (json.JSONDecodeError, TypeError):
-                pass
-            settings_by_cat.setdefault(s.category_id, []).append({"setting": s, "pretty_value": pretty_value})
+            settings_by_cat.setdefault(s.category_id, []).append(_prepare_setting_row(s))
         for items in settings_by_cat.values():
             items.sort(key=lambda v: v["setting"].name)
         return render_template("settings.html", categories=categories_sorted, settings_by_cat=settings_by_cat)
@@ -640,7 +664,21 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
     @login_required
     @trust_level_required(TRUST_LEVELS["edit_setting"])
     def update_setting(setting_id: int):
-        ok, message = hannah.update_setting(setting_id, request.form.get("value", ""))
+        value_type = request.form.get("value_type", "json")
+        if value_type == "text":
+            text_value = request.form.get("text_value", "").replace("\r\n", "\n")
+            value_json = json.dumps(text_value, ensure_ascii=False)
+        elif value_type == "list":
+            items = [v.strip() for v in request.form.getlist("list_item") if v.strip()]
+            value_json = json.dumps(items, ensure_ascii=False)
+        elif value_type == "keyvalue":
+            keys = request.form.getlist("kv_key")
+            values = request.form.getlist("kv_value")
+            pairs = {k.strip(): v.strip() for k, v in zip(keys, values) if k.strip()}
+            value_json = json.dumps(pairs, ensure_ascii=False)
+        else:
+            value_json = request.form.get("value", "")
+        ok, message = hannah.update_setting(setting_id, value_json)
         if not ok:
             flash(message, "danger")
         return redirect(url_for("settings"))

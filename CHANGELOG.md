@@ -5,6 +5,9 @@
 -->
 
 
+## 1.9.1
+* Settings bekommen typspezifische No-Code-Editoren statt eines rohen JSON-Textareas: der Render-Typ wird rein clientseitig aus der Form des JSON-decodierten Werts abgeleitet (kein neues Core-Feld) — ein String wird zum Text-Editor mit echten Zeilenumbrüchen (behebt das kaputte `\n`-Escaping bei `llm.system_prompt`), eine Liste von Strings zum Zeilen-Builder (`nlu.*`), ein Objekt mit String-Values zum Key-Value-Grid (`iobroker.state_names`). Alles andere fällt weiterhin auf das rohe JSON-Textarea zurück ("Erweitert"). Refs #21
+
 ## 1.9.0
 * Responsive Design (Teil 1): `/rooms`, `/users` und `/ble-tags` zeigen auf Mobile jetzt gestapelte Karten statt der breiten Tabelle (`hidden sm:table` / `sm:hidden` Dual-View, kein JS). `/groups` und `/cars` waren als Card-Grid bereits responsive. Satelliten/Routinen/Trigger/Settings folgen in eigenen Tickets. Refs #19
 * Responsive Design (Teil 2): `/satellites` bekommt das gleiche Dual-View — letzte verbliebene Tabelle mit mehreren Inline-Forms pro Zeile (Anzeigename, Raum, Besitzer). Routinen, Trigger und Settings sind bereits Card-basiert und brauchen aktuell keine Anpassung. Refs #20
