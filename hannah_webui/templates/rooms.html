@@ -9,7 +9,7 @@
 
 <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
   {% if rooms %}
-  <table class="w-full text-sm">
+  <table class="w-full text-sm hidden sm:table">
     <thead>
       <tr class="border-b border-gray-800 text-gray-500 text-xs">
         <th class="text-left px-4 py-3">ID</th>
@@ -33,6 +33,21 @@
       {% endfor %}
     </tbody>
   </table>
+  <div class="sm:hidden divide-y divide-gray-800/50">
+    {% for room in rooms %}
+    <div class="p-4">
+      <div class="font-medium text-gray-100">{{ room.display_name }}</div>
+      <div class="font-mono text-xs text-gray-500 mt-0.5">{{ room.room_id }}</div>
+      <div class="mt-2">
+        {% for g in room_groups.get(room.room_id, []) %}
+          {{ pill(g) }}
+        {% else %}
+          <span class="text-gray-600 text-xs">–</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
   {% else %}
   <div class="p-8 text-center text-gray-500">
     Noch keine Räume – werden beim nächsten ioBroker-Adapter-Connect synchronisiert.

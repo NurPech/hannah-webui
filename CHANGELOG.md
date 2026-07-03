@@ -5,6 +5,10 @@
 -->
 
 
+## 1.9.0
+* Responsive Design (Teil 1): `/rooms`, `/users` und `/ble-tags` zeigen auf Mobile jetzt gestapelte Karten statt der breiten Tabelle (`hidden sm:table` / `sm:hidden` Dual-View, kein JS). `/groups` und `/cars` waren als Card-Grid bereits responsive. Satelliten/Routinen/Trigger/Settings folgen in eigenen Tickets. Refs #19
+* Responsive Design (Teil 2): `/satellites` bekommt das gleiche Dual-View — letzte verbliebene Tabelle mit mehreren Inline-Forms pro Zeile (Anzeigename, Raum, Besitzer). Routinen, Trigger und Settings sind bereits Card-basiert und brauchen aktuell keine Anpassung. Refs #20
+
 ## 1.8.1
 * Friendly error pages instead of Flask's default 500: an unreachable Hannah Core (`grpc.RpcError`) now renders a dark-theme "Core nicht erreichbar" page (503), unknown routes get a themed 404, and any other unhandled exception gets a generic 500 page instead of a raw traceback/default error text. Also fixes `HannahClient.login()` swallowing `grpc.RpcError` into a misleading "Ungültige Zugangsdaten" — Core being down now shows the "not reachable" page instead of looking like a wrong password. Refs #18
 

@@ -7,7 +7,7 @@
 
 <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
   {% if tags %}
-  <table class="w-full text-sm">
+  <table class="w-full text-sm hidden sm:table">
     <thead>
       <tr class="border-b border-gray-800 text-gray-500 text-xs">
         <th class="text-left px-4 py-3">MAC-Adresse</th>
@@ -53,6 +53,45 @@
       {% endfor %}
     </tbody>
   </table>
+  <div class="sm:hidden divide-y divide-gray-800/50">
+    {% for tag in tags %}
+    {% set form_id = 'ble-tag-m-' ~ tag.id %}
+    <div class="p-4">
+      <form id="{{ form_id }}" method="post" action="{{ url_for('edit_ble_tag', tag_id=tag.id) }}"></form>
+      <div class="grid grid-cols-1 gap-2">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">MAC-Adresse</label>
+          <input form="{{ form_id }}" type="text" name="mac_address" value="{{ tag.mac_address }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Label</label>
+          <input form="{{ form_id }}" type="text" name="label" value="{{ tag.label }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Owner</label>
+          <select form="{{ form_id }}" name="user_id"
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+            <option value="0">– kein Owner –</option>
+            {% for user in users %}
+            <option value="{{ user.id }}" {% if tag.user_id == user.id %}selected{% endif %}>
+              {{ user.display_name or user.user_name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mt-3">
+        <button form="{{ form_id }}" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-2 py-1 text-xs font-medium transition-colors">Speichern</button>
+        <form method="post" action="{{ url_for('delete_ble_tag', tag_id=tag.id) }}"
+              onsubmit="return confirm('Tag {{ tag.label or tag.mac_address }} löschen?')">
+          <button class="text-xs text-rose-400 hover:text-rose-300 transition-colors">Löschen</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
   {% else %}
   <div class="p-8 text-center text-gray-500">Keine BLE-Tags angelegt.</div>
   {% endif %}
