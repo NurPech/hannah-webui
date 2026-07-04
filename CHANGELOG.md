@@ -5,6 +5,9 @@
 -->
 
 
+## 1.9.4
+* Changed: `proto/*.proto` replaced with a git submodule pointing to [hannah-proto](https://dev.kernstock.net/gessinger/voice/hannah-proto) (pinned to a release tag), instead of a manually synced copy. `scripts/gen_proto.sh` needs no path change — `proto/` is now the submodule itself, same location as before. Added `tests/test_proto_reexport.py`, a regression test walking every scope-split `*_pb2` module and asserting nothing is missing from `hannah_pb2` (Refs #24)
+
 ## 1.9.3
 * Fix `scripts/gen_proto.sh` after Core split `hannah.proto` into multiple scope files (`proto/*.proto` synced from `gessinger/voice/hannah#44`): two quoting bugs left the glob unexpanded and broke stub generation entirely. Also ports Core's `hannah/proto/__init__.py` re-export patch to `hannah_webui/proto/__init__.py`, so `hannah_pb2.Car`/`hannah_pb2.User`/etc. keep working even though those messages now live in `control_pb2`/`user_registry_pb2`/etc. — no call sites in `app.py`/`grpc_client.py` needed to change. Refs #23
 
