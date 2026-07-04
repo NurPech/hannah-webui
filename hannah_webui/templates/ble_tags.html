@@ -41,9 +41,9 @@
         </td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
-            <form id="{{ form_id }}" method="post" action="{{ url_for('edit_ble_tag', tag_id=tag.id) }}"></form>
+            <form id="{{ form_id }}" method="post" action="{{ url_for('ble_tags.edit_ble_tag', tag_id=tag.id) }}"></form>
             <button form="{{ form_id }}" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-2 py-1 text-xs font-medium transition-colors">Speichern</button>
-            <form method="post" action="{{ url_for('delete_ble_tag', tag_id=tag.id) }}"
+            <form method="post" action="{{ url_for('ble_tags.delete_ble_tag', tag_id=tag.id) }}"
                   onsubmit="return confirm('Tag {{ tag.label or tag.mac_address }} löschen?')">
               <button class="text-xs text-rose-400 hover:text-rose-300 transition-colors">Löschen</button>
             </form>
@@ -57,7 +57,7 @@
     {% for tag in tags %}
     {% set form_id = 'ble-tag-m-' ~ tag.id %}
     <div class="p-4">
-      <form id="{{ form_id }}" method="post" action="{{ url_for('edit_ble_tag', tag_id=tag.id) }}"></form>
+      <form id="{{ form_id }}" method="post" action="{{ url_for('ble_tags.edit_ble_tag', tag_id=tag.id) }}"></form>
       <div class="grid grid-cols-1 gap-2">
         <div>
           <label class="block text-xs text-gray-500 mb-1">MAC-Adresse</label>
@@ -84,7 +84,7 @@
       </div>
       <div class="flex items-center gap-2 mt-3">
         <button form="{{ form_id }}" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-2 py-1 text-xs font-medium transition-colors">Speichern</button>
-        <form method="post" action="{{ url_for('delete_ble_tag', tag_id=tag.id) }}"
+        <form method="post" action="{{ url_for('ble_tags.delete_ble_tag', tag_id=tag.id) }}"
               onsubmit="return confirm('Tag {{ tag.label or tag.mac_address }} löschen?')">
           <button class="text-xs text-rose-400 hover:text-rose-300 transition-colors">Löschen</button>
         </form>
@@ -100,7 +100,7 @@
 <div class="bg-gray-900 border border-gray-800 rounded-xl mt-4">
   <div class="border-b border-gray-800 px-4 py-2.5 text-sm text-gray-300">Neuer Tag</div>
   <div class="p-4">
-    <form method="post" action="{{ url_for('create_ble_tag') }}" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+    <form method="post" action="{{ url_for('ble_tags.create_ble_tag') }}" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
       <div>
         <label class="block text-xs text-gray-500 mb-1">MAC-Adresse</label>
         <input type="text" name="mac_address" placeholder="aa:bb:cc:dd:ee:ff" required

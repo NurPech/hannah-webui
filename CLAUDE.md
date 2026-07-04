@@ -6,7 +6,7 @@ Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/v
 
 **Historie:** ursprünglich In-Process-Teil von Hannah Core (`hannah/webui.py`), dann eigener Service `webui/` im Hannah-Monorepo (#27), seit 2026-06-28 eigenständiges Repo (#106 im Monorepo). Architektur-Hintergrund zu Hannah Core/Protokoll/Satelliten: siehe `CLAUDE.md` im Hannah-Monorepo (`gessinger/voice/hannah`).
 
-**Eigenständig, kein Submodule-Link zum Monorepo.** Einzige Abhängigkeit: `proto/*.proto` ist eine Kopie aus `core/proto/*.proto` (Source of Truth liegt im Monorepo) — bei Protokoll-Änderungen dort manuell synchronisieren, dann `scripts/gen_proto.sh` laufen lassen. Seit `gessinger/voice/hannah#44` ist das Proto nach Scope in 12 Dateien gesplittet (`hannah.proto` enthält nur noch den Service, Messages liegen in `control.proto`/`user_registry.proto`/`shared.proto`/etc.) — `hannah_webui/proto/__init__.py` patcht beim Import alle Message-Typen der Scope-Module zurück auf `hannah_pb2`, damit bestehender Code weiterhin `hannah_pb2.Car`/`hannah_pb2.User`/etc. verwenden kann (gleicher Ansatz wie `core/hannah/proto/__init__.py`).
+**Eigenständig, kein Submodule-Link zum Monorepo.** `proto/` ist seit #24 ein eigenständiges Git-Submodule (`gessinger/voice/hannah-proto.git`, aktuell Branch/Tag `v0.1.0`) — eigenes Repo statt manuellem Kopieren aus dem Monorepo, `git submodule update --init` nach dem Klonen bzw. `git submodule update --remote` für eine neue Proto-Version. Codegen bleibt weiterhin Sache jedes Consumers: `scripts/gen_proto.sh` generiert die Python-Stubs lokal aus `proto/*.proto`. Das Proto ist nach Scope in 12 Dateien gesplittet (`gessinger/voice/hannah#44`; `hannah.proto` enthält nur noch den Service, Messages liegen in `control.proto`/`user_registry.proto`/`shared.proto`/etc.) — `hannah_webui/proto/__init__.py` patcht beim Import alle Message-Typen der Scope-Module zurück auf `hannah_pb2`, damit bestehender Code weiterhin `hannah_pb2.Car`/`hannah_pb2.User`/etc. verwenden kann (gleicher Ansatz wie `core/hannah/proto/__init__.py`).
 
 ---
 
@@ -15,12 +15,15 @@ Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/v
 ```
 hannah-webui/
 ├── hannah_webui/
-│   ├── app.py            ← Flask-App-Factory (create_app), alle Routen
+│   ├── app.py            ← Flask-App-Factory (create_app): Error-Handler, Context-Processor, /version, registriert alle Blueprints
+│   ├── extensions.py     ← TRUST_LEVELS, login_required/trust_level_required, get_hannah()/get_telegram_config() (current_app-basiert, kein Closure-Capture — vermeidet zirkuläre Importe mit den Blueprints)
+│   ├── route_helpers.py  ← No-Code-Parsing/Formatting-Helfer (Zeilen-Builder für Routinen/Trigger/Settings), reine Funktionen ohne App-Kontext
+│   ├── blueprints/        ← ein Modul je Routen-Gruppe: auth, me, rooms, groups, satellites, settings, ble_tags, cars, routines, triggers, users (#10)
 │   ├── grpc_client.py    ← HannahClient — synchroner gRPC-Client (kein grpc.aio, Flask ist synchron)
 │   ├── config.py         ← Config-Loader: config.yaml ODER Env-Vars (12-factor, für Container-Deploy)
 │   ├── templates/         ← Jinja2-Templates (ein File pro Seite, bewusst keine Single-File/Vanilla-JS-Architektur)
 │   └── proto/             ← generierte gRPC-Stubs (hannah_pb2.py + 11 weitere *_pb2.py/*_pb2_grpc.py, __init__.py patcht sie auf hannah_pb2 zurück)
-├── proto/*.proto          ← Kopie aus core/proto/*.proto (Monorepo) — Source of Truth dort, 12 Dateien seit gessinger/voice/hannah#44
+├── proto/                 ← Git-Submodule (gessinger/voice/hannah-proto.git), 12 *.proto-Dateien nach Scope gesplittet
 ├── scripts/
 │   ├── gen_proto.sh       ← regeneriert hannah_webui/proto/* aus proto/*.proto
 │   └── release.js
@@ -38,19 +41,21 @@ hannah-webui/
 
 ## Architektur
 
-**Flask-App-Factory** (`hannah_webui/app.py`): `create_app(hannah: HannahClient, secret_key: str)`. Session-basiertes Login gegen Core's `Login`-RPC. Alle Admin-/Personal-Seiten sind No-Code-Editoren (Zeilen-Builder-Pattern statt JSON-Textarea) für:
+**Flask-App-Factory** (`hannah_webui/app.py`): `create_app(hannah: HannahClient, secret_key: str)` erzeugt die Flask-App, hängt `hannah` als `app.extensions["hannah"]` ein (Blueprints holen sich das über `extensions.get_hannah()`, nicht per Closure), registriert Error-Handler/Context-Processor/`/version` und alle Blueprints aus `hannah_webui/blueprints/` (#10 — vorher ein 1000+-Zeilen-`app.py` mit allen Routen als verschachtelte Funktionen). Session-basiertes Login gegen Core's `Login`-RPC. Alle Admin-/Personal-Seiten sind No-Code-Editoren (Zeilen-Builder-Pattern statt JSON-Textarea) für:
 
-| Route | Funktion |
-|---|---|
-| `/login`, `/logout` | Auth |
-| `/me`, `/me/password`, `/me/telegram/callback`, `/me/telegram/unlink` | Self-Service-Startseite (ersetzt die alte Index-Page): Begrüßung, eigenes Passwort ändern, Telegram-Konto verknüpfen/trennen — kein Trust-Level-Gate, wirkt nur auf die eigene `session["user_id"]`. `/` redirected dorthin. Telegram-Verknüpfung läuft über das [Login Widget](https://core.telegram.org/widgets/login); die WebUI verifiziert die HMAC-Signatur selbst (eigener `telegram_bot_token`/`telegram_bot_username` in der Config) und meldet Core nur die bereits verifizierte `account_id` per `LinkAccount` — Core/TelegramAdapter bekommen die Rohdaten nie zu Gesicht. |
-| `/rooms` | Read-only Liste |
-| `/groups`, `/groups/create`, `/groups/<id>/edit`, `/groups/<id>/delete` | Gruppen-CRUD |
-| `/satellites`, `/satellites/<id>/room`, `/satellites/<id>/name` | Satelliten-Zuordnung (kein Delete — keine `DeleteSatellite`-RPC) |
-| `/settings`, `.../update`, `.../create`, `.../delete` | generisches JSON-Textarea pro Setting (Werte zu heterogen für Feld-spezifische Formulare) |
-| `/routines`, `/routines/new`, `/routines/create`, `/routines/<id>/edit`, `/routines/<id>/delete` | Personal, No-Code (Trigger-Phrasen als Zeilen, Aktionen als Typ+Wert-Zeilen) |
-| `/triggers`, `/triggers/new`, `/triggers/create`, `/triggers/<id>/edit`, `/triggers/<id>/delete` | Wenn/Und/Außer-wenn/Dann-Builder; `ask`/`on_response_json`/`cancel_when` bleiben rohes JSON ("Erweitert") |
-| `/users`, `/users/create`, `/users/<id>/edit`, `/users/<id>/delete`, `.../link-resident`, `.../unlink-resident` | User-CRUD + Resident-Verknüpfung |
+| Blueprint | Route | Funktion |
+|---|---|---|
+| `auth` | `/login`, `/logout` | Auth |
+| `me` | `/`, `/me`, `/me/password`, `/me/telegram/callback`, `/me/telegram/unlink`, `/me/alarms/*` | Self-Service-Startseite (ersetzt die alte Index-Page): Begrüßung, eigenes Passwort ändern, Telegram-Konto verknüpfen/trennen, Wecker — kein Trust-Level-Gate, wirkt nur auf die eigene `session["user_id"]`. `/` redirected dorthin. Telegram-Verknüpfung läuft über das [Login Widget](https://core.telegram.org/widgets/login); die WebUI verifiziert die HMAC-Signatur selbst (eigener `telegram_bot_token`/`telegram_bot_username` in der Config) und meldet Core nur die bereits verifizierte `account_id` per `LinkAccount` — Core/TelegramAdapter bekommen die Rohdaten nie zu Gesicht. |
+| `rooms` | `/rooms` | Read-only Liste |
+| `groups` | `/groups`, `/groups/create`, `/groups/<id>/edit`, `/groups/<id>/delete` | Gruppen-CRUD |
+| `satellites` | `/satellites`, `/satellites/<id>/room`, `/satellites/<id>/name` | Satelliten-Zuordnung (kein Delete — keine `DeleteSatellite`-RPC) |
+| `settings` | `/settings`, `.../update` | Render-Typ pro Setting wird aus der Form des JSON-decodierten Werts abgeleitet (String → Text-Editor mit echten Zeilenumbrüchen, Liste → Zeilen-Builder, Objekt → Key-Value-Grid, alles andere → rohes JSON als "Erweitert", siehe #21) |
+| `ble_tags` | `/ble-tags`, `.../create`, `.../<id>/edit`, `.../<id>/delete` | BLE-Tag-CRUD |
+| `cars` | `/cars`, `.../create`, `.../<id>/edit`, `.../<id>/delete` | Car-CRUD inkl. Owner-Zuweisung |
+| `routines` | `/routines`, `/routines/new`, `/routines/create`, `/routines/<id>/edit`, `/routines/<id>/delete` | Personal, No-Code (Trigger-Phrasen als Zeilen, Aktionen als Typ+Wert-Zeilen) |
+| `triggers` | `/triggers`, `/triggers/new`, `/triggers/create`, `/triggers/<id>/edit`, `/triggers/<id>/delete` | Wenn/Und/Außer-wenn/Dann-Builder; `ask`/`on_response_json`/`cancel_when` bleiben rohes JSON ("Erweitert") |
+| `users` | `/users`, `/users/create`, `/users/<id>/edit`, `/users/<id>/delete`, `.../link-resident`, `.../unlink-resident` | User-CRUD + Resident-Verknüpfung |
 
 **gRPC-Client** (`hannah_webui/grpc_client.py`, `HannahClient`): synchroner Wrapper um die generierten Stubs — `login`, `get_rooms`, `get_groups`/`create_group`/`update_group`/`delete_group`/`set_group_rooms`, `get_satellites`/`set_satellite_room`/`set_satellite_display_name`, `get_settings`/`update_setting`/`create_setting`/`delete_setting`, `get_users`/`get_residents`/`create_user`/`update_user`/`delete_user`/`set_trust_level`/`set_system_messages`/`link_account`/`unlink_account`, `get_routines`/`create_routine`/`update_routine`/`delete_routine`, `get_triggers`/`create_trigger`/`update_trigger`/`delete_trigger`.
 
@@ -111,4 +116,4 @@ Aktueller Stand: siehe `CHANGELOG.md`. Offene Bugs/Features: GitLab Issues in di
 ## Bekannte Probleme & Workarounds
 
 - **gunicorn ≥ 26 hat den `eventlet`-Worker entfernt** (`SUPPORTED_WORKERS` enthält ihn nicht mehr, eventlet selbst ist upstream deprecated). Falls async Worker mal nötig werden: `gevent`/`gevent_wsgi`/`gevent_pywsgi` sind noch unterstützt, `eventlet` nicht. Aktuell laufen sync-Worker — kein konkreter Bedarf für async identifiziert (keine SSE/Streaming-Seiten, kleiner Nutzerkreis).
-- **Proto-Sync:** `proto/*.proto` (12 Dateien, seit `gessinger/voice/hannah#44` nach Scope gesplittet) muss nach Änderungen an `core/proto/*.proto` im Monorepo manuell kopiert werden, dann `scripts/gen_proto.sh`. Neue Scope-Datei in Core? Muss zusätzlich in `hannah_webui/proto/__init__.py`s Import-/Patch-Listen ergänzt werden, sonst fehlen deren Message-Typen auf `hannah_pb2`.
+- **Proto-Sync:** `proto/` ist seit #24 ein Git-Submodule (`gessinger/voice/hannah-proto.git`) statt manuellem Kopieren — neue Proto-Version holen mit `git submodule update --remote`, dann `scripts/gen_proto.sh`. Neue Scope-Datei im Proto-Repo? Muss zusätzlich in `hannah_webui/proto/__init__.py`s Import-/Patch-Listen ergänzt werden, sonst fehlen deren Message-Typen auf `hannah_pb2`.

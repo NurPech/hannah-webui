@@ -2,14 +2,14 @@
 {% block title %}Routine {{ 'bearbeiten' if routine else 'anlegen' }}{% endblock %}
 {% block content %}
 <div class="mb-3">
-  <a href="{{ url_for('routines') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Routinen</a>
+  <a href="{{ url_for('routines.routines') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Routinen</a>
 </div>
 
 <h2 class="text-lg font-semibold text-gray-100 mb-5">Routine {{ 'bearbeiten' if routine else 'anlegen' }}</h2>
 
 <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
   <form method="post"
-        action="{{ url_for('save_routine', routine_id=routine.id) if routine else url_for('create_routine') }}">
+        action="{{ url_for('routines.save_routine', routine_id=routine.id) if routine else url_for('routines.create_routine') }}">
     <div class="mb-4">
       <label class="block text-xs font-medium text-gray-400 mb-1">Name</label>
       <input type="text" name="name" value="{{ routine.name if routine else '' }}" required
@@ -69,7 +69,7 @@
 
     <div class="flex gap-2 mt-4">
       <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
-      <a href="{{ url_for('routines') }}"
+      <a href="{{ url_for('routines.routines') }}"
          class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
     </div>
   </form>

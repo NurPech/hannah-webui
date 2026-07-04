@@ -5,9 +5,9 @@
 <div class="flex items-center justify-between mb-5">
   <h2 class="text-lg font-semibold text-gray-100">User</h2>
   <div class="flex gap-2">
-    <a href="{{ url_for('create_user') }}"
+    <a href="{{ url_for('users.create_user') }}"
        class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Neuer User</a>
-    <a href="{{ url_for('users') }}"
+    <a href="{{ url_for('users.users') }}"
        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">Aktualisieren</a>
   </div>
 </div>
@@ -35,7 +35,7 @@
           {% if row.resident %}
             {{ pill(row.resident.display_name ~ ' (' ~ row.resident.type ~ ')') }}
           {% else %}
-            <form method="post" action="{{ url_for('link_resident', user_id=row.user.id) }}" class="flex gap-1">
+            <form method="post" action="{{ url_for('users.link_resident', user_id=row.user.id) }}" class="flex gap-1">
               <select name="resident_id" required
                       class="w-44 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
                 <option value="">– Resident wählen –</option>
@@ -49,7 +49,7 @@
         </td>
         <td class="px-4 py-3">
           {% if row.resident %}
-          <form method="post" action="{{ url_for('unlink_resident', user_id=row.user.id) }}"
+          <form method="post" action="{{ url_for('users.unlink_resident', user_id=row.user.id) }}"
                 onsubmit="return confirm('Verknüpfung für {{ row.user.display_name }} lösen?')">
             <button class="text-xs text-gray-500 hover:text-rose-400 transition-colors">Lösen</button>
           </form>
@@ -57,8 +57,8 @@
         </td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
-            <a href="{{ url_for('edit_user', user_id=row.user.id) }}" class="text-xs text-gray-500 hover:text-blue-400 transition-colors">Bearbeiten</a>
-            <form method="post" action="{{ url_for('delete_user', user_id=row.user.id) }}"
+            <a href="{{ url_for('users.edit_user', user_id=row.user.id) }}" class="text-xs text-gray-500 hover:text-blue-400 transition-colors">Bearbeiten</a>
+            <form method="post" action="{{ url_for('users.delete_user', user_id=row.user.id) }}"
                   onsubmit="return confirm('User {{ row.user.display_name }} ({{ row.user.user_name }}) wirklich löschen?')">
               <button class="text-xs text-rose-400 hover:text-rose-300 transition-colors">Löschen</button>
             </form>
@@ -77,8 +77,8 @@
           <div class="font-mono text-xs text-gray-500">{{ row.user.user_name }}</div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <a href="{{ url_for('edit_user', user_id=row.user.id) }}" class="text-xs text-gray-500 hover:text-blue-400 transition-colors">Bearbeiten</a>
-          <form method="post" action="{{ url_for('delete_user', user_id=row.user.id) }}"
+          <a href="{{ url_for('users.edit_user', user_id=row.user.id) }}" class="text-xs text-gray-500 hover:text-blue-400 transition-colors">Bearbeiten</a>
+          <form method="post" action="{{ url_for('users.delete_user', user_id=row.user.id) }}"
                 onsubmit="return confirm('User {{ row.user.display_name }} ({{ row.user.user_name }}) wirklich löschen?')">
             <button class="text-xs text-rose-400 hover:text-rose-300 transition-colors">Löschen</button>
           </form>
@@ -89,13 +89,13 @@
         {% if row.resident %}
           <div class="flex items-center gap-2">
             {{ pill(row.resident.display_name ~ ' (' ~ row.resident.type ~ ')') }}
-            <form method="post" action="{{ url_for('unlink_resident', user_id=row.user.id) }}"
+            <form method="post" action="{{ url_for('users.unlink_resident', user_id=row.user.id) }}"
                   onsubmit="return confirm('Verknüpfung für {{ row.user.display_name }} lösen?')">
               <button class="text-xs text-gray-500 hover:text-rose-400 transition-colors">Lösen</button>
             </form>
           </div>
         {% else %}
-          <form method="post" action="{{ url_for('link_resident', user_id=row.user.id) }}" class="flex gap-1">
+          <form method="post" action="{{ url_for('users.link_resident', user_id=row.user.id) }}" class="flex gap-1">
             <select name="resident_id" required
                     class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
               <option value="">– Resident wählen –</option>

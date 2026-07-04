@@ -32,23 +32,23 @@ def _sign_telegram_data(data, bot_token=TELEGRAM_BOT_TOKEN):
 
 class TestTelegramAuthVerification:
     def test_valid_signature_accepted(self):
-        from hannah_webui.app import _verify_telegram_auth
+        from hannah_webui.route_helpers import _verify_telegram_auth
         data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": str(int(time.time()))})
         assert _verify_telegram_auth(data, TELEGRAM_BOT_TOKEN) is True
 
     def test_tampered_payload_rejected(self):
-        from hannah_webui.app import _verify_telegram_auth
+        from hannah_webui.route_helpers import _verify_telegram_auth
         data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": str(int(time.time()))})
         data["id"] = "999"
         assert _verify_telegram_auth(data, TELEGRAM_BOT_TOKEN) is False
 
     def test_expired_auth_date_rejected(self):
-        from hannah_webui.app import _verify_telegram_auth
+        from hannah_webui.route_helpers import _verify_telegram_auth
         data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": "1000000000"})
         assert _verify_telegram_auth(data, TELEGRAM_BOT_TOKEN) is False
 
     def test_wrong_bot_token_rejected(self):
-        from hannah_webui.app import _verify_telegram_auth
+        from hannah_webui.route_helpers import _verify_telegram_auth
         data = _sign_telegram_data({"id": "123", "first_name": "Claude", "auth_date": str(int(time.time()))})
         assert _verify_telegram_auth(data, "other-secret") is False
 

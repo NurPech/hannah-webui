@@ -2,14 +2,14 @@
 {% block title %}Trigger {{ 'bearbeiten' if trigger else 'anlegen' }}{% endblock %}
 {% block content %}
 <div class="mb-3">
-  <a href="{{ url_for('triggers') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Trigger</a>
+  <a href="{{ url_for('triggers.triggers') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← Trigger</a>
 </div>
 
 <h2 class="text-lg font-semibold text-gray-100 mb-5">Trigger {{ 'bearbeiten' if trigger else 'anlegen' }}</h2>
 
 <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
   <form method="post"
-        action="{{ url_for('save_trigger', trigger_id=trigger.id) if trigger else url_for('create_trigger') }}">
+        action="{{ url_for('triggers.save_trigger', trigger_id=trigger.id) if trigger else url_for('triggers.create_trigger') }}">
 
     {% if not trigger %}
     <div class="mb-4">
@@ -210,7 +210,7 @@
 
     <div class="flex gap-2 mt-4">
       <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
-      <a href="{{ url_for('triggers') }}"
+      <a href="{{ url_for('triggers.triggers') }}"
          class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
     </div>
   </form>
