@@ -9,6 +9,7 @@ from typing import Optional
 
 import grpc
 
+from hannah_webui.grpc_interceptors import ProtocolVersionClientInterceptor, read_proto_version
 from hannah_webui.proto import hannah_pb2, hannah_pb2_grpc
 
 log = logging.getLogger(__name__)
@@ -23,7 +24,8 @@ class HannahClient:
         self._stub: Optional[hannah_pb2_grpc.HannahServiceStub] = None
 
     def connect(self) -> None:
-        self._channel = grpc.insecure_channel(self._address)
+        channel = grpc.insecure_channel(self._address)
+        self._channel = grpc.intercept_channel(channel, ProtocolVersionClientInterceptor(read_proto_version()))
         self._stub = hannah_pb2_grpc.HannahServiceStub(self._channel)
         log.info("gRPC channel to Hannah at %s created", self._address)
 

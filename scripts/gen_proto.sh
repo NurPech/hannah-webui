@@ -50,4 +50,6 @@ echo "→ Absolute Imports auf relativ patchen"
 sed -i -E 's/^import ([a-zA-Z_][a-zA-Z0-9_]*_pb2) as /from . import \1 as /' \
     "$REPO_ROOT"/hannah_webui/proto/*_pb2.py "$REPO_ROOT"/hannah_webui/proto/*_pb2_grpc.py
 
+cp "$PROTO/PROTO_VERSION" "$REPO_ROOT/hannah_webui/proto/PROTO_VERSION"
+
 echo "Fertig."

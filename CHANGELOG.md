@@ -4,6 +4,9 @@
     ## **WORK IN PROGRESS**
 -->
 
+## 1.11.0
+* Changed: bumped `proto` submodule to v0.3.0 (adds the `PROTO_VERSION` file/CI gate upstream; no `.proto` schema changes). `gen_proto.sh` now also copies `proto/PROTO_VERSION` into `gen/hannah/PROTO_VERSION` for embedding (#4)
+* Added: gRPC client interceptor attaches the current `PROTO_VERSION` as `x-proto-version` metadata on every outgoing call to Hannah, so a protocol version mismatch can be rejected at runtime (#4)
 
 ## 1.10.1
 * Fix: on the Cars card, "Bearbeiten"/"Löschen" sat top-right next to the title and looked stranded whenever the home address wrapped to multiple lines, growing the card below them. Moved into their own footer row below the owner pills, with a divider — stays put regardless of text length. Refs #26
