@@ -5,6 +5,9 @@
 -->
 
 
+## 1.10.1
+* Fix: on the Cars card, "Bearbeiten"/"Löschen" sat top-right next to the title and looked stranded whenever the home address wrapped to multiple lines, growing the card below them. Moved into their own footer row below the owner pills, with a divider — stays put regardless of text length. Refs #26
+
 ## 1.10.0
 * Internal: `app.py` (1059 lines, every route as a nested function inside `create_app`) split into Flask Blueprints — one module per route group under `hannah_webui/blueprints/` (`auth`, `me`, `rooms`, `groups`, `satellites`, `settings`, `ble_tags`, `cars`, `routines`, `triggers`, `users`), plus `extensions.py` (`TRUST_LEVELS`, `login_required`/`trust_level_required`, `current_app`-based `hannah` access instead of closure capture) and `route_helpers.py` (the No-Code parsing/formatting helpers). `app.py` is now 93 lines. No user-visible change — endpoint names changed internally (e.g. `rooms` → `rooms.rooms`), all templates updated accordingly. Refs #10
 
