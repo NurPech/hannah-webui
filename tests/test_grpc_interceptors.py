@@ -1,5 +1,6 @@
 import os
 from unittest.mock import Mock
+from hannah_proto import PROTO_VERSION
 
 from hannah_webui.grpc_interceptors import (
     PROTO_VERSION_METADATA_KEY,
@@ -7,7 +8,7 @@ from hannah_webui.grpc_interceptors import (
     read_proto_version,
 )
 
-EXPECTED_VERSION = "1"
+EXPECTED_VERSION = str(PROTO_VERSION)
 
 
 class _FakeCallDetails:
@@ -20,13 +21,8 @@ class _FakeCallDetails:
         self.compression = None
 
 
-def test_read_proto_version_matches_submodule_source():
-    # hannah_webui/proto/PROTO_VERSION is a copy of proto/PROTO_VERSION (the git
-    # submodule), made by gen_proto.sh — this catches a stale/forgotten regen.
-    path = os.path.join(os.path.dirname(__file__), "..", "proto", "PROTO_VERSION")
-    with open(path, "r", encoding="utf-8") as f:
-        expected = f.read().strip()
-    assert read_proto_version() == expected
+def test_read_proto_version_matches_package():
+    assert read_proto_version() == EXPECTED_VERSION
 
 
 def test_intercept_unary_unary_adds_version_metadata():

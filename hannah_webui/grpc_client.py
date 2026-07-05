@@ -10,7 +10,7 @@ from typing import Optional
 import grpc
 
 from hannah_webui.grpc_interceptors import ProtocolVersionClientInterceptor, read_proto_version
-from hannah_webui.proto import hannah_pb2, hannah_pb2_grpc
+from hannah_proto import hannah_pb2, hannah_pb2_grpc
 
 log = logging.getLogger(__name__)
 

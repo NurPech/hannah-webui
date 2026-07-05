@@ -7,12 +7,12 @@ nothing got left out of the patch — same class of bug as gessinger/voice/hanna
 
 import pkgutil
 
-from hannah_webui import proto
-from hannah_webui.proto import hannah_pb2
+import hannah_proto
+from hannah_proto import hannah_pb2
 
 
 def _scope_pb2_modules():
-    for _, name, _ in pkgutil.iter_modules(proto.__path__):
+    for _, name, _ in pkgutil.iter_modules(hannah_proto.__path__):
         if name.endswith("_pb2") and name != "hannah_pb2":
             yield name
 
@@ -23,7 +23,7 @@ def test_every_scope_module_is_patched_onto_hannah_pb2():
 
     missing = []
     for module_name in scope_modules:
-        module = __import__(f"hannah_webui.proto.{module_name}", fromlist=["_"])
+        module = __import__(f"hannah_proto.{module_name}", fromlist=["_"])
         for name in dir(module):
             if name.startswith("_"):
                 continue

@@ -3,7 +3,7 @@ no real Hannah Core needed. Built from real hannah_pb2 messages so route/templat
 is exercised against the exact wire types Core actually sends."""
 import json
 
-from hannah_webui.proto import hannah_pb2
+from hannah_proto import hannah_pb2
 
 
 class FakeHannahClient:

@@ -4,6 +4,10 @@
     ## **WORK IN PROGRESS**
 -->
 
+
+## 1.11.1
+* Changed: proto stubs now come from the published [`hannah-proto`](https://pypi.org/project/hannah-proto/) package instead of the git-submodule/local-codegen pattern — `.gitmodules`, `proto/` submodule, `hannah_webui/proto/*` generated stubs and `scripts/gen_proto.sh` removed; imports moved from `hannah_webui.proto` to `hannah_proto`. Refs #27
+
 ## 1.11.0
 * Changed: bumped `proto` submodule to v0.3.0 (adds the `PROTO_VERSION` file/CI gate upstream; no `.proto` schema changes). `gen_proto.sh` now also copies `proto/PROTO_VERSION` into `gen/hannah/PROTO_VERSION` for embedding (#4)
 * Added: gRPC client interceptor attaches the current `PROTO_VERSION` as `x-proto-version` metadata on every outgoing call to Hannah, so a protocol version mismatch can be rejected at runtime (#4)
