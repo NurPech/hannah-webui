@@ -16,8 +16,8 @@
   Feldnamen bleiben "{prefix}_state"/"{prefix}_cmp"/"{prefix}_value" wie bisher,
   daher keine Änderung an der Parsing-Seite (route_helpers.py) nötig.
 #}
-{% macro state_condition(prefix, row, device_options, state_cols, cmp_cols, value_cols) %}
-<div class="state-cond contents" data-prefix="{{ prefix }}">
+{% macro state_condition(row, device_options, state_name, value_name, state_cols, value_cols, cmp_name=none, cmp_cols=none) %}
+<div class="state-cond contents" data-prefix="{{ state_name }}">
   <div class="scd-field {{ state_cols }}">
     <div class="flex items-center justify-between mb-1">
       <label class="block text-xs text-gray-500">
@@ -35,33 +35,48 @@
       </optgroup>
       {% endfor %}
     </select>
-    <input type="text" name="{{ prefix }}_state" value="{{ row.state }}" hidden disabled
+    <input type="text" name="{{ state_name }}" value="{{ row.state }}" hidden disabled
            class="scd-freitext-input w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
-    <input type="hidden" name="{{ prefix }}_state" value="{{ row.state }}" class="scd-hidden-state">
+    <input type="hidden" name="{{ state_name }}" value="{{ row.state }}" class="scd-hidden-state">
   </div>
+  {% if cmp_name %}
   <div class="scd-field {{ cmp_cols }}">
     <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
-    <select name="{{ prefix }}_cmp"
+    <select name="{{ cmp_name }}"
             class="scd-cmp w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
       <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
       <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
       <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
     </select>
   </div>
+  {% endif %}
   <div class="scd-field {{ value_cols }}">
     <label class="block text-xs text-gray-500 mb-1">Wert</label>
-    <input type="text" name="{{ prefix }}_value" value="{{ row.value }}"
+    <input type="text" name="{{ value_name }}" value="{{ row.value }}"
            class="scd-val-text w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-    <input type="number" name="{{ prefix }}_value" value="{{ row.value }}" step="any" hidden disabled
+    <input type="number" name="{{ value_name }}" value="{{ row.value }}" step="any" hidden disabled
            class="scd-val-number w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-    <select name="{{ prefix }}_value" hidden disabled
+    <select name="{{ value_name }}" hidden disabled
             class="scd-val-bool w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
       <option value="true" {% if row.value == 'true' %}selected{% endif %}>An</option>
       <option value="false" {% if row.value == 'false' %}selected{% endif %}>Aus</option>
     </select>
-    <select name="{{ prefix }}_value" hidden disabled
+    <select name="{{ value_name }}" hidden disabled
             class="scd-val-enum w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
     </select>
   </div>
 </div>
+{% endmacro %}
+
+{#
+  Raum-Dropdown (#30) statt Freitext — "Alle Räume" (value="") normalisiert serverseitig
+  ohnehin schon auf "all" (siehe route_helpers.py), daher hier direkt als leerer Wert.
+#}
+{% macro room_select(name, current_room, rooms) %}
+<select name="{{ name }}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+  <option value="" {% if not current_room or current_room == 'all' %}selected{% endif %}>Alle Räume</option>
+  {% for r in rooms %}
+  <option value="{{ r.room_id }}" {% if current_room == r.room_id %}selected{% endif %}>{{ r.display_name }}</option>
+  {% endfor %}
+</select>
 {% endmacro %}

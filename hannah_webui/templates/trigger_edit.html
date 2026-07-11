@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import state_condition %}
+{% from "_macros.html" import state_condition, room_select %}
 {% block title %}Trigger {{ 'bearbeiten' if trigger else 'anlegen' }}{% endblock %}
 {% block content %}
 <div class="mb-3">
@@ -29,14 +29,20 @@
         <div class="sm:col-span-2">
           <label class="block text-xs text-gray-500 mb-1">Typ</label>
           <select name="when_type" class="when-type-select w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-            <option value="state" {% if row.type != 'time' %}selected{% endif %}>Zustand</option>
+            <option value="state" {% if row.type not in ('time', 'phrase') %}selected{% endif %}>Zustand</option>
             <option value="time" {% if row.type == 'time' %}selected{% endif %}>Uhrzeit</option>
+            <option value="phrase" {% if row.type == 'phrase' %}selected{% endif %}>Phrase</option>
           </select>
         </div>
-        {{ state_condition('when', row, device_options, 'sm:col-span-4', 'sm:col-span-2', 'sm:col-span-2') }}
+        {{ state_condition(row, device_options, 'when_state', 'when_value', 'sm:col-span-4', 'sm:col-span-2', cmp_name='when_cmp', cmp_cols='sm:col-span-2') }}
         <div class="when-time-field sm:col-span-2">
           <label class="block text-xs text-gray-500 mb-1">Uhrzeit</label>
           <input type="text" name="when_time" placeholder="HH:MM" value="{{ row.time }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+        <div class="when-phrase-field sm:col-span-8">
+          <label class="block text-xs text-gray-500 mb-1">Phrase <span class="text-gray-600">(gesprochener Text, Teilstring-Match)</span></label>
+          <input type="text" name="when_phrase" value="{{ row.phrase }}"
                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
         </div>
       </div>
@@ -65,7 +71,7 @@
     </div>
     {% for row in also_rows %}
     <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
-      {{ state_condition('also', row, device_options, 'sm:col-span-5', 'sm:col-span-4', 'sm:col-span-3') }}
+      {{ state_condition(row, device_options, 'also_state', 'also_value', 'sm:col-span-5', 'sm:col-span-3', cmp_name='also_cmp', cmp_cols='sm:col-span-4') }}
     </div>
     {% endfor %}
 
@@ -73,7 +79,7 @@
       <summary class="text-xs font-medium text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">Außer wenn <span class="text-gray-500">(optional, sperrt das Auslösen)</span></summary>
       {% for row in unless_rows %}
       <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 mt-2 border-b border-gray-800">
-        {{ state_condition('unless', row, device_options, 'sm:col-span-5', 'sm:col-span-4', 'sm:col-span-3') }}
+        {{ state_condition(row, device_options, 'unless_state', 'unless_value', 'sm:col-span-5', 'sm:col-span-3', cmp_name='unless_cmp', cmp_cols='sm:col-span-4') }}
       </div>
       {% endfor %}
     </details>
@@ -81,46 +87,35 @@
     <label class="block text-xs font-medium text-gray-400 mb-1">Dann</label>
     <div class="text-xs text-gray-500 mb-2">
       Pro Zeile per "Typ" wählen: <span class="text-gray-400">Ansage</span> (Text + Raum) oder
-      <span class="text-gray-400">Gerät setzen</span> (State-ID + Wert).
+      <span class="text-gray-400">Gerät setzen</span> (Auslöser + Wert).
     </div>
     {% for row in action_rows %}
-    <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+    {% set action_device_row = {"state": row.state_id, "value": row.state_value} %}
+    <div class="action-row grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
       <div class="sm:col-span-2">
         <label class="block text-xs text-gray-500 mb-1">Typ</label>
-        <select name="action_type"
-                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        <select name="action_type" class="action-type-select w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
           <option value="say" {% if row.type != 'state' %}selected{% endif %}>Ansage</option>
           <option value="state" {% if row.type == 'state' %}selected{% endif %}>Gerät setzen</option>
         </select>
       </div>
-      <div class="sm:col-span-3">
+      <div class="action-say-field sm:col-span-3">
         <label class="block text-xs text-gray-500 mb-1">Ansage-Text</label>
         <input type="text" name="action_say" value="{{ row.say }}"
                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
       </div>
-      <div class="sm:col-span-2">
+      <div class="action-say-field sm:col-span-2">
         <label class="block text-xs text-gray-500 mb-1">Raum</label>
-        <input type="text" name="action_room" value="{{ row.room }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        {{ room_select('action_room', row.room, rooms) }}
       </div>
-      <div class="sm:col-span-3">
-        <label class="block text-xs text-gray-500 mb-1">State-ID</label>
-        <input type="text" name="action_state_id" value="{{ row.state_id }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="block text-xs text-gray-500 mb-1">Wert</label>
-        <input type="text" name="action_state_value" value="{{ row.state_value }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-      </div>
+      {{ state_condition(action_device_row, device_options, 'action_state_id', 'action_state_value', 'sm:col-span-3', 'sm:col-span-2') }}
     </div>
     {% endfor %}
 
     <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 mt-4">
       <div class="sm:col-span-3">
         <label class="block text-xs text-gray-500 mb-1">Raum</label>
-        <input type="text" name="room" value="{{ trigger.room if trigger else 'all' }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        {{ room_select('room', trigger.room if trigger else 'all', rooms) }}
       </div>
       <div class="sm:col-span-3">
         <label class="block text-xs text-gray-500 mb-1">Cooldown (Sekunden)</label>
@@ -173,14 +168,29 @@ document.querySelectorAll('.when-row').forEach(function (row) {
   });
 });
 
-// #29: pro Wenn-Zeile nur die Felder zeigen, die zum gewählten Typ passen —
-// Zustand -> Geräte-Auslöser/Vergleich/Wert, Uhrzeit -> Uhrzeit/Tage.
+// #29/#28: pro Wenn-Zeile nur die Felder zeigen, die zum gewählten Typ passen —
+// Zustand -> Geräte-Auslöser/Vergleich/Wert, Uhrzeit -> Uhrzeit/Tage, Phrase -> Phrase-Text.
 document.querySelectorAll('.when-row').forEach(function (row) {
   var select = row.querySelector('.when-type-select');
   function applyType() {
-    var isTime = select.value === 'time';
-    row.querySelectorAll('.scd-field').forEach(function (el) { el.classList.toggle('hidden', isTime); });
-    row.querySelectorAll('.when-time-field').forEach(function (el) { el.classList.toggle('hidden', !isTime); });
+    var type = select.value;
+    row.querySelectorAll('.scd-field').forEach(function (el) { el.classList.toggle('hidden', type !== 'state'); });
+    row.querySelectorAll('.when-time-field').forEach(function (el) { el.classList.toggle('hidden', type !== 'time'); });
+    row.querySelectorAll('.when-phrase-field').forEach(function (el) { el.classList.toggle('hidden', type !== 'phrase'); });
+  }
+  select.addEventListener('change', applyType);
+  applyType();
+});
+
+// #30: pro Dann-Zeile nur die Felder zeigen, die zum gewählten Aktions-Typ passen —
+// Ansage -> Text/Raum, Gerät setzen -> Geräte-Auslöser/Wert (letztere sind die vom
+// state_condition-Makro gerenderten .scd-field-Zellen, ohne Vergleichsoperator).
+document.querySelectorAll('.action-row').forEach(function (row) {
+  var select = row.querySelector('.action-type-select');
+  function applyType() {
+    var isState = select.value === 'state';
+    row.querySelectorAll('.action-say-field').forEach(function (el) { el.classList.toggle('hidden', isState); });
+    row.querySelectorAll('.scd-field').forEach(function (el) { el.classList.toggle('hidden', !isState); });
   }
   select.addEventListener('change', applyType);
   applyType();

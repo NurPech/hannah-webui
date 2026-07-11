@@ -390,74 +390,9 @@ class TestCars:
         assert resp.headers["Location"].endswith("/me")
 
 
-class TestRoutines:
-    def test_routines_lists_seeded_routine(self, logged_in_client):
-        resp = logged_in_client.get("/routines")
-        body = resp.get_data(as_text=True)
-        assert "Gute Nacht" in body
-        assert "schlafenszeit" in body
-        assert "hannah/set/devices/Licht/EG/Flur/on" in body
-
-    def test_new_routine_form_renders(self, logged_in_client):
-        resp = logged_in_client.get("/routines/new")
-        assert resp.status_code == 200
-
-    def test_edit_routine_form_prefills_existing_data(self, logged_in_client):
-        resp = logged_in_client.get("/routines/1/edit")
-        body = resp.get_data(as_text=True)
-        assert "Gute Nacht" in body
-        assert "schlafenszeit" in body
-
-    def test_create_routine_with_topic_action(self, logged_in_client, hannah):
-        logged_in_client.post("/routines/create", data={
-            "name": "Nachtlicht",
-            "triggers": "nachtlicht\nnacht licht",
-            "reply": "Nachtlicht aktiviert.",
-            "action_type": "topic",
-            "action_topic": "hannah/set/devices/Licht/Bett/Nachtlicht",
-            "action_value": "true",
-            "action_say": "",
-            "action_room": "",
-        })
-        created = next(r for r in hannah._routines.values() if r["name"] == "Nachtlicht")
-        assert created["triggers"] == ["nachtlicht", "nacht licht"]
-        assert created["actions"] == [{"topic": "hannah/set/devices/Licht/Bett/Nachtlicht", "value": "true"}]
-
-    def test_create_routine_with_say_action(self, logged_in_client, hannah):
-        logged_in_client.post("/routines/create", data={
-            "name": "Ansage-Test",
-            "triggers": "ansage test",
-            "reply": "",
-            "action_type": "say",
-            "action_topic": "",
-            "action_value": "",
-            "action_say": "Hallo Welt",
-            "action_room": "Küche",
-        })
-        created = next(r for r in hannah._routines.values() if r["name"] == "Ansage-Test")
-        assert created["actions"] == [{"say": "Hallo Welt", "room": "Küche"}]
-
-    def test_update_routine(self, logged_in_client, hannah):
-        logged_in_client.post("/routines/1/edit", data={
-            "name": "Gute Nacht",
-            "triggers": "gute nacht",
-            "reply": "Schlaf gut.",
-            "action_type": "topic",
-            "action_topic": "hannah/set/devices/Licht/EG/Flur/on",
-            "action_value": "false",
-            "action_say": "",
-            "action_room": "",
-        })
-        assert hannah._routines[1]["reply"] == "Schlaf gut."
-        assert hannah._routines[1]["triggers"] == ["gute nacht"]
-
-    def test_delete_routine(self, logged_in_client, hannah):
-        logged_in_client.post("/routines/1/delete")
-        assert 1 not in hannah._routines
-
-
 class TestTriggers:
-    """#101 Teil 2 — No-Code-Trigger-Editor, mirror der TestRoutines-Tests."""
+    """#101 Teil 2 — No-Code-Trigger-Editor. Seit #28 auch when.phrase (ersetzt die
+    frühere separate Routinen-Verwaltung, siehe hannah#139)."""
 
     def test_triggers_lists_seeded_trigger(self, logged_in_client):
         resp = logged_in_client.get("/triggers")
@@ -504,6 +439,25 @@ class TestTriggers:
         assert created["when"][0]["unless"] == [{"state": "abwesend", "value": "true"}]
         assert created["when"][1]["also"] == created["when"][0]["also"]
         assert created["actions"] == [{"say": "Fenster offen.", "room": "all"}]
+
+    def test_create_trigger_with_phrase_condition(self, logged_in_client, hannah):
+        """#28 — ersetzt die frühere separate Routinen-Verwaltung (hannah#139)."""
+        logged_in_client.post("/triggers/create", data=self._create_payload(
+            id="gute-nacht",
+            when_type=["phrase"], when_state=[""], when_cmp=["value"], when_value=[""],
+            when_time=[""], when_days=[""], when_phrase=["gute nacht"],
+        ))
+        created = hannah._triggers["gute-nacht"]
+        assert created["when"] == [{"phrase": "gute nacht"}]
+
+    def test_edit_trigger_form_prefills_phrase_condition(self, logged_in_client, hannah):
+        hannah._triggers["schlafenszeit"] = {
+            "when": {"phrase": "schlafenszeit"}, "cancel_when": None, "on_response": [], "actions": [],
+            "say": "Gute Nacht.", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+        }
+        resp = logged_in_client.get("/triggers/schlafenszeit/edit")
+        body = resp.get_data(as_text=True)
+        assert 'value="schlafenszeit"' in body
 
     def test_create_trigger_with_time_condition_and_state_action(self, logged_in_client, hannah):
         logged_in_client.post("/triggers/create", data=self._create_payload(

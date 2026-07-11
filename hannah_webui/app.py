@@ -18,7 +18,6 @@ from hannah_webui.blueprints import (
     groups,
     me,
     rooms,
-    routines,
     satellites,
     settings,
     triggers,
@@ -87,7 +86,7 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
             message="Da ist etwas schiefgelaufen. Bitte versuche es erneut.",
         ), 500
 
-    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, routines, triggers, users):
+    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users):
         app.register_blueprint(blueprint_module.bp)
 
     return app

@@ -48,10 +48,6 @@
     <a href="{{ url_for('cars.cars') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('cars.cars', 'cars.edit_car') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Cars</a>
     {% endif %}
-    {% if trust >= trust_levels['list_routines'] %}
-    <a href="{{ url_for('routines.routines') }}"
-       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('routines.routines', 'routines.new_routine', 'routines.edit_routine') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Routinen</a>
-    {% endif %}
     {% if trust >= trust_levels['list_triggers'] %}
     <a href="{{ url_for('triggers.triggers') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('triggers.triggers', 'triggers.new_trigger', 'triggers.edit_trigger') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Trigger</a>

@@ -2,7 +2,7 @@
 
 ## Überblick
 
-Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/voice/hannah) — Räume/Gruppen-, Satelliten-, User-, Settings-, Routinen- und Trigger-Verwaltung. Spricht ausschließlich per gRPC mit Hannah Core, kein direkter DB-/Dateizugriff — Core bleibt alleiniger Owner aller Daten.
+Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/voice/hannah) — Räume/Gruppen-, Satelliten-, User-, Settings- und Trigger-Verwaltung. Spricht ausschließlich per gRPC mit Hannah Core, kein direkter DB-/Dateizugriff — Core bleibt alleiniger Owner aller Daten.
 
 **Historie:** ursprünglich In-Process-Teil von Hannah Core (`hannah/webui.py`), dann eigener Service `webui/` im Hannah-Monorepo (#27), seit 2026-06-28 eigenständiges Repo (#106 im Monorepo). Architektur-Hintergrund zu Hannah Core/Protokoll/Satelliten: siehe `CLAUDE.md` im Hannah-Monorepo (`gessinger/voice/hannah`).
 
@@ -17,8 +17,8 @@ hannah-webui/
 ├── hannah_webui/
 │   ├── app.py            ← Flask-App-Factory (create_app): Error-Handler, Context-Processor, /version, registriert alle Blueprints
 │   ├── extensions.py     ← TRUST_LEVELS, login_required/trust_level_required, get_hannah()/get_telegram_config() (current_app-basiert, kein Closure-Capture — vermeidet zirkuläre Importe mit den Blueprints)
-│   ├── route_helpers.py  ← No-Code-Parsing/Formatting-Helfer (Zeilen-Builder für Routinen/Trigger/Settings), reine Funktionen ohne App-Kontext
-│   ├── blueprints/        ← ein Modul je Routen-Gruppe: auth, me, rooms, groups, satellites, settings, ble_tags, cars, routines, triggers, users (#10)
+│   ├── route_helpers.py  ← No-Code-Parsing/Formatting-Helfer (Zeilen-Builder für Trigger/Settings), reine Funktionen ohne App-Kontext
+│   ├── blueprints/        ← ein Modul je Routen-Gruppe: auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users (#10)
 │   ├── grpc_client.py    ← HannahClient — synchroner gRPC-Client (kein grpc.aio, Flask ist synchron)
 │   ├── config.py         ← Config-Loader: config.yaml ODER Env-Vars (12-factor, für Container-Deploy)
 │   └── templates/         ← Jinja2-Templates (ein File pro Seite, bewusst keine Single-File/Vanilla-JS-Architektur)
@@ -51,11 +51,10 @@ hannah-webui/
 | `settings` | `/settings`, `.../update` | Render-Typ pro Setting wird aus der Form des JSON-decodierten Werts abgeleitet (String → Text-Editor mit echten Zeilenumbrüchen, Liste → Zeilen-Builder, Objekt → Key-Value-Grid, alles andere → rohes JSON als "Erweitert", siehe #21) |
 | `ble_tags` | `/ble-tags`, `.../create`, `.../<id>/edit`, `.../<id>/delete` | BLE-Tag-CRUD |
 | `cars` | `/cars`, `.../create`, `.../<id>/edit`, `.../<id>/delete` | Car-CRUD inkl. Owner-Zuweisung |
-| `routines` | `/routines`, `/routines/new`, `/routines/create`, `/routines/<id>/edit`, `/routines/<id>/delete` | Personal, No-Code (Trigger-Phrasen als Zeilen, Aktionen als Typ+Wert-Zeilen) |
-| `triggers` | `/triggers`, `/triggers/new`, `/triggers/create`, `/triggers/<id>/edit`, `/triggers/<id>/delete` | Wenn/Und/Außer-wenn/Dann-Builder; `ask`/`on_response_json`/`cancel_when` bleiben rohes JSON ("Erweitert") |
+| `triggers` | `/triggers`, `/triggers/new`, `/triggers/create`, `/triggers/<id>/edit`, `/triggers/<id>/delete` | Wenn/Und/Außer-wenn/Dann-Builder; Wenn-Bedingungstyp `state`/`time`/`phrase` (Sprachphrase-Substring-Match, seit #28 — löste die vorherige separate Routinen-Verwaltung ab, siehe `gessinger/voice/hannah#139`); `ask`/`on_response_json`/`cancel_when` bleiben rohes JSON ("Erweitert") |
 | `users` | `/users`, `/users/create`, `/users/<id>/edit`, `/users/<id>/delete`, `.../link-resident`, `.../unlink-resident` | User-CRUD + Resident-Verknüpfung |
 
-**gRPC-Client** (`hannah_webui/grpc_client.py`, `HannahClient`): synchroner Wrapper um die generierten Stubs — `login`, `get_rooms`, `get_groups`/`create_group`/`update_group`/`delete_group`/`set_group_rooms`, `get_satellites`/`set_satellite_room`/`set_satellite_display_name`, `get_settings`/`update_setting`/`create_setting`/`delete_setting`, `get_users`/`get_residents`/`create_user`/`update_user`/`delete_user`/`set_trust_level`/`set_system_messages`/`link_account`/`unlink_account`, `get_routines`/`create_routine`/`update_routine`/`delete_routine`, `get_triggers`/`create_trigger`/`update_trigger`/`delete_trigger`.
+**gRPC-Client** (`hannah_webui/grpc_client.py`, `HannahClient`): synchroner Wrapper um die generierten Stubs — `login`, `get_rooms`, `get_groups`/`create_group`/`update_group`/`delete_group`/`set_group_rooms`, `get_satellites`/`set_satellite_room`/`set_satellite_display_name`, `get_devices`, `get_settings`/`update_setting`/`create_setting`/`delete_setting`, `get_users`/`get_residents`/`create_user`/`update_user`/`delete_user`/`set_trust_level`/`set_system_messages`/`link_account`/`unlink_account`, `get_triggers`/`create_trigger`/`update_trigger`/`delete_trigger`.
 
 **Tests** (`tests/`): `FakeHannahClient` ersetzt `HannahClient` durch einen In-Memory-Stand-in mit echten `hannah_pb2`-Messages — kein Netzwerk, keine echte Hannah Core nötig.
 

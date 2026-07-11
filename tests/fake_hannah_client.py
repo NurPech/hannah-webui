@@ -44,15 +44,6 @@ class FakeHannahClient:
             2: {"category_id": 2, "name": "system_prompt", "value": "Du bist Hannah.\nDeine Antworten werden per Sprachausgabe vorgelesen."},
             3: {"category_id": 3, "name": "state_names", "value": {"on": "on", "level": "level"}},
         }
-        self._routines = {
-            1: {
-                "name": "Gute Nacht",
-                "triggers": ["gute nacht", "schlafenszeit"],
-                "actions": [{"topic": "hannah/set/devices/Licht/EG/Flur/on", "value": "false"}],
-                "reply": "Gute Nacht.",
-            },
-        }
-        self._next_routine_id = 2
         self._triggers = {
             "aussentuer_abend": {
                 "when": {"time": "23:00", "days": ["mon", "tue", "wed", "thu", "fri"]},
@@ -277,32 +268,6 @@ class FakeHannahClient:
             return False
         self._user_records[user_id]["linked_accounts"].pop(service, None)
         return True
-
-    def get_routines(self):
-        return [
-            hannah_pb2.Routine(
-                id=rid, name=r["name"], triggers=r["triggers"],
-                actions_json=json.dumps(r["actions"]), reply=r["reply"],
-            )
-            for rid, r in self._routines.items()
-        ]
-
-    def create_routine(self, name, triggers, actions, reply):
-        if any(r["name"] == name for r in self._routines.values()):
-            return False, "name existiert bereits"
-        routine_id = self._next_routine_id
-        self._next_routine_id += 1
-        self._routines[routine_id] = {"name": name, "triggers": triggers, "actions": actions, "reply": reply}
-        return True, "created"
-
-    def update_routine(self, routine_id, name, triggers, actions, reply):
-        if routine_id not in self._routines:
-            return False, "not found"
-        self._routines[routine_id] = {"name": name, "triggers": triggers, "actions": actions, "reply": reply}
-        return True, "updated"
-
-    def delete_routine(self, routine_id):
-        return self._routines.pop(routine_id, None) is not None
 
     def get_triggers(self):
         return [

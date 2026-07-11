@@ -166,29 +166,6 @@ class HannahClient:
         ))
         return resp.ok
 
-    def get_routines(self) -> list["hannah_pb2.Routine"]:
-        assert self._stub, "call connect() first"
-        return list(self._stub.GetRoutines(hannah_pb2.Empty()).routines)
-
-    def create_routine(self, name: str, triggers: list[str], actions: list[dict], reply: str) -> tuple[bool, str]:
-        assert self._stub, "call connect() first"
-        resp = self._stub.CreateRoutine(hannah_pb2.CreateRoutineRequest(
-            name=name, triggers=triggers, actions_json=json.dumps(actions), reply=reply
-        ))
-        return resp.ok, resp.message
-
-    def update_routine(self, routine_id: int, name: str, triggers: list[str], actions: list[dict], reply: str) -> tuple[bool, str]:
-        assert self._stub, "call connect() first"
-        resp = self._stub.UpdateRoutine(hannah_pb2.UpdateRoutineRequest(
-            id=routine_id, name=name, triggers=triggers, actions_json=json.dumps(actions), reply=reply
-        ))
-        return resp.ok, resp.message
-
-    def delete_routine(self, routine_id: int) -> bool:
-        assert self._stub, "call connect() first"
-        resp = self._stub.DeleteRoutine(hannah_pb2.DeleteRoutineRequest(id=routine_id))
-        return resp.ok
-
     def get_triggers(self) -> list["hannah_pb2.Trigger"]:
         assert self._stub, "call connect() first"
         return list(self._stub.GetTriggers(hannah_pb2.Empty()).triggers)

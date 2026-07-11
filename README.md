@@ -1,6 +1,6 @@
 # Hannah WebUI
 
-Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/voice/hannah) — Räume/Gruppen-, Satelliten-, User-, Trigger- und Routinen-Verwaltung, per gRPC an Hannah Core angebunden (synchroner `HannahClient`, kein `grpc.aio`).
+Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/voice/hannah) — Räume/Gruppen-, Satelliten-, User- und Trigger-Verwaltung, per gRPC an Hannah Core angebunden (synchroner `HannahClient`, kein `grpc.aio`).
 
 Extrahiert aus dem Hannah-Monorepo (`webui/`), siehe `CHANGELOG.md`.
 

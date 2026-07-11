@@ -42,11 +42,11 @@ and the real gRPC connection entirely.
    ```
 
    This logs in as `admin`/`admin` (trust_level 10, sees every nav
-   item), screenshots all eight main pages, then does one real write
+   item), screenshots all seven main pages, then does one real write
    flow — create a group via the form, assert it appears, delete it,
    assert it's gone — and prints any browser console errors.
    Screenshots land in `.claude/skills/run-hannah-webui/screenshots/`,
-   numbered in click order (`00_me.png` … `09_group_deleted.png`).
+   numbered in click order (`00_me.png` … `08_group_deleted.png`).
 
 3. Stop the server. **On Windows, `kill $(cat pid)` from Git Bash does
    not reach the real `python.exe` process** (see Gotchas) — use
@@ -83,12 +83,13 @@ showed real room names, not the fake seed data).
 below the threshold don't 403, they redirect to `/me` with a "Zugriff
 verweigert" flash. The driver now detects this (compares the URL
 after `goto()` to the URL it asked for) and prints `ACCESS DENIED` per
-page plus a summary — don't assume 8/8 "successful" screenshots
-means 8 distinct pages actually rendered; check the driver's own
-output. In this session's live test, the `claude` login (trust 7)
-correctly got `/groups`, `/settings`, `/users` bounced (those need
-trust_level 10) while `/me`, `/rooms`, `/satellites`, `/routines`,
-`/triggers` rendered for real.
+page plus a summary — don't assume 7/7 "successful" screenshots
+means 7 distinct pages actually rendered; check the driver's own
+output. In an earlier live test session (when `/routines` was still
+part of the app, before #28 merged it into `/triggers`), the `claude`
+login (trust 7) correctly got `/groups`, `/settings`, `/users` bounced
+(those need trust_level 10) while `/me`, `/rooms`, `/satellites`,
+`/routines`, `/triggers` rendered for real.
 
 1. Create `config.yaml` in the repo root (gitignored, never commit
    it — see `config.example.yaml` for the shape) with the real

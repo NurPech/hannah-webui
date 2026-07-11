@@ -4,6 +4,11 @@
     ## **WORK IN PROGRESS**
 -->
 
+## 1.13.0
+* **Breaking:** Routinen-Verwaltung (`/routines`) entfernt — Routinen und Trigger waren zwei separate Systeme mit stark überlappendem Aktionsmodell (siehe `gessinger/voice/hannah#139`). Core hat Routinen zugunsten eines neuen Trigger-Bedingungstyps `phrase` (Sprachphrase, Substring-Match) aufgelöst und die `GetRoutines`/`CreateRoutine`/`UpdateRoutine`/`DeleteRoutine`-RPCs entfernt. Bestehende Routinen migriert Core serverseitig in Trigger — kein WebUI-seitiger Migrationsschritt nötig. Refs #28
+* Added: Trigger-Editor's "Wenn"-Zeilen bekommen einen dritten Bedingungstyp "Phrase" neben "Zustand"/"Uhrzeit" — deckt ab, was vorher die Routinen-Verwaltung konnte (gesprochener Text löst den Trigger aus, Actions/Und/Außer-wenn funktionieren unverändert mit). Refs #28
+* Changed: Trigger-Editor's "Dann"-Zeilen bekommen die gleiche No-Code-Behandlung wie #16 — "Gerät setzen"-Aktionen nutzen jetzt die Geräte-Dropdown-Kette (Auslöser + typgefiltertes Wert-Widget, Freitext-Fallback) statt State-ID/Wert-Freitext, "Ansage"-Aktionen bekommen einen Raum-Dropdown (`GetRooms`) statt Freitext-Raum. Der Trigger-weite "Raum"-Dropdown (unten im Editor) wurde aus Konsistenzgründen ebenfalls auf denselben Dropdown umgestellt. "Dann"-Zeilen zeigen jetzt außerdem nur die zum gewählten Aktions-Typ passenden Felder (analog #29). Formularfeldnamen/Parsing unverändert. Refs #30
+
 ## 1.12.1
 * Changed: Trigger-Editor's "Wenn"-Zeilen zeigen jetzt nur noch die Felder, die zum gewählten Typ passen — Geräte-Auslöser/Vergleich/Wert bei "Zustand", Uhrzeit/Tage bei "Uhrzeit" — statt immer alle gleichzeitig. Refs #29
 

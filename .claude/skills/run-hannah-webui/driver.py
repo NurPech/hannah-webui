@@ -32,9 +32,8 @@ PAGES = [
     ("/groups", "02_groups.png"),
     ("/satellites", "03_satellites.png"),
     ("/settings", "04_settings.png"),
-    ("/routines", "05_routines.png"),
-    ("/triggers", "06_triggers.png"),
-    ("/users", "07_users.png"),
+    ("/triggers", "05_triggers.png"),
+    ("/users", "06_users.png"),
 ]
 
 
@@ -76,14 +75,14 @@ def run(base_url: str, username: str, password: str, read_only: bool) -> None:
             page.click("button:has-text('Anlegen')")
             page.wait_for_load_state("networkidle")
             assert page.locator("text=Testgruppe").count() > 0, "created group not shown in list"
-            page.screenshot(path=str(SHOT_DIR / "08_group_created.png"), full_page=True)
+            page.screenshot(path=str(SHOT_DIR / "07_group_created.png"), full_page=True)
 
             page.once("dialog", lambda dialog: dialog.accept())
             card = page.locator("div.rounded-xl", has_text="Testgruppe")
             card.locator("button:has-text('Löschen')").click()
             page.wait_for_load_state("networkidle")
             assert page.locator("text=Testgruppe").count() == 0, "group still present after delete"
-            page.screenshot(path=str(SHOT_DIR / "09_group_deleted.png"), full_page=True)
+            page.screenshot(path=str(SHOT_DIR / "08_group_deleted.png"), full_page=True)
 
         browser.close()
 

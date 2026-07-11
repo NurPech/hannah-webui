@@ -18,7 +18,6 @@ _STATE_TYPE_WIDGET = {
     hannah_pb2.COLOR: "enum",  # gleiche Widget-Logik wie ENUM: Dropdown aus den erlaubten Werten
 }
 
-_ROUTINE_NEW_ACTION_ROWS = 3
 _SETTINGS_NEW_ROWS = 2
 _USER_TYPES = ("roomie", "guest", "pet")
 _WEEKDAY_NAMES = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
@@ -37,10 +36,6 @@ def _slugify(s: str) -> str:
     return s.strip("-")
 
 
-def _parse_lines(text: str) -> list[str]:
-    return [line.strip() for line in text.splitlines() if line.strip()]
-
-
 def _verify_telegram_auth(data: dict, bot_token: str) -> bool:
     """Verifiziert die Signatur eines Telegram-Login-Widget-Callbacks.
     https://core.telegram.org/widgets/login#checking-authorization"""
@@ -54,30 +49,6 @@ def _verify_telegram_auth(data: dict, bot_token: str) -> bool:
         return False
     auth_date = int(data.get("auth_date", 0))
     return time.time() - auth_date < _TELEGRAM_AUTH_MAX_AGE
-
-
-def _parse_action_rows(form) -> list[dict]:
-    """No-Code-Eingabe: pro Zeile entweder ein Gerät-Topic+Wert oder ein Ansage-Text+Raum.
-    Welche Hälfte zählt, entscheidet die "Typ"-Auswahl der Zeile — die jeweils andere
-    Hälfte wird ignoriert, auch wenn versehentlich befüllt."""
-    types = form.getlist("action_type")
-    topics = form.getlist("action_topic")
-    values = form.getlist("action_value")
-    says = form.getlist("action_say")
-    rooms = form.getlist("action_room")
-    actions = []
-    for i, action_type in enumerate(types):
-        if action_type == "say":
-            say = says[i].strip() if i < len(says) else ""
-            if say:
-                room = rooms[i].strip() if i < len(rooms) else ""
-                actions.append({"say": say, "room": room or "all"})
-        else:
-            topic = topics[i].strip() if i < len(topics) else ""
-            if topic:
-                value = values[i].strip() if i < len(values) else ""
-                actions.append({"topic": topic, "value": value or "true"})
-    return actions
 
 
 def _as_or_list(when) -> list[dict]:
@@ -128,7 +99,7 @@ def _device_state_options(rooms) -> list[dict]:
 
 
 def _blank_when_row() -> dict:
-    return {"type": "state", "state": "", "cmp": "value", "value": "", "time": "", "days": ""}
+    return {"type": "state", "state": "", "cmp": "value", "value": "", "time": "", "days": "", "phrase": ""}
 
 
 def _blank_state_row() -> dict:
@@ -142,10 +113,13 @@ def _blank_action_row() -> dict:
 def _condition_to_row(cond: dict) -> dict:
     if "time" in cond:
         return {"type": "time", "state": "", "cmp": "value", "value": "",
-                "time": cond.get("time", ""), "days": ",".join(cond.get("days") or [])}
+                "time": cond.get("time", ""), "days": ",".join(cond.get("days") or []), "phrase": ""}
+    if "phrase" in cond:
+        return {"type": "phrase", "state": "", "cmp": "value", "value": "",
+                "time": "", "days": "", "phrase": cond.get("phrase", "")}
     cmp = next((k for k in _CMP_KEYS if k in cond), "value")
     return {"type": "state", "state": cond.get("state", ""), "cmp": cmp,
-            "value": str(cond.get(cmp, "")), "time": "", "days": ""}
+            "value": str(cond.get(cmp, "")), "time": "", "days": "", "phrase": ""}
 
 
 def _state_condition_to_row(cond: dict) -> dict:
@@ -177,15 +151,17 @@ def _extract_also_unless(conditions: list[dict]) -> tuple[list[dict], str, list[
 
 
 def _parse_when_rows(form) -> list[dict]:
-    """No-Code 'Wenn'-Zeilen (OR-verknüpft): pro Zeile per Typ-Auswahl entweder ein
-    Zustand (State + Vergleich + Wert) oder eine Uhrzeit (HH:MM + optionale, kommagetrennte
-    Wochentage). Genutzt für "wenn" (#101)."""
+    """No-Code 'Wenn'-Zeilen (OR-verknüpft): pro Zeile per Typ-Auswahl ein Zustand
+    (State + Vergleich + Wert), eine Uhrzeit (HH:MM + optionale, kommagetrennte Wochentage)
+    oder eine Sprachphrase (Substring-Match, ersetzt seit #28/hannah#139 die frühere
+    separate Routinen-Verwaltung). Genutzt für "wenn" (#101)."""
     types = form.getlist("when_type")
     states = form.getlist("when_state")
     cmps = form.getlist("when_cmp")
     values = form.getlist("when_value")
     times = form.getlist("when_time")
     days = form.getlist("when_days")
+    phrases = form.getlist("when_phrase")
     conditions = []
     for i, row_type in enumerate(types):
         if row_type == "time":
@@ -197,6 +173,11 @@ def _parse_when_rows(form) -> list[dict]:
             if days_str:
                 cond["days"] = [d.strip().lower() for d in days_str.split(",") if d.strip()]
             conditions.append(cond)
+        elif row_type == "phrase":
+            phrase = phrases[i].strip() if i < len(phrases) else ""
+            if not phrase:
+                continue
+            conditions.append({"phrase": phrase})
         else:
             state_id = states[i].strip() if i < len(states) else ""
             if not state_id:

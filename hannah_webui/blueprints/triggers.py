@@ -59,6 +59,7 @@ def new_trigger():
         action_rows=[_blank_action_row() for _ in range(_TRIGGER_NEW_ACTION_ROWS)],
         on_response_text="",
         device_options=_device_state_options(hannah.get_devices()),
+        rooms=hannah.get_rooms(),
     )
 
 
@@ -128,6 +129,7 @@ def edit_trigger(trigger_id: str):
         + [_blank_action_row() for _ in range(_TRIGGER_NEW_ACTION_ROWS)],
         on_response_text=on_response_text,
         device_options=_device_state_options(hannah.get_devices()),
+        rooms=hannah.get_rooms(),
     )
 
 
