@@ -218,6 +218,10 @@ class HannahClient:
         resp = self._stub.DeleteTrigger(hannah_pb2.DeleteTriggerRequest(id=trigger_id))
         return resp.ok
 
+    def get_devices(self) -> list["hannah_pb2.RoomInfo"]:
+        assert self._stub, "call connect() first"
+        return list(self._stub.GetDevices(hannah_pb2.Empty()).rooms)
+
     def get_alarms(self, user_id: Optional[int] = None) -> list["hannah_pb2.Alarm"]:
         """GetAlarms returns every alarm — Core has no user_id filter on the RPC — so
         callers scoping to a single user (i.e. /me, where alarms are personal data)

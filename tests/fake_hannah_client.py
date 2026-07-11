@@ -129,6 +129,28 @@ class FakeHannahClient:
         self._groups[group_id]["room_ids"] = list(room_ids)
         return True
 
+    def get_devices(self):
+        licht = hannah_pb2.DeviceInfo(
+            id="javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite",
+            name="DeckeSeite", category="Licht",
+            states=["on", "level", "color"],
+            current={"on": "true", "level": "75", "color": "warm"},
+            state_types={
+                "on": hannah_pb2.BOOLEAN, "level": hannah_pb2.NUMERIC, "color": hannah_pb2.ENUM,
+            },
+            state_enum_values={
+                "color": hannah_pb2.EnumValues(values={"warm": "Warmweiß", "kalt": "Kaltweiß"}),
+            },
+        )
+        fenster = hannah_pb2.DeviceInfo(
+            id="fenster.wz.open", name="Fenster", category="Fenster",
+            states=["open"], current={"open": "false"},
+            state_types={"open": hannah_pb2.BOOLEAN},
+        )
+        return [
+            hannah_pb2.RoomInfo(key="wohnzimmer", name="Wohnzimmer", devices=[licht, fenster]),
+        ]
+
     def get_satellites(self):
         result = []
         for device_id, sat in self._satellites.items():

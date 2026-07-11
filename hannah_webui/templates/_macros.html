@@ -5,3 +5,63 @@
 <span class="text-xs px-1.5 py-px rounded bg-{{ color }}-500/10 text-{{ color }}-400 border border-{{ color }}-500/25 mr-1">{{ text }}</span>
 {%- endif -%}
 {% endmacro %}
+
+{#
+  Zustands-Bedingung fürs Trigger-Editor No-Code-Widget (#16): Auslöser (Gerät+State)
+  als Dropdown statt Freitext-State-ID, Vergleich/Wert clientseitig nach Typ des
+  gewählten States gefiltert (Boolean -> An/Aus, Numeric -> Zahl + größer/kleiner,
+  Enum/Color -> Dropdown aus den erlaubten Werten). Der bisherige Freitext-Modus
+  bleibt pro Zeile per Toggle erhalten — Fallback für States, die zu keinem
+  bekannten Gerät gehören (z.B. historisch von Hand eingetragene IDs).
+  Feldnamen bleiben "{prefix}_state"/"{prefix}_cmp"/"{prefix}_value" wie bisher,
+  daher keine Änderung an der Parsing-Seite (route_helpers.py) nötig.
+#}
+{% macro state_condition(prefix, row, device_options, state_cols, cmp_cols, value_cols) %}
+<div class="state-cond contents" data-prefix="{{ prefix }}">
+  <div class="{{ state_cols }}">
+    <div class="flex items-center justify-between mb-1">
+      <label class="block text-xs text-gray-500">
+        <span class="scd-label-dropdown">Auslöser</span><span class="scd-label-freitext hidden">State-ID</span>
+      </label>
+      <button type="button" class="scd-toggle text-xs text-gray-600 hover:text-gray-300 underline decoration-dotted transition-colors">Freitext</button>
+    </div>
+    <select class="scd-device w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      <option value="">– Gerät wählen –</option>
+      {% for room_name, opts in device_options|groupby('room') %}
+      <optgroup label="{{ room_name }}">
+        {% for opt in opts %}
+        <option value="{{ opt.value }}" data-widget="{{ opt.widget }}" data-enum='{{ opt.enum_values | tojson }}'>{{ opt.device }} – {{ opt.state }}</option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+    <input type="text" name="{{ prefix }}_state" value="{{ row.state }}" hidden disabled
+           class="scd-freitext-input w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+    <input type="hidden" name="{{ prefix }}_state" value="{{ row.state }}" class="scd-hidden-state">
+  </div>
+  <div class="{{ cmp_cols }}">
+    <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
+    <select name="{{ prefix }}_cmp"
+            class="scd-cmp w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
+      <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
+      <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
+    </select>
+  </div>
+  <div class="{{ value_cols }}">
+    <label class="block text-xs text-gray-500 mb-1">Wert</label>
+    <input type="text" name="{{ prefix }}_value" value="{{ row.value }}"
+           class="scd-val-text w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+    <input type="number" name="{{ prefix }}_value" value="{{ row.value }}" step="any" hidden disabled
+           class="scd-val-number w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+    <select name="{{ prefix }}_value" hidden disabled
+            class="scd-val-bool w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      <option value="true" {% if row.value == 'true' %}selected{% endif %}>An</option>
+      <option value="false" {% if row.value == 'false' %}selected{% endif %}>Aus</option>
+    </select>
+    <select name="{{ prefix }}_value" hidden disabled
+            class="scd-val-enum w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+    </select>
+  </div>
+</div>
+{% endmacro %}

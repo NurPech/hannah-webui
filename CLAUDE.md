@@ -6,7 +6,7 @@ Flask-Verwaltungsoberfläche für [Hannah](https://dev.kernstock.net/gessinger/v
 
 **Historie:** ursprünglich In-Process-Teil von Hannah Core (`hannah/webui.py`), dann eigener Service `webui/` im Hannah-Monorepo (#27), seit 2026-06-28 eigenständiges Repo (#106 im Monorepo). Architektur-Hintergrund zu Hannah Core/Protokoll/Satelliten: siehe `CLAUDE.md` im Hannah-Monorepo (`gessinger/voice/hannah`).
 
-**Eigenständig, kein Submodule-Link zum Monorepo.** `proto/` ist seit #24 ein eigenständiges Git-Submodule (`gessinger/voice/hannah-proto.git`, aktuell Branch/Tag `v0.1.0`) — eigenes Repo statt manuellem Kopieren aus dem Monorepo, `git submodule update --init` nach dem Klonen bzw. `git submodule update --remote` für eine neue Proto-Version. Codegen bleibt weiterhin Sache jedes Consumers: `scripts/gen_proto.sh` generiert die Python-Stubs lokal aus `proto/*.proto`. Das Proto ist nach Scope in 12 Dateien gesplittet (`gessinger/voice/hannah#44`; `hannah.proto` enthält nur noch den Service, Messages liegen in `control.proto`/`user_registry.proto`/`shared.proto`/etc.) — `hannah_webui/proto/__init__.py` patcht beim Import alle Message-Typen der Scope-Module zurück auf `hannah_pb2`, damit bestehender Code weiterhin `hannah_pb2.Car`/`hannah_pb2.User`/etc. verwenden kann (gleicher Ansatz wie `core/hannah/proto/__init__.py`).
+**Eigenständig, kein Submodule-Link zum Monorepo.** Proto-Stubs kommen seit #27 (v1.11.1) aus dem veröffentlichten [`hannah-proto`](https://pypi.org/project/hannah-proto/) PyPI-Paket (`requirements.txt: hannah-proto>=X.Y.Z`), importiert als `from hannah_proto import hannah_pb2` — kein Git-Submodule, kein lokaler Codegen mehr in diesem Repo (`.gitmodules`, `proto/`-Submodule, `hannah_webui/proto/*`-generierte Stubs und `scripts/gen_proto.sh` wurden dabei entfernt). Eine neue Proto-Version aufnehmen heißt nur noch: Versions-Pin in `requirements.txt` bumpen, `pip install -U hannah-proto` im venv. Das Proto ist nach Scope in mehrere Dateien gesplittet (`gessinger/voice/hannah#44`; `hannah.proto` enthält nur noch den Service, Messages liegen in `control.proto`/`user_registry.proto`/`shared.proto`/etc.) — der Re-Export-Shim, der Message-Typen der Scope-Module zurück auf `hannah_pb2` patcht (damit `hannah_pb2.Car`/`hannah_pb2.User`/etc. weiter funktionieren), lebt jetzt im `hannah-proto`-Paket selbst, nicht mehr in diesem Repo.
 
 ---
 
@@ -21,11 +21,9 @@ hannah-webui/
 │   ├── blueprints/        ← ein Modul je Routen-Gruppe: auth, me, rooms, groups, satellites, settings, ble_tags, cars, routines, triggers, users (#10)
 │   ├── grpc_client.py    ← HannahClient — synchroner gRPC-Client (kein grpc.aio, Flask ist synchron)
 │   ├── config.py         ← Config-Loader: config.yaml ODER Env-Vars (12-factor, für Container-Deploy)
-│   ├── templates/         ← Jinja2-Templates (ein File pro Seite, bewusst keine Single-File/Vanilla-JS-Architektur)
-│   └── proto/             ← generierte gRPC-Stubs (hannah_pb2.py + 11 weitere *_pb2.py/*_pb2_grpc.py, __init__.py patcht sie auf hannah_pb2 zurück)
-├── proto/                 ← Git-Submodule (gessinger/voice/hannah-proto.git), 12 *.proto-Dateien nach Scope gesplittet
+│   └── templates/         ← Jinja2-Templates (ein File pro Seite, bewusst keine Single-File/Vanilla-JS-Architektur)
 ├── scripts/
-│   ├── gen_proto.sh       ← regeneriert hannah_webui/proto/* aus proto/*.proto
+│   ├── copy_public.py
 │   └── release.js
 ├── tests/                 ← pytest + FakeHannahClient (In-Memory-Stand-in, keine echte Core/kein Netzwerk nötig)
 ├── deploy/
@@ -116,4 +114,4 @@ Aktueller Stand: siehe `CHANGELOG.md`. Offene Bugs/Features: GitLab Issues in di
 ## Bekannte Probleme & Workarounds
 
 - **gunicorn ≥ 26 hat den `eventlet`-Worker entfernt** (`SUPPORTED_WORKERS` enthält ihn nicht mehr, eventlet selbst ist upstream deprecated). Falls async Worker mal nötig werden: `gevent`/`gevent_wsgi`/`gevent_pywsgi` sind noch unterstützt, `eventlet` nicht. Aktuell laufen sync-Worker — kein konkreter Bedarf für async identifiziert (keine SSE/Streaming-Seiten, kleiner Nutzerkreis).
-- **Proto-Sync:** `proto/` ist seit #24 ein Git-Submodule (`gessinger/voice/hannah-proto.git`) statt manuellem Kopieren — neue Proto-Version holen mit `git submodule update --remote`, dann `scripts/gen_proto.sh`. Neue Scope-Datei im Proto-Repo? Muss zusätzlich in `hannah_webui/proto/__init__.py`s Import-/Patch-Listen ergänzt werden, sonst fehlen deren Message-Typen auf `hannah_pb2`.
+- **Proto-Sync:** Stubs kommen aus dem `hannah-proto`-PyPI-Paket (seit #27/v1.11.1, siehe Überblick oben) — neue Proto-Version holen ist nur noch ein Versions-Bump in `requirements.txt` + `pip install -U hannah-proto`. Kein Submodule, kein lokaler Codegen, kein Re-Export-Shim mehr in diesem Repo zu pflegen.

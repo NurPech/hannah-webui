@@ -14,6 +14,7 @@ from hannah_webui.route_helpers import (
     _blank_state_row,
     _blank_when_row,
     _condition_to_row,
+    _device_state_options,
     _extract_also_unless,
     _parse_also,
     _parse_state_condition_rows,
@@ -49,6 +50,7 @@ def triggers():
 @login_required
 @trust_level_required(TRUST_LEVELS["create_trigger"])
 def new_trigger():
+    hannah = get_hannah()
     return render_template(
         "trigger_edit.html", trigger=None,
         when_rows=[_blank_when_row() for _ in range(_TRIGGER_NEW_WHEN_ROWS)],
@@ -56,6 +58,7 @@ def new_trigger():
         unless_rows=[_blank_state_row() for _ in range(_TRIGGER_NEW_ALSO_ROWS)],
         action_rows=[_blank_action_row() for _ in range(_TRIGGER_NEW_ACTION_ROWS)],
         on_response_text="",
+        device_options=_device_state_options(hannah.get_devices()),
     )
 
 
@@ -124,6 +127,7 @@ def edit_trigger(trigger_id: str):
         action_rows=[_action_to_row(a) for a in actions]
         + [_blank_action_row() for _ in range(_TRIGGER_NEW_ACTION_ROWS)],
         on_response_text=on_response_text,
+        device_options=_device_state_options(hannah.get_devices()),
     )
 
 

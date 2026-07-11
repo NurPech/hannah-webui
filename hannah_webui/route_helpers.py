@@ -7,7 +7,16 @@ import json
 import re
 import time
 
+from hannah_proto import hannah_pb2
+
 _TELEGRAM_AUTH_MAX_AGE = 300  # Sekunden, gegen Replay alter Callback-URLs
+
+_STATE_TYPE_WIDGET = {
+    hannah_pb2.BOOLEAN: "boolean",
+    hannah_pb2.NUMERIC: "numeric",
+    hannah_pb2.ENUM: "enum",
+    hannah_pb2.COLOR: "enum",  # gleiche Widget-Logik wie ENUM: Dropdown aus den erlaubten Werten
+}
 
 _ROUTINE_NEW_ACTION_ROWS = 3
 _SETTINGS_NEW_ROWS = 2
@@ -90,6 +99,32 @@ def _as_condition_list(also_or_unless) -> tuple[list[dict], str]:
     if isinstance(also_or_unless, list):
         return also_or_unless, "and"
     return [also_or_unless], "and"
+
+
+def _device_state_options(rooms) -> list[dict]:
+    """Flacht GetDevices() (RoomInfo -> DeviceInfo) zu einer Liste von Dropdown-Optionen
+    fürs Trigger-Editor-Zustands-Widget ab (#16). Der Options-'value' ist die volle
+    ioBroker-State-ID (device.id + '.' + state-key) — exakt das Format, das das
+    Freitext-Feld schon immer erwartet hat, damit alte/manuell eingetragene States
+    unverändert weiter funktionieren."""
+    options = []
+    for room in rooms:
+        for device in room.devices:
+            for state_key in device.states:
+                state_type = device.state_types.get(state_key, hannah_pb2.STATE_TYPE_UNSPECIFIED)
+                enum_values = (
+                    dict(device.state_enum_values[state_key].values)
+                    if state_key in device.state_enum_values else {}
+                )
+                options.append({
+                    "value": f"{device.id}.{state_key}",
+                    "room": room.name,
+                    "device": device.name,
+                    "state": state_key,
+                    "widget": _STATE_TYPE_WIDGET.get(state_type, "text"),
+                    "enum_values": enum_values,
+                })
+    return options
 
 
 def _blank_when_row() -> dict:

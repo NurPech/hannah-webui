@@ -4,6 +4,8 @@
     ## **WORK IN PROGRESS**
 -->
 
+## 1.12.0
+* Added: Trigger-Editor's "Wenn"/"Und"/"Außer wenn"-Zustandsbedingungen bekommen eine Dropdown-Kette (Gerät → Vergleich → Wert) statt einer freien ioBroker-State-ID — Vergleichsoperatoren und Werteingabe passen sich clientseitig an den Typ des gewählten States an (Boolean → An/Aus, Numeric → Zahl + größer/kleiner, Enum/Color → Dropdown aus den erlaubten Werten). Der bisherige Freitext-Modus bleibt pro Zeile per Toggle erhalten (Fallback für States, die zu keinem bekannten Gerät gehören) und ist weiterhin das, was tatsächlich gespeichert wird — keine Änderung am `when`/`also`/`unless`-JSON-Format. Braucht `hannah-proto>=0.4.0` (`StateType`/`EnumValues` in `shared.proto`, `DeviceInfo.state_types`/`state_enum_values` in `device_control_menu.proto`). Refs #16
 
 ## 1.11.1
 * Changed: proto stubs now come from the published [`hannah-proto`](https://pypi.org/project/hannah-proto/) package instead of the git-submodule/local-codegen pattern — `.gitmodules`, `proto/` submodule, `hannah_webui/proto/*` generated stubs and `scripts/gen_proto.sh` removed; imports moved from `hannah_webui.proto` to `hannah_proto`. Refs #27

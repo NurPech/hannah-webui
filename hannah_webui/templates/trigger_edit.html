@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import state_condition %}
 {% block title %}Trigger {{ 'bearbeiten' if trigger else 'anlegen' }}{% endblock %}
 {% block content %}
 <div class="mb-3">
@@ -33,25 +34,7 @@
             <option value="time" {% if row.type == 'time' %}selected{% endif %}>Uhrzeit</option>
           </select>
         </div>
-        <div class="sm:col-span-4">
-          <label class="block text-xs text-gray-500 mb-1">State-ID</label>
-          <input type="text" name="when_state" value="{{ row.state }}"
-                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
-        </div>
-        <div class="sm:col-span-2">
-          <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
-          <select name="when_cmp"
-                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-            <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
-            <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
-            <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
-          </select>
-        </div>
-        <div class="sm:col-span-2">
-          <label class="block text-xs text-gray-500 mb-1">Wert</label>
-          <input type="text" name="when_value" value="{{ row.value }}"
-                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-        </div>
+        {{ state_condition('when', row, device_options, 'sm:col-span-4', 'sm:col-span-2', 'sm:col-span-2') }}
         <div class="sm:col-span-2">
           <label class="block text-xs text-gray-500 mb-1">Uhrzeit</label>
           <input type="text" name="when_time" placeholder="HH:MM" value="{{ row.time }}"
@@ -83,25 +66,7 @@
     </div>
     {% for row in also_rows %}
     <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
-      <div class="sm:col-span-5">
-        <label class="block text-xs text-gray-500 mb-1">State-ID</label>
-        <input type="text" name="also_state" value="{{ row.state }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
-      </div>
-      <div class="sm:col-span-4">
-        <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
-        <select name="also_cmp"
-                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-          <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
-          <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
-          <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
-        </select>
-      </div>
-      <div class="sm:col-span-3">
-        <label class="block text-xs text-gray-500 mb-1">Wert</label>
-        <input type="text" name="also_value" value="{{ row.value }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-      </div>
+      {{ state_condition('also', row, device_options, 'sm:col-span-5', 'sm:col-span-4', 'sm:col-span-3') }}
     </div>
     {% endfor %}
 
@@ -109,25 +74,7 @@
       <summary class="text-xs font-medium text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">Außer wenn <span class="text-gray-500">(optional, sperrt das Auslösen)</span></summary>
       {% for row in unless_rows %}
       <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 mt-2 border-b border-gray-800">
-        <div class="sm:col-span-5">
-          <label class="block text-xs text-gray-500 mb-1">State-ID</label>
-          <input type="text" name="unless_state" value="{{ row.state }}"
-                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
-        </div>
-        <div class="sm:col-span-4">
-          <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
-          <select name="unless_cmp"
-                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-            <option value="value" {% if row.cmp == 'value' %}selected{% endif %}>=</option>
-            <option value="above" {% if row.cmp == 'above' %}selected{% endif %}>&gt;</option>
-            <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
-          </select>
-        </div>
-        <div class="sm:col-span-3">
-          <label class="block text-xs text-gray-500 mb-1">Wert</label>
-          <input type="text" name="unless_value" value="{{ row.value }}"
-                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-        </div>
+        {{ state_condition('unless', row, device_options, 'sm:col-span-5', 'sm:col-span-4', 'sm:col-span-3') }}
       </div>
       {% endfor %}
     </details>
@@ -226,5 +173,101 @@ document.querySelectorAll('.when-row').forEach(function (row) {
     });
   });
 });
+
+// #16: Zustands-Bedingung als Dropdown-Kette (Gerät -> Vergleich/Wert nach Typ gefiltert)
+// statt Freitext-State-ID, mit Freitext als Fallback pro Zeile (Toggle).
+(function () {
+  function activeValueEl(row) {
+    return row.querySelector(
+      '.scd-val-text:not([disabled]), .scd-val-number:not([disabled]), '
+      + '.scd-val-bool:not([disabled]), .scd-val-enum:not([disabled])'
+    );
+  }
+
+  function widgetSelector(widget) {
+    return { numeric: '.scd-val-number', boolean: '.scd-val-bool', enum: '.scd-val-enum' }[widget] || '.scd-val-text';
+  }
+
+  function setActiveValueWidget(row, selector) {
+    var prevValue = activeValueEl(row) ? activeValueEl(row).value : '';
+    row.querySelectorAll('.scd-val-text, .scd-val-number, .scd-val-bool, .scd-val-enum').forEach(function (el) {
+      var active = el.matches(selector);
+      el.hidden = !active;
+      el.disabled = !active;
+    });
+    var next = activeValueEl(row);
+    if (next && prevValue) next.value = prevValue;
+  }
+
+  function populateEnumOptions(row, values) {
+    var select = row.querySelector('.scd-val-enum');
+    select.innerHTML = '';
+    Object.keys(values || {}).forEach(function (raw) {
+      var opt = document.createElement('option');
+      opt.value = raw;
+      opt.textContent = values[raw];
+      select.appendChild(opt);
+    });
+  }
+
+  function setCmpOptions(row, allowAll) {
+    row.querySelectorAll('.scd-cmp option').forEach(function (opt) {
+      opt.disabled = !allowAll && opt.value !== 'value';
+    });
+  }
+
+  function applyDeviceChange(row) {
+    var select = row.querySelector('.scd-device');
+    row.querySelector('.scd-hidden-state').value = select.value;
+    var option = select.options[select.selectedIndex];
+    var widget = (option && option.value) ? (option.dataset.widget || 'text') : 'text';
+    var enumValues = {};
+    if (option && option.dataset.enum) {
+      try { enumValues = JSON.parse(option.dataset.enum); } catch (e) { /* kaputtes JSON ignorieren, Fallback bleibt Freitext-Wert */ }
+    }
+    if (widget === 'enum') populateEnumOptions(row, enumValues);
+    setActiveValueWidget(row, widgetSelector(widget));
+    setCmpOptions(row, widget === 'numeric');
+  }
+
+  function setMode(row, mode) {
+    var isFreitext = mode === 'freitext';
+    row.dataset.mode = mode;
+    row.querySelector('.scd-device').hidden = isFreitext;
+    row.querySelector('.scd-device').disabled = isFreitext;
+    row.querySelector('.scd-freitext-input').hidden = !isFreitext;
+    row.querySelector('.scd-freitext-input').disabled = !isFreitext;
+    row.querySelector('.scd-hidden-state').disabled = isFreitext;
+    row.querySelector('.scd-label-dropdown').classList.toggle('hidden', isFreitext);
+    row.querySelector('.scd-label-freitext').classList.toggle('hidden', !isFreitext);
+    row.querySelector('.scd-toggle').textContent = isFreitext ? 'Dropdown' : 'Freitext';
+    if (isFreitext) {
+      setCmpOptions(row, true);
+      setActiveValueWidget(row, '.scd-val-text');
+    } else {
+      applyDeviceChange(row);
+    }
+  }
+
+  document.querySelectorAll('.state-cond').forEach(function (row) {
+    var select = row.querySelector('.scd-device');
+    var initial = row.querySelector('.scd-hidden-state').value;
+    var option = null;
+    if (initial) {
+      option = Array.prototype.find.call(select.options, function (o) { return o.value === initial; });
+    }
+    setMode(row, 'dropdown');
+    if (option) {
+      select.value = initial;
+      applyDeviceChange(row);
+    } else if (initial) {
+      setMode(row, 'freitext');
+    }
+    select.addEventListener('change', function () { applyDeviceChange(row); });
+    row.querySelector('.scd-toggle').addEventListener('click', function () {
+      setMode(row, row.dataset.mode === 'freitext' ? 'dropdown' : 'freitext');
+    });
+  });
+})();
 </script>
 {% endblock %}
