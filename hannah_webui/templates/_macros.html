@@ -18,7 +18,7 @@
 #}
 {% macro state_condition(prefix, row, device_options, state_cols, cmp_cols, value_cols) %}
 <div class="state-cond contents" data-prefix="{{ prefix }}">
-  <div class="{{ state_cols }}">
+  <div class="scd-field {{ state_cols }}">
     <div class="flex items-center justify-between mb-1">
       <label class="block text-xs text-gray-500">
         <span class="scd-label-dropdown">Auslöser</span><span class="scd-label-freitext hidden">State-ID</span>
@@ -39,7 +39,7 @@
            class="scd-freitext-input w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
     <input type="hidden" name="{{ prefix }}_state" value="{{ row.state }}" class="scd-hidden-state">
   </div>
-  <div class="{{ cmp_cols }}">
+  <div class="scd-field {{ cmp_cols }}">
     <label class="block text-xs text-gray-500 mb-1">Vergleich</label>
     <select name="{{ prefix }}_cmp"
             class="scd-cmp w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
@@ -48,7 +48,7 @@
       <option value="below" {% if row.cmp == 'below' %}selected{% endif %}>&lt;</option>
     </select>
   </div>
-  <div class="{{ value_cols }}">
+  <div class="scd-field {{ value_cols }}">
     <label class="block text-xs text-gray-500 mb-1">Wert</label>
     <input type="text" name="{{ prefix }}_value" value="{{ row.value }}"
            class="scd-val-text w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">

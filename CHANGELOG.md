@@ -4,6 +4,9 @@
     ## **WORK IN PROGRESS**
 -->
 
+## 1.12.1
+* Changed: Trigger-Editor's "Wenn"-Zeilen zeigen jetzt nur noch die Felder, die zum gewählten Typ passen — Geräte-Auslöser/Vergleich/Wert bei "Zustand", Uhrzeit/Tage bei "Uhrzeit" — statt immer alle gleichzeitig. Refs #29
+
 ## 1.12.0
 * Added: Trigger-Editor's "Wenn"/"Und"/"Außer wenn"-Zustandsbedingungen bekommen eine Dropdown-Kette (Gerät → Vergleich → Wert) statt einer freien ioBroker-State-ID — Vergleichsoperatoren und Werteingabe passen sich clientseitig an den Typ des gewählten States an (Boolean → An/Aus, Numeric → Zahl + größer/kleiner, Enum/Color → Dropdown aus den erlaubten Werten). Der bisherige Freitext-Modus bleibt pro Zeile per Toggle erhalten (Fallback für States, die zu keinem bekannten Gerät gehören) und ist weiterhin das, was tatsächlich gespeichert wird — keine Änderung am `when`/`also`/`unless`-JSON-Format. Braucht `hannah-proto>=0.4.0` (`StateType`/`EnumValues` in `shared.proto`, `DeviceInfo.state_types`/`state_enum_values` in `device_control_menu.proto`). Refs #16
 

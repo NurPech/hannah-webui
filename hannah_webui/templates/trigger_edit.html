@@ -28,20 +28,19 @@
       <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end">
         <div class="sm:col-span-2">
           <label class="block text-xs text-gray-500 mb-1">Typ</label>
-          <select name="when_type"
-                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+          <select name="when_type" class="when-type-select w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
             <option value="state" {% if row.type != 'time' %}selected{% endif %}>Zustand</option>
             <option value="time" {% if row.type == 'time' %}selected{% endif %}>Uhrzeit</option>
           </select>
         </div>
         {{ state_condition('when', row, device_options, 'sm:col-span-4', 'sm:col-span-2', 'sm:col-span-2') }}
-        <div class="sm:col-span-2">
+        <div class="when-time-field sm:col-span-2">
           <label class="block text-xs text-gray-500 mb-1">Uhrzeit</label>
           <input type="text" name="when_time" placeholder="HH:MM" value="{{ row.time }}"
                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
         </div>
       </div>
-      <div class="mt-2">
+      <div class="when-time-field mt-2">
         <label class="block text-xs text-gray-500 mb-1">Tage <span class="text-gray-600">(nur für Uhrzeit-Bedingungen, leer = jeden Tag)</span></label>
         <input type="hidden" name="when_days" value="{{ row.days }}" class="when-days-input">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
@@ -172,6 +171,19 @@ document.querySelectorAll('.when-row').forEach(function (row) {
       hidden.value = Array.prototype.map.call(checked, function (c) { return c.value; }).join(',');
     });
   });
+});
+
+// #29: pro Wenn-Zeile nur die Felder zeigen, die zum gewählten Typ passen —
+// Zustand -> Geräte-Auslöser/Vergleich/Wert, Uhrzeit -> Uhrzeit/Tage.
+document.querySelectorAll('.when-row').forEach(function (row) {
+  var select = row.querySelector('.when-type-select');
+  function applyType() {
+    var isTime = select.value === 'time';
+    row.querySelectorAll('.scd-field').forEach(function (el) { el.classList.toggle('hidden', isTime); });
+    row.querySelectorAll('.when-time-field').forEach(function (el) { el.classList.toggle('hidden', !isTime); });
+  }
+  select.addEventListener('change', applyType);
+  applyType();
 });
 
 // #16: Zustands-Bedingung als Dropdown-Kette (Gerät -> Vergleich/Wert nach Typ gefiltert)
