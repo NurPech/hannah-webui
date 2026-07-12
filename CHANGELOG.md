@@ -1,9 +1,31 @@
 # Changelog
+
+All notable changes are documented here, in the [Keep a Changelog](https://keepachangelog.com/) style, English only.
+
 <!--
     Placeholder for the next version (at the beginning of the line):
     ## **WORK IN PROGRESS**
+
+    ### Added
+    - ...
+
+    ### Changed
+    - ...
+
+    ### Fixed
+    - ...
+
+    ### Removed
+    - ...
+
+    Only include the categories actually used. Breaking changes get a
+    `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+
+## 1.13.2
+### Fixed
+- Trigger list showed a blank pill for phrase-only conditions (the former Routinen, e.g. `nachtlicht`/`gute_nacht`/`regenbogen`) — the pill template only handled `time`/`state`, not `phrase`. Now shows the quoted phrase, and a condition with no label at all no longer renders an empty pill. Refs #34
 
 ## 1.13.1
 * Changed: CI now uses the shared `test-changelog` component from `hannah-components` instead of its own inline job — same discipline, now covers any source change instead of the previous fixed file pattern

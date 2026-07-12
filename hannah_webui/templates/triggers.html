@@ -22,8 +22,8 @@
       <div class="font-mono font-semibold text-gray-100 mb-1">{{ trigger.id }}</div>
       <div>
         {% for cond in item.when %}
-        {% set label %}{% if cond.time %}{{ cond.time }}{% if cond.days %} ({{ cond.days|join(', ') }}){% endif %}{% else %}{{ cond.state }}{% endif %}{% endset %}
-        {{ pill(label.strip()) }}
+        {% set label %}{% if cond.time %}{{ cond.time }}{% if cond.days %} ({{ cond.days|join(', ') }}){% endif %}{% elif cond.phrase %}„{{ cond.phrase }}“{% else %}{{ cond.state }}{% endif %}{% endset %}
+        {% if label.strip() %}{{ pill(label.strip()) }}{% endif %}
         {% endfor %}
       </div>
     </div>

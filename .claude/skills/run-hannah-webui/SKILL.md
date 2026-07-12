@@ -32,8 +32,12 @@ and the real gRPC connection entirely.
 
    ```sh
    venv/Scripts/python .claude/skills/run-hannah-webui/serve_fake.py --port 5099 > /tmp/webui_serve.log 2>&1 &
-   timeout 30 bash -c 'until curl -sf http://127.0.0.1:5099/login >/dev/null; do sleep 1; done'
+   timeout 30 bash -c 'until venv/Scripts/python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:5099/login\", timeout=2)" 2>/dev/null; do sleep 1; done'
    ```
+
+   (`curl` may be blocked outright on locked-down Windows machines —
+   see Gotchas — so the readiness poll uses `venv/Scripts/python` +
+   `urllib.request` instead, which isn't subject to that restriction.)
 
 2. Drive it:
 
@@ -62,11 +66,18 @@ and the real gRPC connection entirely.
 Other logins: `claude`/`claude` (trust_level 7 — a regular roomie, no
 admin nav items). Both come from `tests/fake_hannah_client.py`.
 
-To hit a single page manually without the full driver script:
+To hit a single page manually without the full driver script (plain
+`urllib`, since `curl` may not be available — see Gotchas):
 
 ```sh
-curl -s -c /tmp/c.txt -b /tmp/c.txt -X POST http://127.0.0.1:5099/login -d "username=admin&password=admin"
-curl -s -b /tmp/c.txt http://127.0.0.1:5099/groups
+venv/Scripts/python - <<'EOF'
+import http.cookiejar, urllib.parse, urllib.request
+cj = http.cookiejar.CookieJar()
+opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+opener.open("http://127.0.0.1:5099/login",
+            data=urllib.parse.urlencode({"username": "admin", "password": "admin"}).encode())
+print(opener.open("http://127.0.0.1:5099/groups").read().decode()[:500])
+EOF
 ```
 
 ## Run (agent path) — against a real Hannah Core
@@ -106,12 +117,12 @@ login (trust 7) correctly got `/groups`, `/settings`, `/users` bounced
 
    ```sh
    venv/Scripts/python main.py --config config.yaml > /tmp/webui_live.log 2>&1 &
-   timeout 30 bash -c 'until curl -sf http://127.0.0.1:<port-from-config.yaml>/login >/dev/null; do sleep 1; done'
+   timeout 30 bash -c 'until venv/Scripts/python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:<port-from-config.yaml>/login\", timeout=2)" 2>/dev/null; do sleep 1; done'
    ```
 
    The log line `gRPC channel to Hannah at <host>:<port> created`
    confirms the channel was built (not that Core is reachable — gRPC
-   channels connect lazily). If the curl poll times out, it's more
+   channels connect lazily). If the readiness poll times out, it's more
    likely no route to Core than a WebUI bug — check
    `grpc.host:grpc.port` reachability first, e.g.
    `timeout 5 bash -c 'exec 3<>/dev/tcp/<grpc.host>/<grpc.port> && echo CONNECTED'`.
@@ -158,7 +169,7 @@ driven by Playwright.
 venv/Scripts/python -m pytest tests/ -v
 ```
 
-53 tests pass against `FakeHannahClient`, no network/Core needed —
+88 tests pass against `FakeHannahClient`, no network/Core needed —
 this is the fastest way to check route/template logic without going
 through Playwright at all.
 
@@ -169,6 +180,12 @@ through Playwright at all.
   `python.exe` PID launched under MSYS. Find the real PID with
   `tasklist //FI "IMAGENAME eq python.exe"` and `taskkill //F //PID
   <pid>` instead.
+- **`curl` can be outright blocked** on locked-down Windows machines
+  (GPO policy rejecting untrusted binaries) — fails with `Permission
+  denied`, not a normal connection error. Use `venv/Scripts/python` +
+  `urllib.request` for readiness polls and one-off page fetches
+  instead (see the commands above); it isn't affected since it's an
+  already-trusted interpreter.
 - **Tailwind loads from `cdn.tailwindcss.com`** (see `base.html`) — if
   the environment has no outbound internet, pages render unstyled
   (still functionally testable, just ugly in screenshots).

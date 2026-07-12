@@ -400,6 +400,33 @@ class TestTriggers:
         assert "aussentuer_abend" in body
         assert "23:00" in body
 
+    def test_triggers_list_shows_phrase_condition_pill(self, logged_in_client, hannah):
+        """Ehemalige Routine, seit #28 ein Trigger mit reiner Phrasen-Bedingung — die
+        Pill in der Übersicht muss die Phrase zeigen statt leer zu bleiben (Bug: die
+        Pill-Vorlage kannte nur time/state, nicht phrase)."""
+        hannah._triggers["gute_nacht"] = {
+            "when": {"phrase": "gute nacht"}, "cancel_when": None, "on_response": [], "actions": [],
+            "say": "Gute Nacht.", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+        }
+        resp = logged_in_client.get("/triggers")
+        body = resp.get_data(as_text=True)
+        assert "gute nacht" in body
+
+    def test_triggers_list_hides_pill_for_condition_without_label(self, logged_in_client, hannah):
+        """Eine Bedingung ganz ohne time/phrase/state (z.B. unvollständig gespeichert)
+        darf keine leere Pill erzeugen."""
+        hannah._triggers["leere-bedingung"] = {
+            "when": [{"phrase": "gute nacht"}, {"state": ""}], "cancel_when": None,
+            "on_response": [], "actions": [], "say": "Gute Nacht.", "ask": "",
+            "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+        }
+        resp = logged_in_client.get("/triggers")
+        body = resp.get_data(as_text=True)
+        card_start = body.index("leere-bedingung")
+        next_card = body.find('font-mono font-semibold text-gray-100 mb-1">', card_start + 1)
+        card = body[card_start:next_card if next_card != -1 else len(body)]
+        assert card.count('rounded bg-gray-800') == 1
+
     def test_new_trigger_form_renders(self, logged_in_client):
         resp = logged_in_client.get("/triggers/new")
         assert resp.status_code == 200

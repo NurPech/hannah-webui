@@ -92,7 +92,7 @@ Versionsstand: Fresh Start bei `v1.0.0` (keine Fortführung der Monorepo-Version
 Eigenständiges Repo, eigener Issue-Tracker (GitLab-Projekt `gessinger/voice/hannah-webui`) — **nicht** mehr Projekt 319 (das Hannah-Monorepo).
 
 1. **Nie direkt auf `master` arbeiten.** Immer zuerst einen Feature-Branch anlegen.
-2. **`CHANGELOG.md` parallel zu jeder Änderung pflegen** (Englisch, WIP-Sektion).
+2. **`CHANGELOG.md` parallel zu jeder Änderung pflegen**, in der `## **WORK IN PROGRESS**`-Sektion. Einträge grundsätzlich auf Englisch (Projektsprache) — Regel 2 galt schon vorher, wurde ab ~1.12.0 aber nicht mehr befolgt (Deutsch schlich sich ein), siehe #33. Format seit v1.13.1 im [Keep-a-Changelog](https://keepachangelog.com)-Stil: pro Kategorie eine Unterüberschrift (`### Added` / `### Changed` / `### Fixed` / `### Removed`, nur tatsächlich genutzte Kategorien), Einträge darunter als Bullet ohne Inline-Präfix. Breaking Changes: `**BREAKING:**`-Präfix am Zeilenanfang, in der inhaltlich passenden Kategorie (meist Changed/Removed). Jeder Eintrag endet mit `Refs #ID`. Ältere Releases (≤1.13.1) folgen noch dem alten Format (flache Liste, `Category: ...`-Präfix, teils Deutsch) — nicht rückwirkend umschreiben.
 3. **Commits nur auf explizite Anfrage**, nie unaufgefordert.
 4. **Pushen, wenn:** Arbeit abgeschlossen ist, eine Pause eingelegt wird, oder Arbeit gesichert werden soll.
 5. **Landung auf `master` ausschließlich über Merge Request.** Nie direkt mergen.
