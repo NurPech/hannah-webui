@@ -132,11 +132,13 @@ class FakeHannahClient:
             state_enum_values={
                 "color": hannah_pb2.EnumValues(values={"warm": "Warmweiß", "kalt": "Kaltweiß"}),
             },
+            state_writable={"on": True, "level": True, "color": True},
         )
         fenster = hannah_pb2.DeviceInfo(
             id="fenster.wz.open", name="Fenster", category="Fenster",
             states=["open"], current={"open": "false"},
             state_types={"open": hannah_pb2.BOOLEAN},
+            state_writable={"open": False},
         )
         return [
             hannah_pb2.RoomInfo(key="wohnzimmer", name="Wohnzimmer", devices=[licht, fenster]),

@@ -108,7 +108,7 @@
         <label class="block text-xs text-gray-500 mb-1">Raum</label>
         {{ room_select('action_room', row.room, rooms) }}
       </div>
-      {{ state_condition(action_device_row, device_options, 'action_state_id', 'action_state_value', 'sm:col-span-3', 'sm:col-span-2') }}
+      {{ state_condition(action_device_row, action_device_options, 'action_state_id', 'action_state_value', 'sm:col-span-3', 'sm:col-span-2') }}
     </div>
     {% endfor %}
 

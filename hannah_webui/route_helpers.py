@@ -72,16 +72,23 @@ def _as_condition_list(also_or_unless) -> tuple[list[dict], str]:
     return [also_or_unless], "and"
 
 
-def _device_state_options(rooms) -> list[dict]:
+def _device_state_options(rooms, writable_only: bool = False) -> list[dict]:
     """Flacht GetDevices() (RoomInfo -> DeviceInfo) zu einer Liste von Dropdown-Optionen
     fürs Trigger-Editor-Zustands-Widget ab (#16). Der Options-'value' ist die volle
     ioBroker-State-ID (device.id + '.' + state-key) — exakt das Format, das das
     Freitext-Feld schon immer erwartet hat, damit alte/manuell eingetragene States
-    unverändert weiter funktionieren."""
+    unverändert weiter funktionieren.
+
+    writable_only blendet nicht beschreibbare States aus (z.B. Fenster-/Tür-/Temperatur-
+    Sensoren) — fürs Aktions-Dropdown ("Dann"), da dort nur Geräte gesetzt werden können.
+    Fehlt ein State in state_writable (ältere Core-Version ohne das Feld), gilt er als
+    schreibbar, damit die Auswahl nicht grundlos leerläuft."""
     options = []
     for room in rooms:
         for device in room.devices:
             for state_key in device.states:
+                if writable_only and not device.state_writable.get(state_key, True):
+                    continue
                 state_type = device.state_types.get(state_key, hannah_pb2.STATE_TYPE_UNSPECIFIED)
                 enum_values = (
                     dict(device.state_enum_values[state_key].values)

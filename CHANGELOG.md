@@ -4,6 +4,12 @@
     ## **WORK IN PROGRESS**
 -->
 
+
+## 1.13.1
+* Changed: CI now uses the shared `test-changelog` component from `hannah-components` instead of its own inline job — same discipline, now covers any source change instead of the previous fixed file pattern
+* Changed: CI now uses the shared `upload-base`/`upload-notes` components from `hannah-components` instead of its own inline `upload` job's notes-upload block
+* Changed: Trigger-Editor's "Dann"-Geräte-Dropdown blendet States aus, die laut `DeviceInfo.state_writable` (neu in `hannah-proto>=0.5.2`) nicht beschreibbar sind — z.B. Fenster-/Tür-/Temperatursensoren, die ohnehin nicht gesetzt werden können. "Wenn"/"Und"/"Außer wenn" zeigen weiterhin alle States, da nicht-schreibbare Sensoren dort als Bedingung sinnvoll sind. Refs #32
+
 ## 1.13.0
 * **Breaking:** Routinen-Verwaltung (`/routines`) entfernt — Routinen und Trigger waren zwei separate Systeme mit stark überlappendem Aktionsmodell (siehe `gessinger/voice/hannah#139`). Core hat Routinen zugunsten eines neuen Trigger-Bedingungstyps `phrase` (Sprachphrase, Substring-Match) aufgelöst und die `GetRoutines`/`CreateRoutine`/`UpdateRoutine`/`DeleteRoutine`-RPCs entfernt. Bestehende Routinen migriert Core serverseitig in Trigger — kein WebUI-seitiger Migrationsschritt nötig. Refs #28
 * Added: Trigger-Editor's "Wenn"-Zeilen bekommen einen dritten Bedingungstyp "Phrase" neben "Zustand"/"Uhrzeit" — deckt ab, was vorher die Routinen-Verwaltung konnte (gesprochener Text löst den Trigger aus, Actions/Und/Außer-wenn funktionieren unverändert mit). Refs #28

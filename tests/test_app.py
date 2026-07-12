@@ -404,6 +404,15 @@ class TestTriggers:
         resp = logged_in_client.get("/triggers/new")
         assert resp.status_code == 200
 
+    def test_new_trigger_form_hides_non_writable_state_in_action_dropdown(self, logged_in_client):
+        """state_writable (hannah-proto #8) blendet nicht beschreibbare States wie den
+        Fenstersensor in der Dann-Auswahl aus, bleibt aber in Wenn/Und/Außer-wenn sichtbar."""
+        resp = logged_in_client.get("/triggers/new")
+        body = resp.get_data(as_text=True)
+        # 2 Wenn- + 2 Und- + 2 Außer-wenn-Zeilen zeigen den State, die 2 Dann-Zeilen nicht
+        # (8 Vorkommen wären es, würde die Action-Dropdown den Sensor nicht ausblenden).
+        assert body.count('value="fenster.wz.open.open"') == 6
+
     def test_edit_trigger_form_prefills_time_condition(self, logged_in_client):
         resp = logged_in_client.get("/triggers/aussentuer_abend/edit")
         body = resp.get_data(as_text=True)

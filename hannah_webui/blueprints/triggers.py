@@ -51,6 +51,7 @@ def triggers():
 @trust_level_required(TRUST_LEVELS["create_trigger"])
 def new_trigger():
     hannah = get_hannah()
+    devices = hannah.get_devices()
     return render_template(
         "trigger_edit.html", trigger=None,
         when_rows=[_blank_when_row() for _ in range(_TRIGGER_NEW_WHEN_ROWS)],
@@ -58,7 +59,8 @@ def new_trigger():
         unless_rows=[_blank_state_row() for _ in range(_TRIGGER_NEW_ALSO_ROWS)],
         action_rows=[_blank_action_row() for _ in range(_TRIGGER_NEW_ACTION_ROWS)],
         on_response_text="",
-        device_options=_device_state_options(hannah.get_devices()),
+        device_options=_device_state_options(devices),
+        action_device_options=_device_state_options(devices, writable_only=True),
         rooms=hannah.get_rooms(),
     )
 
@@ -102,6 +104,7 @@ def edit_trigger(trigger_id: str):
     trigger = next((t for t in hannah.get_triggers() if t.id == trigger_id), None)
     if trigger is None:
         return redirect(url_for("triggers.triggers"))
+    devices = hannah.get_devices()
     try:
         conditions = _as_or_list(json.loads(trigger.when_json) if trigger.when_json else {})
     except json.JSONDecodeError:
@@ -128,7 +131,8 @@ def edit_trigger(trigger_id: str):
         action_rows=[_action_to_row(a) for a in actions]
         + [_blank_action_row() for _ in range(_TRIGGER_NEW_ACTION_ROWS)],
         on_response_text=on_response_text,
-        device_options=_device_state_options(hannah.get_devices()),
+        device_options=_device_state_options(devices),
+        action_device_options=_device_state_options(devices, writable_only=True),
         rooms=hannah.get_rooms(),
     )
 
