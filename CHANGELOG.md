@@ -23,6 +23,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 1.13.3
+### Fixed
+- "Und" condition on a trigger's time-type "Wenn" row was silently dropped instead of being sent to Core — `_attach_also_unless()` only attached it to conditions with a `state` key. Core now evaluates `also` for time conditions too (time acts as an additional AND-gate), so the webui no longer needs the restriction. Refs #35
+
 ## 1.13.2
 ### Fixed
 - Trigger list showed a blank pill for phrase-only conditions (the former Routinen, e.g. `nachtlicht`/`gute_nacht`/`regenbogen`) — the pill template only handled `time`/`state`, not `phrase`. Now shows the quoted phrase, and a condition with no label at all no longer renders an empty pill. Refs #34

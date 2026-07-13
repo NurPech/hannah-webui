@@ -507,6 +507,19 @@ class TestTriggers:
         assert created["when"] == [{"time": "07:00", "days": ["mon", "tue"]}]
         assert created["actions"] == [{"set_state": {"id": "javascript.0.virtualDevice.Licht.test", "value": "true"}}]
 
+    def test_create_trigger_with_time_condition_and_also(self, logged_in_client, hannah):
+        logged_in_client.post("/triggers/create", data=self._create_payload(
+            id="katzen-futter",
+            when_type=["time"], when_state=[""], when_cmp=["value"], when_value=[""],
+            when_time=["10:00"], when_days=["mon,tue,wed,thu,fri"],
+            also_state=["cat_feeded"], also_cmp=["value"], also_value=["false"],
+        ))
+        created = hannah._triggers["katzen-futter"]
+        assert created["when"] == [{
+            "time": "10:00", "days": ["mon", "tue", "wed", "thu", "fri"],
+            "also": [{"state": "cat_feeded", "value": "false"}],
+        }]
+
     def test_update_trigger(self, logged_in_client, hannah):
         logged_in_client.post("/triggers/aussentuer_abend/edit", data=self._create_payload(
             when_type=["time"], when_state=[""], when_cmp=["value"], when_value=[""],

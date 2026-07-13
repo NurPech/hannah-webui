@@ -228,15 +228,15 @@ def _parse_also(form) -> dict | list | None:
 def _attach_also_unless(conditions: list[dict], also, unless) -> list[dict]:
     """Hängt 'und'/'außer wenn' an jede Wenn-Bedingung — die Engine prüft sie pro
     OR-Branch (trigger_engine.py), die No-Code-UI bildet aber EINEN globalen 'und'/
-    'außer wenn'-Block ab, der für alle 'wenn'-Zeilen gelten soll. 'und' gilt nur für
-    Zustands-, nicht für Uhrzeit-Bedingungen (die Engine prüft 'also' nie bei
-    Zeit-Triggern, siehe _check_time_triggers())."""
+    'außer wenn'-Block ab, der für alle 'wenn'-Zeilen gelten soll. Gilt auch für
+    Uhrzeit-Bedingungen: _check_time_triggers() wertet 'also' inzwischen ebenfalls
+    aus, Zeit wirkt damit immer als zusätzliches AND-Gate."""
     result = []
     for cond in conditions:
         cond = dict(cond)
         if unless:
             cond["unless"] = unless
-        if also and "state" in cond:
+        if also:
             cond["also"] = also
         result.append(cond)
     return result
