@@ -23,6 +23,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 1.13.4
+### Changed
+- Trigger editor's "Wenn" label and a new hint under the days picker now explain that a time condition acts as an additional AND-gate over the rest of the (still OR-connected) "Wenn" group — previously implied everything was plain OR, which pointed users toward the "Und" block instead of just adding a second "Wenn" row. Refs #36
+
 ## 1.13.3
 ### Fixed
 - "Und" condition on a trigger's time-type "Wenn" row was silently dropped instead of being sent to Core — `_attach_also_unless()` only attached it to conditions with a `state` key. Core now evaluates `also` for time conditions too (time acts as an additional AND-gate), so the webui no longer needs the restriction. Refs #35

@@ -20,7 +20,7 @@
     </div>
     {% endif %}
 
-    <label class="block text-xs font-medium text-gray-400 mb-1">Wenn <span class="text-gray-500">(eine Bedingung reicht — ODER-verknüpft)</span></label>
+    <label class="block text-xs font-medium text-gray-400 mb-1">Wenn <span class="text-gray-500">(Bedingungen sind ODER-verknüpft — eine Uhrzeit-Bedingung gilt zusätzlich immer als UND-Gate für alle übrigen)</span></label>
     {% set weekdays = [('mon', 'Montag'), ('tue', 'Dienstag'), ('wed', 'Mittwoch'), ('thu', 'Donnerstag'), ('fri', 'Freitag'), ('sat', 'Samstag'), ('sun', 'Sonntag')] %}
     {% for row in when_rows %}
     {% set row_days = row.days.split(',') %}
@@ -57,6 +57,7 @@
           </label>
           {% endfor %}
         </div>
+        <p class="text-xs text-gray-600 mt-1">Diese Uhrzeit muss zusätzlich zu jeder anderen Wenn-Bedingung erfüllt sein.</p>
       </div>
     </div>
     {% endfor %}
