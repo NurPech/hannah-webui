@@ -22,6 +22,11 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+
+## 1.13.6
+### Fixed
+- `deploy/install.sh` was tracked in git without the executable bit — `curl | bash` worked regardless, but running the extracted script directly (e.g. `--uninstall`) failed with `Permission denied`.
+
 ## 1.13.5
 ### Fixed
 - `deploy/install.sh` no longer hard-fails when `UPDATE_SERVER_TOKEN` is unset, same fix as Core.
