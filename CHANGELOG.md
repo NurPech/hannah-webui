@@ -22,6 +22,12 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 1.13.5
+### Fixed
+- `deploy/install.sh` no longer hard-fails when `UPDATE_SERVER_TOKEN` is unset, same fix as Core.
+
+### Added
+- `deploy/install.sh` now checks it's running as root before attempting any privileged operation, instead of failing partway through with a confusing permission error
 
 ## 1.13.4
 ### Changed
