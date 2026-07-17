@@ -12,6 +12,7 @@
   {% set trust = session.get('trust_level', 0) %}
   {% set can_manage_owner = trust >= trust_levels['set_satellite_owner'] %}
   {% set can_delete = trust >= trust_levels['delete_satellite'] %}
+  {% set can_manage_firmware = trust >= trust_levels['trigger_firmware_update'] %}
   <table class="w-full text-sm hidden sm:table">
     <thead>
       <tr class="border-b border-gray-800 text-gray-500 text-xs">
@@ -21,6 +22,9 @@
         <th class="text-left px-4 py-3">Zugewiesener Raum</th>
         <th class="text-left px-4 py-3">Besitzer</th>
         <th class="text-left px-4 py-3">Zuletzt gesehen</th>
+        {% if can_manage_firmware %}
+        <th class="text-left px-4 py-3">Firmware</th>
+        {% endif %}
         {% if can_delete %}
         <th class="px-4 py-3"></th>
         {% endif %}
@@ -29,12 +33,15 @@
     <tbody>
       {% for v in satellites %}
       {% set sat = v.sat %}
+      {% set show_update = can_manage_firmware and sat.update_available %}
       <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30">
         <td class="px-4 py-3">
-          {% if sat.connected %}
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" title="Verbunden"></span>
-          {% else %}
+          {% if not sat.connected %}
           <span class="inline-block w-2 h-2 rounded-full bg-gray-600" title="Nicht verbunden"></span>
+          {% elif show_update %}
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.4)]" title="Update verfügbar{{ ' (' + sat.new_version + ')' if sat.new_version else '' }}"></span>
+          {% else %}
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" title="Verbunden"></span>
           {% endif %}
         </td>
         <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ sat.device_id }}</td>
@@ -85,6 +92,19 @@
         </td>
 
         <td class="px-4 py-3 text-xs text-gray-500">{{ sat.last_seen or '–' }}</td>
+        {% if can_manage_firmware %}
+        <td class="px-4 py-3">
+          <span class="text-xs text-gray-500">{{ sat.firmware_version or '–' }}</span>
+          {% if show_update %}
+          <form method="post" action="{{ url_for('satellites.trigger_firmware_update', device_id=sat.device_id) }}" class="mt-1">
+            <button type="submit"
+                    class="bg-amber-900/40 hover:bg-amber-800/60 border border-amber-800/50 text-amber-300 hover:text-amber-200 rounded-lg px-2 py-1 text-xs transition-colors">
+              Update{{ ' auf ' + sat.new_version if sat.new_version else '' }}
+            </button>
+          </form>
+          {% endif %}
+        </td>
+        {% endif %}
         {% if can_delete %}
         <td class="px-4 py-3">
           <form method="post" action="{{ url_for('satellites.delete_satellite', device_id=sat.device_id) }}">
@@ -103,13 +123,16 @@
   <div class="sm:hidden divide-y divide-gray-800/50">
     {% for v in satellites %}
     {% set sat = v.sat %}
+    {% set show_update = can_manage_firmware and sat.update_available %}
     <div class="p-4">
       <div class="flex items-start justify-between gap-2">
         <div class="flex items-center gap-2">
-          {% if sat.connected %}
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" title="Verbunden"></span>
-          {% else %}
+          {% if not sat.connected %}
           <span class="inline-block w-2 h-2 rounded-full bg-gray-600" title="Nicht verbunden"></span>
+          {% elif show_update %}
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.4)]" title="Update verfügbar{{ ' (' + sat.new_version + ')' if sat.new_version else '' }}"></span>
+          {% else %}
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" title="Verbunden"></span>
           {% endif %}
           <span class="font-mono text-xs text-gray-500">{{ sat.device_id }}</span>
         </div>
@@ -173,6 +196,21 @@
       </div>
 
       <div class="mt-3 text-xs text-gray-500">Zuletzt gesehen: <span class="text-gray-400">{{ sat.last_seen or '–' }}</span></div>
+
+      {% if can_manage_firmware %}
+      <div class="mt-3">
+        <label class="block text-xs text-gray-500 mb-1">Firmware</label>
+        <span class="text-xs text-gray-400">{{ sat.firmware_version or '–' }}</span>
+        {% if show_update %}
+        <form method="post" action="{{ url_for('satellites.trigger_firmware_update', device_id=sat.device_id) }}" class="mt-1">
+          <button type="submit"
+                  class="bg-amber-900/40 hover:bg-amber-800/60 border border-amber-800/50 text-amber-300 hover:text-amber-200 rounded-lg px-2 py-1 text-xs transition-colors">
+            Update{{ ' auf ' + sat.new_version if sat.new_version else '' }}
+          </button>
+        </form>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
@@ -186,5 +224,8 @@
 <div class="mt-3 text-xs text-gray-500 flex items-center gap-4">
   <span class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]"></span> verbunden</span>
   <span class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-gray-600"></span> nicht verbunden (DB-Eintrag)</span>
+  {% if satellites and session.get('trust_level', 0) >= trust_levels['trigger_firmware_update'] %}
+  <span class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.4)]"></span> Update verfügbar</span>
+  {% endif %}
 </div>
 {% endblock %}

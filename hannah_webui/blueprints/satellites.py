@@ -71,3 +71,16 @@ def set_satellite_owner(device_id: str):
     if not ok:
         flash(message or "Besitzer konnte nicht gesetzt werden.", "danger")
     return redirect(url_for("satellites.satellites"))
+
+
+@bp.route("/satellites/<device_id>/update-firmware", methods=["POST"])
+@login_required
+@trust_level_required(TRUST_LEVELS["trigger_firmware_update"])
+def trigger_firmware_update(device_id: str):
+    hannah = get_hannah()
+    ok, message = hannah.trigger_firmware_update(device_id)
+    if ok:
+        flash("Firmware-Update angestoßen.", "success")
+    else:
+        flash(message or "Firmware-Update konnte nicht angestoßen werden.", "danger")
+    return redirect(url_for("satellites.satellites"))

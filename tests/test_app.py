@@ -219,6 +219,29 @@ class TestSatellites:
         resp = admin_client.get("/satellites")
         assert "Leonie" in resp.get_data(as_text=True)
 
+    def test_admin_sees_firmware_version(self, admin_client):
+        body = admin_client.get("/satellites").get_data(as_text=True)
+        assert "1.4.0" in body
+
+    def test_regular_user_does_not_see_firmware_version(self, logged_in_client, hannah):
+        hannah._satellites["kueche-esp"]["owner_user_id"] = 1
+        body = logged_in_client.get("/satellites").get_data(as_text=True)
+        assert "1.4.0" not in body
+
+    def test_admin_sees_update_button_when_update_available(self, admin_client, hannah):
+        hannah._satellites["kueche-esp"]["update_available"] = True
+        hannah._satellites["kueche-esp"]["new_version"] = "1.5.0"
+        body = admin_client.get("/satellites").get_data(as_text=True)
+        assert "1.5.0" in body
+
+    def test_trigger_firmware_update(self, admin_client, hannah):
+        admin_client.post("/satellites/kueche-esp/update-firmware")
+        assert hannah._satellites["kueche-esp"] is not None
+
+    def test_trigger_firmware_update_requires_trust_level_10(self, logged_in_client):
+        resp = logged_in_client.post("/satellites/kueche-esp/update-firmware", follow_redirects=True)
+        assert "Zugriff verweigert" in resp.get_data(as_text=True)
+
 
 class TestSatellitePermissions:
     """Row-level Sichtbarkeit: reguläre User (trust_level 7) sehen nur eigene

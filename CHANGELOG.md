@@ -23,6 +23,13 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 1.14.0
+### Added
+- Satellites page now shows firmware version and an "Update" button (trust level 10+): the connected/offline status dot turns amber when a newer firmware is available, and the button fires Core's `TriggerFirmwareUpdate` RPC. Refs #37
+
+### Changed
+- Bumped `hannah-proto` pin to `>=0.5.3` for the new `Satellite.firmware_version`/`update_available`/`new_version` fields and `TriggerFirmwareUpdate` RPC. Refs #37
+
 ## 1.13.6
 ### Fixed
 - `deploy/install.sh` was tracked in git without the executable bit — `curl | bash` worked regardless, but running the extracted script directly (e.g. `--uninstall`) failed with `Permission denied`.

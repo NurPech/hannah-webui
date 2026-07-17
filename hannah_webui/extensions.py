@@ -24,6 +24,7 @@ TRUST_LEVELS = {
     "set_satellite_name": 5,
     "delete_satellite": 10,
     "set_satellite_owner": 10,
+    "trigger_firmware_update": 10,
     "list_settings": 10,
     "edit_setting": 10,
     "list_ble_tags": 10,

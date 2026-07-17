@@ -24,6 +24,9 @@ class FakeHannahClient:
                 "last_seen": "2026-06-27 12:00:00",
                 "connected": True,
                 "owner_user_id": 0,
+                "firmware_version": "1.4.0",
+                "update_available": False,
+                "new_version": "",
             },
         }
         self._users = {"claude": "claude", "admin": "admin"}
@@ -162,6 +165,9 @@ class FakeHannahClient:
                 room_mismatch=sat.get("connected", False) and live_room != room_id,
                 owner_user_id=owner_user_id,
                 owner_display_name=owner["display_name"] if owner else "",
+                firmware_version=sat.get("firmware_version") or "",
+                update_available=sat.get("update_available", False),
+                new_version=sat.get("new_version") or "",
             ))
         return result
 
@@ -185,6 +191,11 @@ class FakeHannahClient:
 
     def delete_satellite(self, device_id, requestor_id):
         return (True, "deleted") if self._satellites.pop(device_id, None) is not None else (False, "satellite not found")
+
+    def trigger_firmware_update(self, device_id):
+        if device_id not in self._satellites:
+            return False, "satellite not found"
+        return True, "triggered"
 
     def get_settings(self):
         categories = [hannah_pb2.Category(id=cid, name=name) for cid, name in self._categories.items()]

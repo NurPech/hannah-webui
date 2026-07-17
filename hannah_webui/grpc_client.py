@@ -101,6 +101,11 @@ class HannahClient:
         resp = self._stub.SetSatelliteOwner(hannah_pb2.SetSatelliteOwnerRequest(device_id=device_id, user_id=user_id, requestor_id=requestor_id))
         return resp.ok, resp.message
 
+    def trigger_firmware_update(self, device_id: str) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.TriggerFirmwareUpdate(hannah_pb2.TriggerFirmwareUpdateRequest(device=device_id))
+        return resp.ok, resp.message
+
     def get_settings(self) -> tuple[list["hannah_pb2.Category"], list["hannah_pb2.Setting"]]:
         assert self._stub, "call connect() first"
         resp = self._stub.GetSettings(hannah_pb2.Empty())
