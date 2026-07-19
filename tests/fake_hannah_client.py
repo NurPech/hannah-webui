@@ -27,6 +27,7 @@ class FakeHannahClient:
                 "firmware_version": "1.4.0",
                 "update_available": False,
                 "new_version": "",
+                "smalltalk_followup_listen": False,
             },
         }
         self._users = {"claude": "claude", "admin": "admin"}
@@ -168,6 +169,7 @@ class FakeHannahClient:
                 firmware_version=sat.get("firmware_version") or "",
                 update_available=sat.get("update_available", False),
                 new_version=sat.get("new_version") or "",
+                smalltalk_followup_listen=sat.get("smalltalk_followup_listen", False),
             ))
         return result
 
@@ -196,6 +198,12 @@ class FakeHannahClient:
         if device_id not in self._satellites:
             return False, "satellite not found"
         return True, "triggered"
+
+    def set_satellite_followup(self, device_id, enabled, requestor_id):
+        if device_id not in self._satellites:
+            return False, "satellite not found"
+        self._satellites[device_id]["smalltalk_followup_listen"] = enabled
+        return True, "updated"
 
     def get_settings(self):
         categories = [hannah_pb2.Category(id=cid, name=name) for cid, name in self._categories.items()]

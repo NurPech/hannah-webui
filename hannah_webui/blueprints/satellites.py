@@ -73,6 +73,18 @@ def set_satellite_owner(device_id: str):
     return redirect(url_for("satellites.satellites"))
 
 
+@bp.route("/satellites/<device_id>/followup", methods=["POST"])
+@login_required
+@trust_level_required(TRUST_LEVELS["set_satellite_followup"])
+def set_satellite_followup(device_id: str):
+    hannah = get_hannah()
+    enabled = request.form.get("enabled") == "1"
+    ok, message = hannah.set_satellite_followup(device_id, enabled, session["user_id"])
+    if not ok:
+        flash(message or "FollowUp-Einstellung konnte nicht gesetzt werden.", "danger")
+    return redirect(url_for("satellites.satellites"))
+
+
 @bp.route("/satellites/<device_id>/update-firmware", methods=["POST"])
 @login_required
 @trust_level_required(TRUST_LEVELS["trigger_firmware_update"])

@@ -242,6 +242,15 @@ class TestSatellites:
         resp = logged_in_client.post("/satellites/kueche-esp/update-firmware", follow_redirects=True)
         assert "Zugriff verweigert" in resp.get_data(as_text=True)
 
+    def test_set_satellite_followup_enable(self, logged_in_client, hannah):
+        logged_in_client.post("/satellites/kueche-esp/followup", data={"enabled": "1"})
+        assert hannah._satellites["kueche-esp"]["smalltalk_followup_listen"] is True
+
+    def test_set_satellite_followup_disable(self, logged_in_client, hannah):
+        hannah._satellites["kueche-esp"]["smalltalk_followup_listen"] = True
+        logged_in_client.post("/satellites/kueche-esp/followup", data={})
+        assert hannah._satellites["kueche-esp"]["smalltalk_followup_listen"] is False
+
 
 class TestSatellitePermissions:
     """Row-level Sichtbarkeit: reguläre User (trust_level 7) sehen nur eigene

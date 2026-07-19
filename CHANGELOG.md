@@ -23,6 +23,14 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+
+## 1.15.0
+### Added
+- Satellites page now has a "FollowUp" toggle per satellite, controlling whether the mic reopens after a Smalltalk answer instead of waiting for wake-word/PTT again. Refs #38
+
+### Changed
+- Bumped `hannah-proto` pin to `>=0.5.4` for the new `Satellite.smalltalk_followup_listen` field and `SetSatelliteSmalltalkFollowup` RPC. Refs #38
+
 ## 1.14.0
 ### Added
 - Satellites page now shows firmware version and an "Update" button (trust level 10+): the connected/offline status dot turns amber when a newer firmware is available, and the button fires Core's `TriggerFirmwareUpdate` RPC. Refs #37
