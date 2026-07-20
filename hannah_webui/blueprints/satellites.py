@@ -78,8 +78,10 @@ def set_satellite_owner(device_id: str):
 @trust_level_required(TRUST_LEVELS["set_satellite_followup"])
 def set_satellite_followup(device_id: str):
     hannah = get_hannah()
-    enabled = request.form.get("enabled") == "1"
-    ok, message = hannah.set_satellite_followup(device_id, enabled, session["user_id"])
+    sat = next((s for s in hannah.get_satellites() if s.device_id == device_id), None)
+    if sat is None:
+        return redirect(url_for("satellites.satellites"))
+    ok, message = hannah.set_satellite_followup(device_id, not sat.smalltalk_followup_listen, session["user_id"])
     if not ok:
         flash(message or "FollowUp-Einstellung konnte nicht gesetzt werden.", "danger")
     return redirect(url_for("satellites.satellites"))

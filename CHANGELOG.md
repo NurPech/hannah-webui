@@ -24,6 +24,11 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 
 
 
+## 1.15.1
+### Changed
+- Satellites page's FollowUp toggle now uses the same "An"/"Aus" pill-button pattern as the alarm enable toggle instead of a native checkbox. Refs #39
+- Weekday pickers (alarm creation, trigger "Tage" condition) restyled from plain checkboxes to selectable pill chips; trigger weekday labels unified to the abbreviated form (`Mo`, `Di`, …) already used for alarms. Refs #39
+
 ## 1.15.0
 ### Added
 - Satellites page now has a "FollowUp" toggle per satellite, controlling whether the mic reopens after a Smalltalk answer instead of waiting for wake-word/PTT again. Refs #38

@@ -21,7 +21,7 @@
     {% endif %}
 
     <label class="block text-xs font-medium text-gray-400 mb-1">Wenn <span class="text-gray-500">(Bedingungen sind ODER-verknüpft — eine Uhrzeit-Bedingung gilt zusätzlich immer als UND-Gate für alle übrigen)</span></label>
-    {% set weekdays = [('mon', 'Montag'), ('tue', 'Dienstag'), ('wed', 'Mittwoch'), ('thu', 'Donnerstag'), ('fri', 'Freitag'), ('sat', 'Samstag'), ('sun', 'Sonntag')] %}
+    {% set weekdays = [('mon', 'Mo'), ('tue', 'Di'), ('wed', 'Mi'), ('thu', 'Do'), ('fri', 'Fr'), ('sat', 'Sa'), ('sun', 'So')] %}
     {% for row in when_rows %}
     {% set row_days = row.days.split(',') %}
     <div class="when-row mb-2 pb-2 border-b border-gray-800">
@@ -51,9 +51,11 @@
         <input type="hidden" name="when_days" value="{{ row.days }}" class="when-days-input">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
           {% for code, label in weekdays %}
-          <label class="flex items-center gap-1.5 text-xs text-gray-300">
-            <input type="checkbox" value="{{ code }}" class="day-chip accent-emerald-500" {% if code in row_days %}checked{% endif %}>
-            {{ label }}
+          <label class="cursor-pointer">
+            <input type="checkbox" value="{{ code }}" class="day-chip peer sr-only" {% if code in row_days %}checked{% endif %}>
+            <span class="block text-center text-xs px-2 py-1 rounded border bg-gray-800 text-gray-500 border-gray-700 peer-checked:bg-emerald-500/10 peer-checked:text-emerald-400 peer-checked:border-emerald-500/25 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500 transition-colors">
+              {{ label }}
+            </span>
           </label>
           {% endfor %}
         </div>
