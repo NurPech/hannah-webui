@@ -23,6 +23,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 1.16.2
+### Changed
+- Bumped `hannah-proto` pin to `>=1.0.2`. Refs #42
+
 ## 1.16.1
 ### Changed
 - Tailwind CSS is now built locally (standalone CLI, purged/minified) instead of loaded from the Play CDN — no outbound-internet dependency to render, and fits the PWA's self-contained goal better. Built fresh on every CI run (`build-tailwind` job) and passed as a build artifact to `container-build`/`upload`; not committed. Refs #41
