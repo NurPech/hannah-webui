@@ -23,6 +23,9 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 1.16.0
+### Added
+- PWA support: the WebUI is now installable (Add to Home Screen / desktop install) via a web app manifest, generated icon set, and a minimal service worker that only satisfies installability criteria — no offline caching, since the app is a thin client over live gRPC data from Core. Refs #40
 
 ## 1.15.1
 ### Changed
