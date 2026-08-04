@@ -10,3 +10,8 @@ venv/
 *.db-journal
 .claude/*
 !.claude/skills/
+
+# Built by Tailwind CLI from hannah_webui/static/css/input.css — CI builds and
+# artifacts this fresh on every pipeline run (see .gitlab-ci.yml build-tailwind),
+# never committed. Build it locally too when working on templates/styling.
+hannah_webui/static/css/tailwind.css

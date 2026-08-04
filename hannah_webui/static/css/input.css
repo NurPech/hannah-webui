@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Points at hannah_webui/templates, relative to this file — explicit rather than relying
+   on Tailwind's auto-detection, since the CI build runs from a different working directory
+   than local dev. */
+@source "../../templates/**/*.html";

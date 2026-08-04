@@ -1,9 +1,12 @@
+{# Full literal class strings per color, not built from a color fragment — see the same
+   note on the flash-message styles in base.html for why. Add new colors here, not as a
+   bare color name at the call site, or the static Tailwind build won't generate them. #}
+{% set _pill_styles = {
+  'gray': 'bg-gray-800 text-gray-400 border border-gray-700',
+  'sky': 'bg-sky-500/10 text-sky-400 border border-sky-500/25',
+} %}
 {% macro pill(text, color='gray') %}
-{%- if color == 'gray' -%}
-<span class="text-xs px-1.5 py-px rounded bg-gray-800 text-gray-400 border border-gray-700 mr-1">{{ text }}</span>
-{%- else -%}
-<span class="text-xs px-1.5 py-px rounded bg-{{ color }}-500/10 text-{{ color }}-400 border border-{{ color }}-500/25 mr-1">{{ text }}</span>
-{%- endif -%}
+<span class="text-xs px-1.5 py-px rounded {{ _pill_styles.get(color, _pill_styles['gray']) }} mr-1">{{ text }}</span>
 {% endmacro %}
 
 {#

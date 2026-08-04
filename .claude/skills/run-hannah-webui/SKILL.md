@@ -3,8 +3,9 @@ name: run-hannah-webui
 description: Build, run, and drive hannah-webui (the Flask admin UI for Hannah Core). Use when asked to start hannah-webui, run its tests, take a screenshot of a page, or verify a UI change works end-to-end — without needing a real Hannah Core gRPC backend.
 ---
 
-hannah-webui is a server-rendered Flask app (Jinja2 + Tailwind CDN, no
-SPA framework) that normally talks to Hannah Core over gRPC. There is
+hannah-webui is a server-rendered Flask app (Jinja2 + a locally built
+Tailwind stylesheet, no SPA framework) that normally talks to Hannah
+Core over gRPC. There is
 no real Core in this environment, so the driver boots the app against
 `tests/fake_hannah_client.py` (the same in-memory stand-in the test
 suite uses) on a real HTTP port, then drives it with Playwright.
@@ -24,6 +25,20 @@ venv/Scripts/python -m playwright install chromium
 No `config.yaml` needed for the agent path — `serve_fake.py` builds
 the app directly with `create_app()`, bypassing `main.py`/`config.py`
 and the real gRPC connection entirely.
+
+`base.html` links `hannah_webui/static/css/tailwind.css`, which is
+gitignored and not built by this setup — build it once (and again
+after editing template classes) with the standalone Tailwind CLI, no
+Node/npm needed:
+
+```sh
+# one-time: download the CLI for your platform from
+# https://github.com/tailwindlabs/tailwindcss/releases (pinned to
+# v4.3.3 in .gitlab-ci.yml's build-tailwind job — keep in sync)
+tailwindcss -i hannah_webui/static/css/input.css -o hannah_webui/static/css/tailwind.css --minify
+```
+
+Without it, pages render completely unstyled — see Gotchas.
 
 ## Run (agent path)
 
@@ -186,9 +201,13 @@ through Playwright at all.
   `urllib.request` for readiness polls and one-off page fetches
   instead (see the commands above); it isn't affected since it's an
   already-trusted interpreter.
-- **Tailwind loads from `cdn.tailwindcss.com`** (see `base.html`) — if
-  the environment has no outbound internet, pages render unstyled
-  (still functionally testable, just ugly in screenshots).
+- **`hannah_webui/static/css/tailwind.css` doesn't exist until you
+  build it** (gitignored, CI builds it fresh via the standalone CLI —
+  see Setup). Forgetting this makes every page render completely
+  unstyled — still functionally testable, just ugly in screenshots.
+  Same failure mode if you add a new utility class to a template and
+  forget to rebuild: the class is in the DOM but not in the compiled
+  CSS, so it silently does nothing.
 - **`create_app()` takes the fake client directly** — don't route
   through `main.py`/`config.py` for the fake-backend path. `main.py`
   needs a `config.yaml` and every route that touches Hannah data will

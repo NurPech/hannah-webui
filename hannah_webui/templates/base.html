@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
   <meta name="theme-color" content="#111827">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen">
 {% if session.get('user_id') %}
@@ -72,12 +72,25 @@
 {% endif %}
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-  {% set flash_colors = {'danger': 'rose', 'success': 'emerald', 'warning': 'amber', 'info': 'blue'} %}
+  {# Full literal class strings per category, not built from a color fragment — Tailwind's
+     static build only generates classes it finds verbatim in the source, unlike the Play CDN
+     which JIT-compiled from the rendered DOM and tolerated bg-{{ color }}-500/10-style pieces. #}
+  {% set flash_styles = {
+    'danger': 'bg-rose-500/10 text-rose-300 border-rose-500/25',
+    'success': 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
+    'warning': 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+    'info': 'bg-blue-500/10 text-blue-300 border-blue-500/25',
+  } %}
+  {% set flash_close_styles = {
+    'danger': 'text-rose-400 hover:text-rose-200',
+    'success': 'text-emerald-400 hover:text-emerald-200',
+    'warning': 'text-amber-400 hover:text-amber-200',
+    'info': 'text-blue-400 hover:text-blue-200',
+  } %}
   {% for category, message in get_flashed_messages(with_categories=true) %}
-  {% set color = flash_colors.get(category, 'blue') %}
-  <div class="mb-4 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm bg-{{ color }}-500/10 text-{{ color }}-300 border-{{ color }}-500/25">
+  <div class="mb-4 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm {{ flash_styles.get(category, flash_styles['info']) }}">
     <span class="flex-1">{{ message }}</span>
-    <button type="button" onclick="this.closest('div').remove()" class="text-{{ color }}-400 hover:text-{{ color }}-200">&times;</button>
+    <button type="button" onclick="this.closest('div').remove()" class="{{ flash_close_styles.get(category, flash_close_styles['info']) }}">&times;</button>
   </div>
   {% endfor %}
   {% block content %}{% endblock %}

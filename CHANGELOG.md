@@ -23,6 +23,13 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 1.16.1
+### Changed
+- Tailwind CSS is now built locally (standalone CLI, purged/minified) instead of loaded from the Play CDN — no outbound-internet dependency to render, and fits the PWA's self-contained goal better. Built fresh on every CI run (`build-tailwind` job) and passed as a build artifact to `container-build`/`upload`; not committed. Refs #41
+
+### Fixed
+- Two spots built Tailwind classes dynamically from a variable (`bg-{{ color }}-500/10` in `_macros.html`'s `pill()` macro and `base.html`'s flash-message styling) — invisible under the Play CDN's DOM-scanning JIT, but would've silently lost all color styling under the new static build, which only generates classes it finds as complete literal strings in the source. Refs #41
+
 ## 1.16.0
 ### Added
 - PWA support: the WebUI is now installable (Add to Home Screen / desktop install) via a web app manifest, generated icon set, and a minimal service worker that only satisfies installability criteria — no offline caching, since the app is a thin client over live gRPC data from Core. Refs #40
