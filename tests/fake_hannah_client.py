@@ -14,7 +14,7 @@ class FakeHannahClient:
             "bad": "Bad",
         }
         self._groups = {
-            "erdgeschoss": {"display_name": "Erdgeschoss", "room_ids": ["kueche", "wohnzimmer"]},
+            "erdgeschoss": {"display_name": "Erdgeschoss", "device_ids": ["kueche-esp"]},
         }
         self._satellites = {
             "kueche-esp": {
@@ -93,11 +93,15 @@ class FakeHannahClient:
     def get_groups(self):
         result = []
         for group_id, g in self._groups.items():
-            rooms = [
-                hannah_pb2.Room(room_id=rid, display_name=self._rooms[rid])
-                for rid in g["room_ids"] if rid in self._rooms
+            satellites = [
+                hannah_pb2.GroupSatellite(
+                    device_id=device_id,
+                    display_name=self._satellites[device_id].get("display_name") or "",
+                    room_id=self._satellites[device_id].get("room_id") or "",
+                )
+                for device_id in g["device_ids"] if device_id in self._satellites
             ]
-            result.append(hannah_pb2.Group(group_id=group_id, display_name=g["display_name"], rooms=rooms))
+            result.append(hannah_pb2.Group(group_id=group_id, display_name=g["display_name"], satellites=satellites))
         return result
 
     def get_group(self, group_id):
@@ -106,7 +110,7 @@ class FakeHannahClient:
     def create_group(self, group_id, display_name):
         if group_id in self._groups:
             return False
-        self._groups[group_id] = {"display_name": display_name, "room_ids": []}
+        self._groups[group_id] = {"display_name": display_name, "device_ids": []}
         return True
 
     def update_group(self, group_id, display_name):
@@ -118,10 +122,10 @@ class FakeHannahClient:
     def delete_group(self, group_id):
         return self._groups.pop(group_id, None) is not None
 
-    def set_group_rooms(self, group_id, room_ids):
+    def set_group_satellites(self, group_id, device_ids):
         if group_id not in self._groups:
             return False
-        self._groups[group_id]["room_ids"] = list(room_ids)
+        self._groups[group_id]["device_ids"] = list(device_ids)
         return True
 
     def get_devices(self):

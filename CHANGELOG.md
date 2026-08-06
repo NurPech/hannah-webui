@@ -22,6 +22,9 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.0.0
+### Changed
+- **BREAKING:** Groups now reference satellites directly instead of rooms (`hannah-proto>=2.0.1`, `Group.satellites` replaces `Group.rooms`, `SetGroupSatellites` replaces `SetGroupRooms`). The group edit form lists satellites to assign instead of rooms; the room→groups badge on `/rooms` is now derived from which room each group's satellites currently sit in. Refs #43
 
 ## 1.16.2
 ### Changed

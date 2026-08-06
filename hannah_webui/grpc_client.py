@@ -68,9 +68,9 @@ class HannahClient:
         resp = self._stub.DeleteGroup(hannah_pb2.DeleteGroupRequest(group_id=group_id))
         return resp.ok
 
-    def set_group_rooms(self, group_id: str, room_ids: list[str]) -> bool:
+    def set_group_satellites(self, group_id: str, device_ids: list[str]) -> bool:
         assert self._stub, "call connect() first"
-        resp = self._stub.SetGroupRooms(hannah_pb2.SetGroupRoomsRequest(group_id=group_id, room_ids=room_ids))
+        resp = self._stub.SetGroupSatellites(hannah_pb2.SetGroupSatellitesRequest(group_id=group_id, device_ids=device_ids))
         return resp.ok
 
     def get_satellites(self) -> list["hannah_pb2.Satellite"]:

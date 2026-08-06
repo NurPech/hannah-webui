@@ -178,15 +178,15 @@ class TestGroups:
         resp = admin_client.get("/groups")
         assert "Obergeschoss" in resp.get_data(as_text=True)
 
-    def test_edit_group_renames_and_sets_rooms(self, admin_client):
+    def test_edit_group_renames_and_sets_satellites(self, admin_client):
         admin_client.post(
             "/groups/erdgeschoss/edit",
-            data={"display_name": "EG", "room_ids": "bad"},
+            data={"display_name": "EG", "device_ids": "kueche-esp"},
         )
         resp = admin_client.get("/groups")
         body = resp.get_data(as_text=True)
         assert "EG" in body
-        assert "Bad" in body
+        assert "Küche01" in body
 
     def test_delete_group(self, admin_client):
         admin_client.post("/groups/erdgeschoss/delete")

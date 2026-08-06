@@ -17,21 +17,21 @@
     </div>
 
     <div class="mb-5">
-      <label class="block text-xs font-medium text-gray-400 mb-2">Räume</label>
-      {% if rooms %}
+      <label class="block text-xs font-medium text-gray-400 mb-2">Satelliten</label>
+      {% if satellites %}
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-        {% for room in rooms %}
-        <label for="room_{{ room.room_id }}" class="flex items-center gap-2 text-sm text-gray-300">
-          <input type="checkbox" name="room_ids" value="{{ room.room_id }}" id="room_{{ room.room_id }}"
-                 {% if room.room_id in selected_room_ids %}checked{% endif %}
+        {% for sat in satellites %}
+        <label for="sat_{{ sat.device_id }}" class="flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" name="device_ids" value="{{ sat.device_id }}" id="sat_{{ sat.device_id }}"
+                 {% if sat.device_id in selected_device_ids %}checked{% endif %}
                  class="accent-emerald-500">
-          {{ room.display_name }}
-          <span class="text-xs text-gray-500">{{ room.room_id }}</span>
+          {{ sat.display_name or sat.device_id }}
+          <span class="text-xs text-gray-500">{{ sat.room_display_name or sat.device_id }}</span>
         </label>
         {% endfor %}
       </div>
       {% else %}
-      <div class="text-xs text-gray-500">Keine Räume verfügbar – erst ioBroker-Adapter verbinden.</div>
+      <div class="text-xs text-gray-500">Keine Satelliten verfügbar.</div>
       {% endif %}
     </div>
 

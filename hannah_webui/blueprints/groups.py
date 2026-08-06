@@ -11,7 +11,7 @@ bp = Blueprint("groups", __name__)
 @trust_level_required(TRUST_LEVELS["list_groups"])
 def groups():
     hannah = get_hannah()
-    return render_template("groups.html", groups=hannah.get_groups(), rooms=hannah.get_rooms())
+    return render_template("groups.html", groups=hannah.get_groups())
 
 
 @bp.route("/groups/create", methods=["POST"])
@@ -33,12 +33,12 @@ def edit_group(group_id: str):
     group = hannah.get_group(group_id)
     if group is None:
         return redirect(url_for("groups.groups"))
-    selected_room_ids = {r.room_id for r in group.rooms}
+    selected_device_ids = {s.device_id for s in group.satellites}
     return render_template(
         "group_edit.html",
         group=group,
-        rooms=hannah.get_rooms(),
-        selected_room_ids=selected_room_ids,
+        satellites=hannah.get_satellites(),
+        selected_device_ids=selected_device_ids,
     )
 
 
@@ -48,10 +48,10 @@ def edit_group(group_id: str):
 def save_group(group_id: str):
     hannah = get_hannah()
     display_name = request.form.get("display_name", "").strip()
-    room_ids = request.form.getlist("room_ids")
+    device_ids = request.form.getlist("device_ids")
     if display_name:
         hannah.update_group(group_id, display_name)
-    hannah.set_group_rooms(group_id, room_ids)
+    hannah.set_group_satellites(group_id, device_ids)
     return redirect(url_for("groups.groups"))
 
 

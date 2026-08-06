@@ -24,10 +24,10 @@
       </div>
     </div>
     <div class="mt-3">
-      {% for room in group.rooms %}
-        {{ pill(room.display_name) }}
+      {% for sat in group.satellites %}
+        {{ pill(sat.display_name or sat.device_id) }}
       {% else %}
-        <span class="text-gray-600 text-xs">Noch keine Räume zugewiesen.</span>
+        <span class="text-gray-600 text-xs">Noch keine Satelliten zugewiesen.</span>
       {% endfor %}
     </div>
   </div>
