@@ -631,7 +631,14 @@ class TestErrorPages:
         hannah.get_rooms = lambda: (_ for _ in ()).throw(grpc.RpcError())
         resp = logged_in_client.get("/rooms")
         assert resp.status_code == 503
-        assert "nicht erreichbar" in resp.get_data(as_text=True)
+        body = resp.get_data(as_text=True)
+        assert "nicht erreichbar" in body
+        assert "bg-rose-400" in body  # header status dot turns red
+
+    def test_header_status_dot_is_green_when_core_reachable(self, logged_in_client):
+        body = logged_in_client.get("/rooms").get_data(as_text=True)
+        assert "bg-emerald-400" in body
+        assert "bg-rose-400" not in body
 
     def test_unknown_route_shows_friendly_404_page(self, client):
         resp = client.get("/this-route-does-not-exist")

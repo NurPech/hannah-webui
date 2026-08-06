@@ -15,7 +15,11 @@
 {% if session.get('user_id') %}
 <header class="sticky top-0 z-20 bg-gray-900/80 backdrop-blur border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center gap-4">
   <a href="/" class="flex items-center gap-2.5 mr-2">
-    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]"></span>
+    {% if core_unreachable %}
+    <span class="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_6px_2px_rgba(251,113,133,0.4)]" title="Hannah Core nicht erreichbar"></span>
+    {% else %}
+    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" title="Hannah Core erreichbar"></span>
+    {% endif %}
     <span class="font-bold tracking-tight text-sm">Hannah</span>
     <span class="text-xs text-gray-600 font-mono" title="WebUI-Version">{{ 'v' + app_version if app_version != 'dev' else app_version }}</span>
   </a>

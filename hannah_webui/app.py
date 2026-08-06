@@ -65,6 +65,7 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
         return render_template(
             "error.html", title="Hannah Core nicht erreichbar",
             message="Hannah Core antwortet gerade nicht. Bitte versuche es in Kürze erneut.",
+            core_unreachable=True,
         ), 503
 
     @app.errorhandler(404)
