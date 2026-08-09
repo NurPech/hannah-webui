@@ -11,6 +11,7 @@ import grpc
 
 from hannah_webui.grpc_interceptors import ProtocolVersionClientInterceptor, read_proto_version
 from hannah_proto import hannah_pb2, hannah_pb2_grpc
+from hannah_proto.interceptor.compat_interceptor import CompatVersionSyncClientInterceptor
 
 log = logging.getLogger(__name__)
 
@@ -24,8 +25,17 @@ class HannahClient:
         self._stub: Optional[hannah_pb2_grpc.HannahServiceStub] = None
 
     def connect(self) -> None:
+        # compat_version (hannah-proto#10/hannah#217) runs additively next
+        # to ProtocolVersionClientInterceptor, not as a replacement — a
+        # breaking change scoped to one message no longer has to reject
+        # every client, only calls that actually use the affected message.
+        service = hannah_pb2.DESCRIPTOR.services_by_name["HannahService"]
         channel = grpc.insecure_channel(self._address)
-        self._channel = grpc.intercept_channel(channel, ProtocolVersionClientInterceptor(read_proto_version()))
+        self._channel = grpc.intercept_channel(
+            channel,
+            ProtocolVersionClientInterceptor(read_proto_version()),
+            CompatVersionSyncClientInterceptor(service),
+        )
         self._stub = hannah_pb2_grpc.HannahServiceStub(self._channel)
         log.info("gRPC channel to Hannah at %s created", self._address)
 

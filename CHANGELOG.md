@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.1.1
+### Fixed
+- `connect()` now correctly chains `ProtocolVersionClientInterceptor` and the new `CompatVersionSyncClientInterceptor` (per-message `x-compat-version` check, `hannah-proto>=3.3.0`) via `grpc.intercept_channel()` — the previous attempt passed `interceptors=` as a keyword (invalid signature) and used the `grpc.aio` (async) interceptor variant, incompatible with this repo's synchronous gRPC client. Refs #45
+
 ## 2.1.0
 ### Changed
 - The header status dot next to the "Hannah" logo now turns red on the "Core nicht erreichbar" error page instead of always showing green regardless of actual reachability. Refs #44

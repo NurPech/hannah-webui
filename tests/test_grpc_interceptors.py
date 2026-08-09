@@ -1,7 +1,13 @@
 import os
+from concurrent import futures
 from unittest.mock import Mock
-from hannah_proto import PROTO_VERSION
 
+import grpc
+import pytest
+from hannah_proto import PROTO_VERSION, hannah_pb2, hannah_pb2_grpc
+from hannah_proto.interceptor.compat_interceptor import COMPAT_VERSION_METADATA_KEY
+
+from hannah_webui.grpc_client import HannahClient
 from hannah_webui.grpc_interceptors import (
     PROTO_VERSION_METADATA_KEY,
     ProtocolVersionClientInterceptor,
@@ -81,3 +87,37 @@ def test_intercept_stream_unary_and_stream_stream_forward_request_iterator():
     forwarded_details, forwarded_iter = continuation.call_args[0]
     assert forwarded_iter is request_iterator
     assert (PROTO_VERSION_METADATA_KEY, EXPECTED_VERSION) in forwarded_details.metadata
+
+
+class _MetadataCapturingServicer(hannah_pb2_grpc.HannahServiceServicer):
+    def __init__(self):
+        self.received_metadata = None
+
+    def GetRooms(self, request, context):
+        self.received_metadata = dict(context.invocation_metadata())
+        return hannah_pb2.GetRoomsResponse()
+
+
+@pytest.fixture
+def metadata_server():
+    servicer = _MetadataCapturingServicer()
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    hannah_pb2_grpc.add_HannahServiceServicer_to_server(servicer, server)
+    port = server.add_insecure_port("localhost:0")
+    server.start()
+    yield servicer, port
+    server.stop(None)
+
+
+def test_connect_chains_proto_version_and_compat_version_interceptors(metadata_server):
+    """connect() wires ProtocolVersionClientInterceptor and CompatVersionSyncClientInterceptor
+    additively (hannah-proto#10/hannah#217, see grpc_client.py) — a real call must carry both
+    x-proto-version and x-compat-version, not just whichever interceptor runs last."""
+    servicer, port = metadata_server
+    client = HannahClient("localhost", port)
+    client.connect()
+
+    client.get_rooms()
+
+    assert servicer.received_metadata[PROTO_VERSION_METADATA_KEY] == EXPECTED_VERSION
+    assert COMPAT_VERSION_METADATA_KEY in servicer.received_metadata
