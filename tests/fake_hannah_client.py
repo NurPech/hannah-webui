@@ -71,6 +71,23 @@ class FakeHannahClient:
             1: {"topic_prefix": "vwconnect/golf", "home_address": "Musterstraße 1", "owner_user_ids": [1], "name": "Golf"},
         }
         self._next_car_id = 2
+        self._activity_log = {
+            1: {
+                "ts": "2026-08-12 08:10:00", "channel_type": "satellite", "channel_id": "kueche-esp",
+                "user_id": 1, "raw_text": "Wie ist das Wetter", "intent_name": "weather",
+                "intent_meta_json": "", "answer_text": "Heute sonnig, 22 Grad.", "has_audio": True,
+            },
+            2: {
+                "ts": "2026-08-12 08:15:00", "channel_type": "telegram", "channel_id": "123456789",
+                "user_id": 1, "raw_text": "Wecker für 7 Uhr", "intent_name": "alarm_create",
+                "intent_meta_json": "", "answer_text": "Alarm gesetzt.", "has_audio": False,
+            },
+            3: {
+                "ts": "2026-08-11 20:00:00", "channel_type": "satellite", "channel_id": "kueche-esp",
+                "user_id": 2, "raw_text": "Licht an", "intent_name": "device_control",
+                "intent_meta_json": "", "answer_text": "Mach ich.", "has_audio": True,
+            },
+        }
 
     def connect(self) -> None:
         pass
@@ -411,3 +428,29 @@ class FakeHannahClient:
 
     def delete_car(self, car_id):
         return self._cars.pop(car_id, None) is not None
+
+    def list_activity_log(self, requestor_id, filter_user_id=0, page_size=30, before_id=0):
+        target_user_id = filter_user_id or requestor_id
+        entries = sorted(
+            ((aid, e) for aid, e in self._activity_log.items() if e["user_id"] == target_user_id),
+            key=lambda kv: kv[0], reverse=True,
+        )
+        if before_id:
+            entries = [(aid, e) for aid, e in entries if aid < before_id]
+        page = entries[:page_size]
+        has_more = len(entries) > page_size
+        result = [
+            hannah_pb2.ActivityLogEntry(
+                id=aid, ts=e["ts"], channel_type=e["channel_type"], channel_id=e["channel_id"],
+                user_id=e["user_id"], raw_text=e["raw_text"], intent_name=e["intent_name"],
+                intent_meta_json=e["intent_meta_json"], answer_text=e["answer_text"], has_audio=e["has_audio"],
+            )
+            for aid, e in page
+        ]
+        return result, has_more
+
+    def stream_activity_audio(self, requestor_id, activity_log_id):
+        entry = self._activity_log.get(activity_log_id)
+        if not entry or not entry["has_audio"]:
+            return b"", 0
+        return b"\x01\x00" * 8000, 16000

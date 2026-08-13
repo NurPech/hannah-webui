@@ -27,6 +27,14 @@ _TRIGGER_NEW_ALSO_ROWS = 2
 _TRIGGER_NEW_ACTION_ROWS = 2
 _CMP_KEYS = ("value", "above", "below")
 
+_ACTIVITY_LOG_PAGE_SIZE = 30
+_ACTIVITY_LOG_CHANNEL_LABELS = {
+    "telegram": "Telegram",
+    "iobroker": "ioBroker",
+    "grpc_text": "gRPC (Text)",
+    "grpc_voice": "gRPC (Voice)",
+}
+
 
 def _slugify(s: str) -> str:
     """Einfacher Slug: Kleinbuchstaben, Leerzeichen -> Bindestrich, Sonderzeichen entfernen."""
@@ -291,3 +299,35 @@ def _prepare_setting_row(s) -> dict:
     except (json.JSONDecodeError, TypeError):
         pass
     return {"setting": s, "value_type": "json", "pretty_value": pretty_value}
+
+
+def _resolve_activity_channel(entry, satellite_display_names: dict) -> dict:
+    """Formatiert das 'wo' eines Activity-Log-Eintrags: 'satellite' wird auf den
+    Satelliten-Anzeigenamen aufgelöst (Fallback auf die rohe channel_id, falls der
+    Satellit inzwischen gelöscht wurde). Andere channel_types (telegram/iobroker/
+    grpc_text/grpc_voice) bekommen ein festes Label statt Auflösung — ihre channel_id
+    ist typspezifisch (bei telegram z.B. die Konto-ID, die ohnehin schon über user_id
+    einem User zugeordnet ist) und wird nur als Zusatzinfo mitgegeben."""
+    if entry.channel_type == "satellite":
+        return {"label": satellite_display_names.get(entry.channel_id, entry.channel_id), "detail": ""}
+    label = _ACTIVITY_LOG_CHANNEL_LABELS.get(entry.channel_type, entry.channel_type or "?")
+    return {"label": label, "detail": entry.channel_id}
+
+
+def _build_wav(pcm: bytes, sample_rate: int, channels: int = 1, bits_per_sample: int = 16) -> bytes:
+    """Baut einen minimalen WAV-Header um die rohen PCM-Daten (16-bit signed, mono —
+    siehe ActivityAudioChunk in activity_log.proto). StreamActivityAudio liefert nur
+    die Samples, ein <audio>-Element im Browser braucht aber einen Container mit Header."""
+    byte_rate = sample_rate * channels * bits_per_sample // 8
+    block_align = channels * bits_per_sample // 8
+    data_size = len(pcm)
+    header = b"RIFF" + (36 + data_size).to_bytes(4, "little") + b"WAVE"
+    header += b"fmt " + (16).to_bytes(4, "little")
+    header += (1).to_bytes(2, "little")  # PCM
+    header += channels.to_bytes(2, "little")
+    header += sample_rate.to_bytes(4, "little")
+    header += byte_rate.to_bytes(4, "little")
+    header += block_align.to_bytes(2, "little")
+    header += bits_per_sample.to_bytes(2, "little")
+    header += b"data" + data_size.to_bytes(4, "little")
+    return header + pcm

@@ -33,6 +33,10 @@
 
   <nav id="nav-links" class="hidden sm:flex sm:items-center gap-1 w-full sm:w-auto basis-full sm:basis-auto order-3 sm:order-none mr-auto">
     {% set trust = session.get('trust_level', 0) %}
+    {% if trust >= trust_levels['list_activity_log'] %}
+    <a href="{{ url_for('activity_log.activity_log') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'activity_log.activity_log' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Verlauf</a>
+    {% endif %}
     {% if trust >= trust_levels['list_rooms'] %}
     <a href="{{ url_for('rooms.rooms') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'rooms.rooms' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Räume</a>

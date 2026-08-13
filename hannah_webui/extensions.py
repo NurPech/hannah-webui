@@ -45,6 +45,8 @@ TRUST_LEVELS = {
     "edit_user": 10,
     "delete_user": 10,
     "link_resident": 10,
+    "list_activity_log": 0,
+    "filter_activity_log": 10,
 }
 
 

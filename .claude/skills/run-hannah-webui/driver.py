@@ -34,6 +34,7 @@ PAGES = [
     ("/settings", "04_settings.png"),
     ("/triggers", "05_triggers.png"),
     ("/users", "06_users.png"),
+    ("/activity-log", "07_activity_log.png"),
 ]
 
 

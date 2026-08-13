@@ -22,6 +22,11 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+
+## 2.2.0
+### Added
+- New "Verlauf" (Activity Log) page, listing every user's own logged interactions (transcript, resolved channel, intent, answer text) with cursor-based pagination and inline audio playback for entries that have it — `StreamActivityAudio`'s raw PCM is buffered server-side and served as `audio/wav`. Trust-level-10 users additionally get a filter to view another user's log. Requires `hannah-proto>=3.4.0`. Refs #46
+
 ## 2.1.1
 ### Fixed
 - `connect()` now correctly chains `ProtocolVersionClientInterceptor` and the new `CompatVersionSyncClientInterceptor` (per-message `x-compat-version` check, `hannah-proto>=3.3.0`) via `grpc.intercept_channel()` — the previous attempt passed `interceptors=` as a keyword (invalid signature) and used the `grpc.aio` (async) interceptor variant, incompatible with this repo's synchronous gRPC client. Refs #45

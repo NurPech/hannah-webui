@@ -12,6 +12,7 @@ from flask import Flask, jsonify, render_template
 from werkzeug.exceptions import HTTPException
 
 from hannah_webui.blueprints import (
+    activity_log,
     auth,
     ble_tags,
     cars,
@@ -87,7 +88,7 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
             message="Da ist etwas schiefgelaufen. Bitte versuche es erneut.",
         ), 500
 
-    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users):
+    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users, activity_log):
         app.register_blueprint(blueprint_module.bp)
 
     return app

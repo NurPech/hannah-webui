@@ -299,3 +299,25 @@ class HannahClient:
         assert self._stub, "call connect() first"
         resp = self._stub.DeleteCar(hannah_pb2.DeleteCarRequest(id=car_id))
         return resp.ok
+
+    def list_activity_log(self, requestor_id: int, filter_user_id: int = 0,
+                           page_size: int = 30, before_id: int = 0) -> tuple[list["hannah_pb2.ActivityLogEntry"], bool]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.ListActivityLog(hannah_pb2.ListActivityLogRequest(
+            requestor_id=requestor_id, filter_user_id=filter_user_id, page_size=page_size, before_id=before_id,
+        ))
+        return list(resp.entries), resp.has_more
+
+    def stream_activity_audio(self, requestor_id: int, activity_log_id: int) -> tuple[bytes, int]:
+        """Buffers the full server-streamed PCM response — activity log clips are short
+        (a few seconds of spoken audio), so buffering server-side and serving a proper
+        WAV response is simpler and more browser-compatible than chunked streaming."""
+        assert self._stub, "call connect() first"
+        pcm = bytearray()
+        sample_rate = 0
+        for chunk in self._stub.StreamActivityAudio(hannah_pb2.StreamActivityAudioRequest(
+            requestor_id=requestor_id, activity_log_id=activity_log_id,
+        )):
+            pcm.extend(chunk.pcm)
+            sample_rate = sample_rate or chunk.sample_rate
+        return bytes(pcm), sample_rate

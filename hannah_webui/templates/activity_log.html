@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+{% block title %}Verlauf{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
+  <h2 class="text-lg font-semibold text-gray-100">Verlauf</h2>
+  {% if can_filter %}
+  <form method="get" action="{{ url_for('activity_log.activity_log') }}" class="flex items-center gap-2">
+    <label class="text-xs text-gray-500">User</label>
+    <select name="filter_user_id" onchange="this.form.submit()"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      <option value="0" {% if filter_user_id == 0 %}selected{% endif %}>– eigenes Log –</option>
+      {% for user in users %}
+      <option value="{{ user.id }}" {% if filter_user_id == user.id %}selected{% endif %}>{{ user.display_name or user.user_name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% endif %}
+</div>
+
+<div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+  {% if rows %}
+  <table class="w-full text-sm hidden sm:table">
+    <thead>
+      <tr class="border-b border-gray-800 text-gray-500 text-xs">
+        <th class="text-left px-4 py-3">Zeit</th>
+        {% if can_filter %}
+        <th class="text-left px-4 py-3">User</th>
+        {% endif %}
+        <th class="text-left px-4 py-3">Wo</th>
+        <th class="text-left px-4 py-3">Erkannt</th>
+        <th class="text-left px-4 py-3">Intent</th>
+        <th class="text-left px-4 py-3">Antwort</th>
+        <th class="text-left px-4 py-3">Audio</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      {% set entry = row.entry %}
+      <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30 align-top">
+        <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ entry.ts }}</td>
+        {% if can_filter %}
+        <td class="px-4 py-3 text-xs text-gray-400">{{ row.user_display_name or '–' }}</td>
+        {% endif %}
+        <td class="px-4 py-3">
+          <div class="text-gray-200">{{ row.channel.label }}</div>
+          {% if row.channel.detail %}
+          <div class="text-xs text-gray-600 font-mono">{{ row.channel.detail }}</div>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-gray-300">{{ entry.raw_text or '–' }}</td>
+        <td class="px-4 py-3">
+          {% if entry.intent_name %}{{ macros.pill(entry.intent_name, 'sky') }}{% else %}<span class="text-gray-600">–</span>{% endif %}
+        </td>
+        <td class="px-4 py-3 text-gray-300">{{ entry.answer_text or '–' }}</td>
+        <td class="px-4 py-3">
+          {% if entry.has_audio %}
+          <audio controls preload="none" class="h-8 w-44">
+            <source src="{{ url_for('activity_log.activity_log_audio', entry_id=entry.id) }}" type="audio/wav">
+          </audio>
+          {% else %}
+          <span class="text-gray-600">–</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="sm:hidden divide-y divide-gray-800/50">
+    {% for row in rows %}
+    {% set entry = row.entry %}
+    <div class="p-4">
+      <div class="flex items-center justify-between gap-2 text-xs text-gray-500">
+        <span>{{ entry.ts }}</span>
+        {% if can_filter %}
+        <span class="text-gray-400">{{ row.user_display_name or '–' }}</span>
+        {% endif %}
+      </div>
+      <div class="mt-2">
+        <span class="text-gray-200">{{ row.channel.label }}</span>
+        {% if row.channel.detail %}
+        <span class="text-xs text-gray-600 font-mono">({{ row.channel.detail }})</span>
+        {% endif %}
+      </div>
+      <div class="mt-2 text-gray-300">{{ entry.raw_text or '–' }}</div>
+      <div class="mt-2">
+        {% if entry.intent_name %}{{ macros.pill(entry.intent_name, 'sky') }}{% endif %}
+      </div>
+      <div class="mt-2 text-gray-300">{{ entry.answer_text or '–' }}</div>
+      {% if entry.has_audio %}
+      <audio controls preload="none" class="mt-2 h-8 w-full">
+        <source src="{{ url_for('activity_log.activity_log_audio', entry_id=entry.id) }}" type="audio/wav">
+      </audio>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% if has_more %}
+  <div class="p-4 text-center border-t border-gray-800">
+    <a href="{{ url_for('activity_log.activity_log', before_id=next_before_id, filter_user_id=filter_user_id) }}"
+       class="inline-block bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-xs text-gray-300 transition-colors">Ältere anzeigen</a>
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="p-8 text-center text-gray-500">
+    Noch keine Einträge im Verlauf.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

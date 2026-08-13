@@ -658,3 +658,60 @@ class TestErrorPages:
         resp = logged_in_client.get("/rooms")
         assert resp.status_code == 500
         assert "schiefgelaufen" in resp.get_data(as_text=True)
+
+
+class TestActivityLog:
+    def test_lists_own_entries_only(self, logged_in_client):
+        body = logged_in_client.get("/activity-log").get_data(as_text=True)
+        assert "Wie ist das Wetter" in body
+        assert "Wecker für 7 Uhr" in body
+        assert "Licht an" not in body  # gehört user_id 2 (admin), nicht claude (user_id 1)
+
+    def test_resolves_satellite_channel_to_display_name(self, logged_in_client):
+        body = logged_in_client.get("/activity-log").get_data(as_text=True)
+        assert "Küche01" in body  # satellite display_name statt roher device_id
+
+    def test_shows_label_for_non_satellite_channel(self, logged_in_client):
+        body = logged_in_client.get("/activity-log").get_data(as_text=True)
+        assert "Telegram" in body
+
+    def test_regular_user_has_no_filter_dropdown(self, logged_in_client):
+        body = logged_in_client.get("/activity-log").get_data(as_text=True)
+        assert 'name="filter_user_id"' not in body
+
+    def test_regular_user_cannot_filter_other_users_log(self, logged_in_client):
+        """filter_user_id wird ohne Trust-Level 10 ignoriert, Route bleibt beim eigenen Log."""
+        body = logged_in_client.get("/activity-log?filter_user_id=2").get_data(as_text=True)
+        assert "Licht an" not in body
+        assert "Wie ist das Wetter" in body
+
+    def test_admin_sees_filter_dropdown(self, admin_client):
+        body = admin_client.get("/activity-log").get_data(as_text=True)
+        assert 'name="filter_user_id"' in body
+
+    def test_admin_can_filter_other_users_log(self, admin_client):
+        body = admin_client.get("/activity-log?filter_user_id=1").get_data(as_text=True)
+        assert "Wie ist das Wetter" in body
+        assert "Wecker für 7 Uhr" in body
+        assert "Licht an" not in body
+
+    def test_before_id_cursor_excludes_entries_at_or_after_cursor(self, logged_in_client):
+        body = logged_in_client.get("/activity-log?before_id=2").get_data(as_text=True)
+        assert "Wie ist das Wetter" in body  # id 1, älter als der Cursor
+        assert "Wecker für 7 Uhr" not in body  # id 2, durch Cursor ausgeschlossen
+
+    def test_entry_with_audio_gets_player_link(self, logged_in_client):
+        body = logged_in_client.get("/activity-log").get_data(as_text=True)
+        assert "/activity-log/1/audio" in body  # entry 1: has_audio=True
+        assert "/activity-log/2/audio" not in body  # entry 2: has_audio=False
+
+    def test_audio_endpoint_returns_wav(self, logged_in_client):
+        resp = logged_in_client.get("/activity-log/1/audio")
+        assert resp.status_code == 200
+        assert resp.mimetype == "audio/wav"
+        assert resp.data[:4] == b"RIFF"
+        assert resp.data[8:12] == b"WAVE"
+
+    def test_audio_endpoint_404s_without_audio(self, logged_in_client):
+        resp = logged_in_client.get("/activity-log/2/audio")
+        assert resp.status_code == 404
