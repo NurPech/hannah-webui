@@ -95,10 +95,16 @@
     </div>
     {% endfor %}
   </div>
-  {% if has_more %}
-  <div class="p-4 text-center border-t border-gray-800">
-    <a href="{{ url_for('activity_log.activity_log', before_id=next_before_id, filter_user_id=filter_user_id) }}"
-       class="inline-block bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-xs text-gray-300 transition-colors">Ältere anzeigen</a>
+  {% if has_prev or has_more %}
+  <div class="p-4 flex items-center justify-center gap-3 border-t border-gray-800">
+    {% if has_prev %}
+    <a href="{{ url_for('activity_log.activity_log', before_id=prev_before_id, history=prev_history, filter_user_id=filter_user_id) }}"
+       class="inline-block bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-xs text-gray-300 transition-colors">← Vorherige Einträge</a>
+    {% endif %}
+    {% if has_more %}
+    <a href="{{ url_for('activity_log.activity_log', before_id=next_before_id, history=older_history, filter_user_id=filter_user_id) }}"
+       class="inline-block bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-xs text-gray-300 transition-colors">Ältere anzeigen →</a>
+    {% endif %}
   </div>
   {% endif %}
   {% else %}

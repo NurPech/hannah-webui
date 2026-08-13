@@ -715,3 +715,25 @@ class TestActivityLog:
     def test_audio_endpoint_404s_without_audio(self, logged_in_client):
         resp = logged_in_client.get("/activity-log/2/audio")
         assert resp.status_code == 404
+
+    def test_first_page_has_no_prev_link(self, logged_in_client):
+        body = logged_in_client.get("/activity-log").get_data(as_text=True)
+        assert "Vorherige Einträge" not in body
+
+    def test_prev_link_appears_once_paginated(self, logged_in_client):
+        body = logged_in_client.get("/activity-log?before_id=2").get_data(as_text=True)
+        assert "Vorherige Einträge" in body
+
+    def test_prev_link_falls_back_to_first_page_without_history(self, logged_in_client):
+        """Ohne history-Stack (z.B. direkt von einer verlinkten Seite 2 aus) landet
+        'Vorherige Einträge' auf before_id=0 (Seite 1) statt ins Leere zu zeigen."""
+        body = logged_in_client.get("/activity-log?before_id=2").get_data(as_text=True)
+        assert "before_id=0" in body
+
+    def test_prev_link_pops_history_stack(self, logged_in_client):
+        """history=0,2 simuliert: Seite 1 (before_id=0) -> Seite 2 (before_id=2) -> aktuelle
+        Seite 3. 'Vorherige Einträge' muss zu before_id=2 mit history=0 zurückspringen,
+        nicht zu before_id=0."""
+        body = logged_in_client.get("/activity-log?before_id=999&history=0,2").get_data(as_text=True)
+        assert "before_id=2" in body
+        assert "history=0" in body

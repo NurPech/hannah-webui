@@ -301,6 +301,15 @@ def _prepare_setting_row(s) -> dict:
     return {"setting": s, "value_type": "json", "pretty_value": pretty_value}
 
 
+def _parse_activity_log_history(raw: str) -> list[int]:
+    """Liest den 'history'-Query-Param der Verlauf-Seite: eine kommagetrennte Liste
+    bereits besuchter before_id-Cursor (älteste zuerst), damit "Vorherige Einträge"
+    zur exakt vorherigen Seite zurückspringen kann. ListActivityLogRequest kennt nur
+    einen Vorwärts-Cursor (before_id) — der Rückweg wird hier als Breadcrumb im
+    Query-String nachgebaut, nicht von Core geliefert."""
+    return [int(x) for x in raw.split(",") if x.strip().lstrip("-").isdigit()]
+
+
 def _resolve_activity_channel(entry, satellite_display_names: dict) -> dict:
     """Formatiert das 'wo' eines Activity-Log-Eintrags: 'satellite' wird auf den
     Satelliten-Anzeigenamen aufgelöst (Fallback auf die rohe channel_id, falls der

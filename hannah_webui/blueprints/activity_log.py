@@ -1,7 +1,7 @@
 from flask import Blueprint, Response, abort, render_template, request, session
 
 from hannah_webui.extensions import TRUST_LEVELS, get_hannah, login_required
-from hannah_webui.route_helpers import _ACTIVITY_LOG_PAGE_SIZE, _build_wav, _resolve_activity_channel
+from hannah_webui.route_helpers import _ACTIVITY_LOG_PAGE_SIZE, _build_wav, _parse_activity_log_history, _resolve_activity_channel
 
 bp = Blueprint("activity_log", __name__)
 
@@ -13,6 +13,7 @@ def activity_log():
     can_filter = session.get("trust_level", 0) >= TRUST_LEVELS["filter_activity_log"]
     filter_user_id = int(request.args.get("filter_user_id") or 0) if can_filter else 0
     before_id = int(request.args.get("before_id") or 0)
+    history = _parse_activity_log_history(request.args.get("history", ""))
 
     entries, has_more = hannah.list_activity_log(
         requestor_id=session["user_id"], filter_user_id=filter_user_id,
@@ -30,6 +31,10 @@ def activity_log():
     return render_template(
         "activity_log.html", rows=rows, has_more=has_more,
         next_before_id=entries[-1].id if entries else 0,
+        older_history=",".join(str(x) for x in (*history, before_id)),
+        has_prev=before_id != 0,
+        prev_before_id=history[-1] if history else 0,
+        prev_history=",".join(str(x) for x in history[:-1]),
         can_filter=can_filter, users=[u for u in hannah.get_users() if u.active] if can_filter else [],
         filter_user_id=filter_user_id,
     )

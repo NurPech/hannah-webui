@@ -23,6 +23,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 2.2.1
+### Fixed
+- The Activity Log page's pagination only had a "Ältere anzeigen" (older) link — no way back to newer entries except the browser's back button. Adds a "Vorherige Einträge" link, tracking visited cursors as a breadcrumb stack in the query string (`ListActivityLogRequest` only exposes a forward `before_id` cursor, no reverse one). Refs #47
+
 ## 2.2.0
 ### Added
 - New "Verlauf" (Activity Log) page, listing every user's own logged interactions (transcript, resolved channel, intent, answer text) with cursor-based pagination and inline audio playback for entries that have it — `StreamActivityAudio`'s raw PCM is buffered server-side and served as `audio/wav`. Trust-level-10 users additionally get a filter to view another user's log. Requires `hannah-proto>=3.4.0`. Refs #46
