@@ -71,6 +71,17 @@ class FakeHannahClient:
             1: {"topic_prefix": "vwconnect/golf", "home_address": "Musterstraße 1", "owner_user_ids": [1], "name": "Golf"},
         }
         self._next_car_id = 2
+        self._messages = {
+            1: {
+                "user_id": 1, "content": "Es ist kalt draußen, Fenster prüfen.", "source": "weather",
+                "created_at": "2026-08-18 07:00:00", "sender_user_id": 0, "reply_to_id": 0,
+            },
+            2: {
+                "user_id": 1, "content": "Kannst du später zurückrufen?", "source": "webui",
+                "created_at": "2026-08-18 09:00:00", "sender_user_id": 2, "reply_to_id": 0,
+            },
+        }
+        self._next_message_id = 3
         self._activity_log = {
             1: {
                 "ts": "2026-08-12 08:10:00", "channel_type": "satellite", "channel_id": "kueche-esp",
@@ -448,6 +459,28 @@ class FakeHannahClient:
             for aid, e in page
         ]
         return result, has_more
+
+    def list_messages(self, requestor_id, filter_user_id=0):
+        target_user_id = filter_user_id or requestor_id
+        return [
+            hannah_pb2.Message(
+                id=mid, user_id=m["user_id"], content=m["content"], source=m["source"],
+                created_at=m["created_at"], sender_user_id=m["sender_user_id"], reply_to_id=m["reply_to_id"],
+            )
+            for mid, m in sorted(self._messages.items()) if m["user_id"] == target_user_id
+        ]
+
+    def create_message(self, user_id, content, source, sender_user_id=0, reply_to_id=0):
+        message_id = self._next_message_id
+        self._next_message_id += 1
+        self._messages[message_id] = {
+            "user_id": user_id, "content": content, "source": source,
+            "created_at": "2026-08-18 12:00:00", "sender_user_id": sender_user_id, "reply_to_id": reply_to_id,
+        }
+        return True, "created"
+
+    def delete_message(self, requestor_id, message_id):
+        return self._messages.pop(message_id, None) is not None
 
     def stream_activity_audio(self, requestor_id, activity_log_id):
         entry = self._activity_log.get(activity_log_id)

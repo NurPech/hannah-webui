@@ -308,6 +308,27 @@ class HannahClient:
         ))
         return list(resp.entries), resp.has_more
 
+    def list_messages(self, requestor_id: int, filter_user_id: int = 0) -> list["hannah_pb2.Message"]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.ListMessages(hannah_pb2.ListMessagesRequest(
+            requestor_id=requestor_id, filter_user_id=filter_user_id,
+        ))
+        return list(resp.messages)
+
+    def create_message(self, user_id: int, content: str, source: str,
+                        sender_user_id: int = 0, reply_to_id: int = 0) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.CreateMessage(hannah_pb2.CreateMessageRequest(
+            user_id=user_id, content=content, source=source,
+            sender_user_id=sender_user_id, reply_to_id=reply_to_id,
+        ))
+        return resp.ok, resp.message
+
+    def delete_message(self, requestor_id: int, message_id: int) -> bool:
+        assert self._stub, "call connect() first"
+        resp = self._stub.DeleteMessage(hannah_pb2.DeleteMessageRequest(requestor_id=requestor_id, id=message_id))
+        return resp.ok
+
     def stream_activity_audio(self, requestor_id: int, activity_log_id: int) -> tuple[bytes, int]:
         """Buffers the full server-streamed PCM response — activity log clips are short
         (a few seconds of spoken audio), so buffering server-side and serving a proper

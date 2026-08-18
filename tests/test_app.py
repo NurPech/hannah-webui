@@ -737,3 +737,71 @@ class TestActivityLog:
         body = logged_in_client.get("/activity-log?before_id=999&history=0,2").get_data(as_text=True)
         assert "before_id=2" in body
         assert "history=0" in body
+
+
+class TestMessages:
+    """#48 — Message-Mailbox (hannah#234/hannah#237): passive Benachrichtigungen +
+    User-zu-User-Chat mit Reply-Flow. sender_user_id=0 = Systemnachricht, nicht
+    reply-fähig; der Sender bekommt aktuell keine eigene Kopie seiner Nachricht."""
+
+    def test_lists_own_messages(self, logged_in_client):
+        body = logged_in_client.get("/messages").get_data(as_text=True)
+        assert "Es ist kalt draußen, Fenster prüfen." in body
+        assert "Kannst du später zurückrufen?" in body
+
+    def test_system_message_has_no_reply_option(self, logged_in_client):
+        body = logged_in_client.get("/messages").get_data(as_text=True)
+        # nur die Nachricht mit sender_user_id=2 ist reply-fähig, die Systemnachricht (sender_user_id=0) nicht
+        assert body.count("Antworten") == 1
+
+    def test_nav_badge_shows_pending_count(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert ">2<" in body
+
+    def test_nav_badge_hidden_when_inbox_empty(self, logged_in_client, hannah):
+        hannah._messages.clear()
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "bg-emerald-600 text-white text-[10px]" not in body
+
+    def test_recipient_dropdown_excludes_self_but_includes_others(self, logged_in_client, hannah):
+        hannah._user_records[2] = {
+            "user_name": "bob", "display_name": "Bob", "email": "bob@example.com",
+            "trust_level": 5, "active": True, "system_messages": False, "type": "roomie", "linked_accounts": {},
+        }
+        body = logged_in_client.get("/messages").get_data(as_text=True)
+        select_html = body.split('name="recipient_id"')[1].split("</select>")[0]
+        assert "Bob" in select_html
+        assert "Leonie" not in select_html
+
+    def test_send_message_creates_entry_with_sender_and_recipient(self, logged_in_client, hannah):
+        hannah._user_records[2] = {
+            "user_name": "bob", "display_name": "Bob", "email": "bob@example.com",
+            "trust_level": 5, "active": True, "system_messages": False, "type": "roomie", "linked_accounts": {},
+        }
+        bob_id = 2
+        logged_in_client.post("/messages/send", data={"recipient_id": str(bob_id), "content": "Hallo Bob"})
+        created = next(m for m in hannah._messages.values() if m["content"] == "Hallo Bob")
+        assert created["user_id"] == bob_id
+        assert created["sender_user_id"] == 1
+        assert created["source"] == "webui"
+        assert created["reply_to_id"] == 0
+
+    def test_send_message_requires_recipient_and_content(self, logged_in_client, hannah):
+        before = len(hannah._messages)
+        logged_in_client.post("/messages/send", data={"recipient_id": "", "content": ""})
+        assert len(hannah._messages) == before
+
+    def test_reply_to_user_message_sets_reply_to_id_and_goes_back_to_sender(self, logged_in_client, hannah):
+        logged_in_client.post("/messages/2/reply", data={"content": "Klar, rufe zurück."})
+        created = next(m for m in hannah._messages.values() if m["content"] == "Klar, rufe zurück.")
+        assert created["user_id"] == 2
+        assert created["sender_user_id"] == 1
+        assert created["reply_to_id"] == 2
+
+    def test_reply_to_system_message_is_ignored(self, logged_in_client, hannah):
+        logged_in_client.post("/messages/1/reply", data={"content": "Sollte nicht ankommen"})
+        assert not any(m["content"] == "Sollte nicht ankommen" for m in hannah._messages.values())
+
+    def test_delete_message(self, logged_in_client, hannah):
+        logged_in_client.post("/messages/1/delete")
+        assert 1 not in hannah._messages

@@ -8,7 +8,7 @@ import logging
 import os
 
 import grpc
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, session
 from werkzeug.exceptions import HTTPException
 
 from hannah_webui.blueprints import (
@@ -18,6 +18,7 @@ from hannah_webui.blueprints import (
     cars,
     groups,
     me,
+    messages,
     rooms,
     satellites,
     settings,
@@ -56,6 +57,19 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
     def inject_trust_levels():
         return {"trust_levels": TRUST_LEVELS, "app_version": app_version}
 
+    @app.context_processor
+    def inject_pending_messages_count():
+        # Nav badge, rendered on every page via base.html — a gRPC error here must not
+        # take down otherwise-unrelated pages, so it degrades to 0 instead of propagating
+        # to the global grpc.RpcError handler below.
+        if "user_id" not in session:
+            return {"pending_messages_count": 0}
+        try:
+            count = len(hannah.list_messages(requestor_id=session["user_id"]))
+        except grpc.RpcError:
+            count = 0
+        return {"pending_messages_count": count}
+
     @app.route("/version")
     def version():
         return jsonify({"version": app_version})
@@ -88,7 +102,7 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
             message="Da ist etwas schiefgelaufen. Bitte versuche es erneut.",
         ), 500
 
-    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users, activity_log):
+    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users, activity_log, messages):
         app.register_blueprint(blueprint_module.bp)
 
     return app

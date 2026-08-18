@@ -7,4 +7,4 @@ gunicorn>=21.2.0    # Produktions-WSGI-Server (siehe deploy/hannah-webui.service
 # Proto schema — published package instead of the git-submodule/local-codegen
 # pattern (#60); pins the runtime proto/gRPC-version coupling that used to be
 # handled by matching grpcio-tools' version locally
-hannah-proto>=3.4.0    # 3.4.0 adds ActivityLogEntry/ListActivityLog/StreamActivityAudio (Activity Log, #46)
+hannah-proto>=3.7.1    # 3.7.1 adds Message/CreateMessage/ListMessages/DeleteMessage (Message-Mailbox, #48)

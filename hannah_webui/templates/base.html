@@ -37,6 +37,15 @@
     <a href="{{ url_for('activity_log.activity_log') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'activity_log.activity_log' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Verlauf</a>
     {% endif %}
+    {% if trust >= trust_levels['list_messages'] %}
+    <a href="{{ url_for('messages.messages') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 {% if request.endpoint == 'messages.messages' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">
+      Nachrichten
+      {% if pending_messages_count %}
+      <span class="bg-emerald-600 text-white text-[10px] leading-none rounded-full px-1.5 py-0.5 font-semibold">{{ pending_messages_count }}</span>
+      {% endif %}
+    </a>
+    {% endif %}
     {% if trust >= trust_levels['list_rooms'] %}
     <a href="{{ url_for('rooms.rooms') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'rooms.rooms' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Räume</a>

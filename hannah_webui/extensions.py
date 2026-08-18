@@ -47,6 +47,7 @@ TRUST_LEVELS = {
     "link_resident": 10,
     "list_activity_log": 0,
     "filter_activity_log": 10,
+    "list_messages": 0,
 }
 
 

@@ -23,6 +23,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 2.3.0
+### Added
+- New "Nachrichten" page: a personal, passive message mailbox (hannah#234) with a bidirectional reply flow (hannah#237) — list own messages (sender name or "System" for `sender_user_id=0`, source, timestamp), reply inline (only for user-sent messages, not system notifications), send a new message to any other user, and delete individually. Nav shows a badge with the pending count. Requires `hannah-proto>=3.7.1`. Note: the sender currently gets no copy of their own sent message (Core-side, may be added later), so this is an inbox view, not a full two-sided chat transcript. Refs #48
+
 ## 2.2.1
 ### Fixed
 - The Activity Log page's pagination only had a "Ältere anzeigen" (older) link — no way back to newer entries except the browser's back button. Adds a "Vorherige Einträge" link, tracking visited cursors as a breadcrumb stack in the query string (`ListActivityLogRequest` only exposes a forward `before_id` cursor, no reverse one). Refs #47
