@@ -23,6 +23,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
 -->
 
 
+## 2.3.1
+### Changed
+- README now covers the full feature set, a pages/permissions table, and configuration/deployment in more depth; added `docs/usage.md` with a per-page usage walkthrough. Refs #49
+
 ## 2.3.0
 ### Added
 - New "Nachrichten" page: a personal, passive message mailbox (hannah#234) with a bidirectional reply flow (hannah#237) — list own messages (sender name or "System" for `sender_user_id=0`, source, timestamp), reply inline (only for user-sent messages, not system notifications), send a new message to any other user, and delete individually. Nav shows a badge with the pending count. Requires `hannah-proto>=3.7.1`. Note: the sender currently gets no copy of their own sent message (Core-side, may be added later), so this is an inbox view, not a full two-sided chat transcript. Refs #48
