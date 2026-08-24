@@ -22,6 +22,9 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.3.2
+### Added
+- `docker-compose.example.yml` alongside the existing `docker run` example in the README. Refs #50
 
 ## 2.3.1
 ### Changed

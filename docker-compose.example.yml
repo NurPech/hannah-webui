@@ -1,0 +1,22 @@
+services:
+  hannah-webui:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Signiert die Flask-Session-Cookie — muss über Neustarts hinweg stabil sein,
+      # sonst werden Nutzer zufällig ausgeloggt. Generieren mit:
+      #   python3 -c "import secrets; print(secrets.token_hex(32))"
+      HANNAH_WEBUI_SECRET_KEY: "CHANGE_ME"
+
+      # Hannah Core, per gRPC — läuft als eigener Dienst/Container, nicht Teil
+      # dieses Compose-Files
+      HANNAH_WEBUI_GRPC_HOST: "hannah-core.example.internal"
+      HANNAH_WEBUI_GRPC_PORT: "50051"
+
+      # Optional: Telegram Login Widget für Account-Verknüpfung in /me — Bot-Token
+      # via @BotFather, Domain muss dort per /setdomain auf diese WebUI-Instanz
+      # freigeschaltet sein
+      # HANNAH_WEBUI_TELEGRAM_BOT_TOKEN: ""
+      # HANNAH_WEBUI_TELEGRAM_BOT_USERNAME: ""

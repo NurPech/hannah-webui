@@ -99,7 +99,7 @@ grpc:
   port: 50051
 ```
 
-Äquivalente Env-Vars (Docker-Pfad, kein `config.yaml` im Image): `HANNAH_WEBUI_HOST`, `HANNAH_WEBUI_PORT`, `HANNAH_WEBUI_SECRET_KEY`, `HANNAH_WEBUI_TELEGRAM_BOT_TOKEN`, `HANNAH_WEBUI_TELEGRAM_BOT_USERNAME`, `HANNAH_WEBUI_GRPC_HOST`, `HANNAH_WEBUI_GRPC_PORT`.
+Äquivalente Env-Vars (Docker-Pfad, kein `config.yaml` im Image): `HANNAH_WEBUI_SECRET_KEY`, `HANNAH_WEBUI_TELEGRAM_BOT_TOKEN`, `HANNAH_WEBUI_TELEGRAM_BOT_USERNAME`, `HANNAH_WEBUI_GRPC_HOST`, `HANNAH_WEBUI_GRPC_PORT`. `HANNAH_WEBUI_HOST`/`HANNAH_WEBUI_PORT` existieren zwar auch, wirken aber nur bei `main.py` (lokaler Dev-Server) — der Docker-Entrypoint `wsgi.py` liest `cfg.host`/`cfg.port` gar nicht, die Bind-Adresse steckt fest in `gunicorn.conf.py` (`0.0.0.0:5000`, siehe unten).
 
 ---
 
@@ -128,15 +128,16 @@ Bind-Adresse/Worker-Anzahl stehen in der `.service`-Unit, nicht in `config.yaml`
 Multi-Arch-Image (amd64/arm64), Konfiguration ausschließlich per Env-Vars:
 
 ```bash
+docker build -t hannah-webui .
 docker run -d \
   -p 5000:5000 \
   -e HANNAH_WEBUI_SECRET_KEY="..." \
   -e HANNAH_WEBUI_GRPC_HOST=hannah-core \
   -e HANNAH_WEBUI_GRPC_PORT=50051 \
-  registry.dev.kernstock.net/gessinger/voice/hannah-webui:latest
+  hannah-webui
 ```
 
-Getaggt mit Versionsnummer und `latest`.
+Beispiel-Compose-Datei: [`docker-compose.example.yml`](docker-compose.example.yml).
 
 ---
 
