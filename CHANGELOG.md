@@ -22,6 +22,11 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+
+## 2.3.3
+### Changed
+- Settings and User pages are more compact and visually consistent: Settings now lays out its category cards in a two-column grid (was a single full-width column) with a tightened typographic hierarchy (uppercase category label, bold setting name); the User table merges its two separate action columns into one right-aligned "Aktionen" column and shows trust-level as a pill badge instead of a bare number.
+
 ## 2.3.2
 ### Added
 - `docker-compose.example.yml` alongside the existing `docker run` example in the README. Refs #50

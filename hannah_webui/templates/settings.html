@@ -1,66 +1,69 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-5">
+<div class="flex items-center justify-between mb-4">
   <h2 class="text-lg font-semibold text-gray-100">Settings</h2>
   <span class="text-xs text-gray-500">Entsprechen 1:1 dem, was früher in config.yaml stand.</span>
 </div>
 
 {% if not categories %}
-<div class="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">Keine Settings-Kategorien vorhanden.</div>
+<div class="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center text-gray-500">Keine Settings-Kategorien vorhanden.</div>
 {% endif %}
 
-{% for category in categories %}
-<div class="bg-gray-900 border border-gray-800 rounded-xl mb-4">
-  <div class="border-b border-gray-800 px-4 py-2.5 font-mono text-sm text-gray-300">{{ category.name }}</div>
-  <div class="p-4 space-y-4">
-    {% for item in settings_by_cat.get(category.id, []) %}
-    {% set setting = item.setting %}
-    <form method="post" action="{{ url_for('settings.update_setting', setting_id=setting.id) }}">
-      <label class="block text-xs font-medium text-gray-400 mb-1">
-        {{ setting.name }}{% if item.value_type == 'json' %} <span class="text-gray-600">(Erweitert)</span>{% endif %}
-      </label>
-      <input type="hidden" name="value_type" value="{{ item.value_type }}">
-
-      {% if item.value_type == 'text' %}
-      <textarea name="text_value" rows="6"
-                class="w-full max-w-xl bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ item.text_value }}</textarea>
-      <button class="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Speichern</button>
-
-      {% elif item.value_type == 'list' %}
-      <div class="space-y-1 max-w-xl">
-        {% for v in item.list_rows %}
-        <input type="text" name="list_item" value="{{ v }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
-        {% endfor %}
-      </div>
-      <button class="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Speichern</button>
-
-      {% elif item.value_type == 'keyvalue' %}
-      <div class="space-y-1 max-w-xl">
-        {% for k, v in item.kv_rows %}
-        <div class="grid grid-cols-2 gap-2">
-          <input type="text" name="kv_key" value="{{ k }}" placeholder="Key"
-                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors">
-          <input type="text" name="kv_value" value="{{ v }}" placeholder="Value"
-                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+  {% for category in categories %}
+  <div class="bg-gray-900 border border-gray-800 rounded-lg">
+    <div class="px-4 py-2.5 border-b border-gray-800">
+      <h3 class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{{ category.name }}</h3>
+    </div>
+    <div class="divide-y divide-gray-800">
+      {% for item in settings_by_cat.get(category.id, []) %}
+      {% set setting = item.setting %}
+      <form method="post" action="{{ url_for('settings.update_setting', setting_id=setting.id) }}" class="px-4 py-3">
+        <div class="flex items-baseline justify-between gap-3 mb-2">
+          <label class="text-sm font-medium text-gray-200">{{ setting.name }}</label>
+          {% if item.value_type == 'json' %}<span class="text-[10px] font-mono uppercase tracking-wide text-gray-600 shrink-0">Erweitert</span>{% endif %}
         </div>
-        {% endfor %}
-      </div>
-      <button class="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Speichern</button>
+        <input type="hidden" name="value_type" value="{{ item.value_type }}">
 
-      {% else %}
-      <div class="flex flex-col sm:flex-row gap-2 sm:items-start">
+        {% if item.value_type == 'text' %}
+        <textarea name="text_value" rows="5"
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ item.text_value }}</textarea>
+
+        {% elif item.value_type == 'list' %}
+        <div class="space-y-1.5">
+          {% for v in item.list_rows %}
+          <input type="text" name="list_item" value="{{ v }}"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+          {% endfor %}
+        </div>
+
+        {% elif item.value_type == 'keyvalue' %}
+        <div class="space-y-1.5">
+          {% for k, v in item.kv_rows %}
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" name="kv_key" value="{{ k }}" placeholder="Key"
+                   class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+            <input type="text" name="kv_value" value="{{ v }}" placeholder="Value"
+                   class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+          </div>
+          {% endfor %}
+        </div>
+
+        {% else %}
         <textarea name="value" rows="3"
-                  class="w-full max-w-xl bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ item.pretty_value }}</textarea>
-        <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Speichern</button>
-      </div>
-      {% endif %}
-    </form>
-    {% else %}
-    <div class="text-xs text-gray-500">Noch keine Settings in dieser Kategorie.</div>
-    {% endfor %}
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ item.pretty_value }}</textarea>
+        {% endif %}
+
+        <div class="mt-2 flex justify-end">
+          <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Speichern</button>
+        </div>
+      </form>
+      {% else %}
+      <div class="px-4 py-3 text-xs text-gray-500">Noch keine Settings in dieser Kategorie.</div>
+      {% endfor %}
+    </div>
   </div>
+  {% endfor %}
 </div>
-{% endfor %}
 {% endblock %}
