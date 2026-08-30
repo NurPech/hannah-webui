@@ -45,11 +45,19 @@ class HannahClient:
 
     def login(self, username: str, password: str) -> tuple[bool, Optional["hannah_pb2.User"]]:
         """Verifies credentials against Core's user registry. Returns (found, user_or_None).
-        grpc.RpcError (Core unreachable) is deliberately not caught here — it would otherwise
-        look identical to a wrong password ("Ungültige Zugangsdaten") on the login page.
-        Left to propagate to app.py's global grpc.RpcError handler instead."""
+        Core rejects both an unknown username and a wrong password for a known one with a
+        gRPC-level UNAUTHENTICATED status (not just resp.found=False) — caught here and folded
+        into the normal "not found" result so the login page shows its usual invalid-credentials
+        message instead of falling through to app.py's global grpc.RpcError handler ("Core nicht
+        erreichbar"), see hannah-webui#51. Any other RpcError (Core actually unreachable) still
+        propagates to that handler."""
         assert self._stub, "call connect() first"
-        resp = self._stub.Login(hannah_pb2.LoginRequest(username=username, password=password))
+        try:
+            resp = self._stub.Login(hannah_pb2.LoginRequest(username=username, password=password))
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return False, None
+            raise
         return resp.found, (resp.user if resp.found else None)
 
     def get_rooms(self) -> list["hannah_pb2.Room"]:

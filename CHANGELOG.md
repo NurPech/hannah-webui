@@ -22,6 +22,9 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.3.4
+### Fixed
+- Wrong login credentials (unknown username, or wrong password for a known user) now show the normal "Ungültige Zugangsdaten." message again instead of the "Hannah Core nicht erreichbar" error page — Core now rejects both cases with a gRPC-level `UNAUTHENTICATED` status instead of `resp.found=False`, and `HannahClient.login()` didn't account for that. Refs #51
 
 ## 2.3.3
 ### Changed
