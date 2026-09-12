@@ -44,7 +44,12 @@ def triggers():
         except json.JSONDecodeError:
             when = {}
         triggers_view.append({"trigger": t, "actions": actions, "when": _as_or_list(when)})
-    return render_template("triggers.html", triggers=triggers_view)
+    residents_by_roomie_id = {r.roomie_id: r.display_name for r in hannah.get_residents()}
+    return render_template(
+        "triggers.html", triggers=triggers_view,
+        residents_by_roomie_id=residents_by_roomie_id,
+        presence_state_labels=dict(_PRESENCE_STATES),
+    )
 
 
 @bp.route("/triggers/new")

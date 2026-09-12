@@ -489,6 +489,20 @@ class TestTriggers:
         body = resp.get_data(as_text=True)
         assert "gute nacht" in body
 
+    def test_triggers_list_shows_presence_action(self, logged_in_client, hannah):
+        """#56 — die Liste kannte nur say/set_state, set_presence fiel auf eine leere
+        'Setze  = '-Zeile zurück, weil sie in den else-Zweig lief."""
+        hannah._triggers["gute_nacht"] = {
+            "when": {"phrase": "gute nacht"}, "cancel_when": None, "on_response": [],
+            "actions": [{"set_presence": {"roomie": "leonie", "state": "asleep"}}],
+            "say": "", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+        }
+        resp = logged_in_client.get("/triggers")
+        body = resp.get_data(as_text=True)
+        assert "Setze Anwesenheit von" in body
+        assert ">Leonie<" in body
+        assert ">Schläft<" in body
+
     def test_triggers_list_hides_pill_for_condition_without_label(self, logged_in_client, hannah):
         """Eine Bedingung ganz ohne time/phrase/state (z.B. unvollständig gespeichert)
         darf keine leere Pill erzeugen."""

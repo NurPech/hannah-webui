@@ -24,7 +24,8 @@
     {% set weekdays = [('mon', 'Mo'), ('tue', 'Di'), ('wed', 'Mi'), ('thu', 'Do'), ('fri', 'Fr'), ('sat', 'Sa'), ('sun', 'So')] %}
     {% for row in when_rows %}
     {% set row_days = row.days.split(',') %}
-    <div class="when-row mb-2 pb-2 border-b border-gray-800">
+    <div class="when-row removable-row relative pr-7 mb-2 pb-2 border-b border-gray-800">
+      <button type="button" class="row-remove-btn absolute top-0 right-0 text-gray-600 hover:text-rose-400 transition-colors text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-gray-800" title="Zeile entfernen" aria-label="Zeile entfernen">✕</button>
       <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end">
         <div class="sm:col-span-2">
           <label class="block text-xs text-gray-500 mb-1">Typ</label>
@@ -73,7 +74,8 @@
       </select>
     </div>
     {% for row in also_rows %}
-    <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+    <div class="also-row removable-row relative pr-7 grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+      <button type="button" class="row-remove-btn absolute top-0 right-0 text-gray-600 hover:text-rose-400 transition-colors text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-gray-800" title="Zeile entfernen" aria-label="Zeile entfernen">✕</button>
       {{ state_condition(row, device_options, 'also_state', 'also_value', 'sm:col-span-5', 'sm:col-span-3', cmp_name='also_cmp', cmp_cols='sm:col-span-4') }}
     </div>
     {% endfor %}
@@ -81,7 +83,8 @@
     <details class="mb-4">
       <summary class="text-xs font-medium text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">Außer wenn <span class="text-gray-500">(optional, sperrt das Auslösen)</span></summary>
       {% for row in unless_rows %}
-      <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 mt-2 border-b border-gray-800">
+      <div class="unless-row removable-row relative pr-7 grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 mt-2 border-b border-gray-800">
+        <button type="button" class="row-remove-btn absolute top-0 right-0 text-gray-600 hover:text-rose-400 transition-colors text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-gray-800" title="Zeile entfernen" aria-label="Zeile entfernen">✕</button>
         {{ state_condition(row, device_options, 'unless_state', 'unless_value', 'sm:col-span-5', 'sm:col-span-3', cmp_name='unless_cmp', cmp_cols='sm:col-span-4') }}
       </div>
       {% endfor %}
@@ -95,7 +98,8 @@
     </div>
     {% for row in action_rows %}
     {% set action_device_row = {"state": row.state_id, "value": row.state_value} %}
-    <div class="action-row grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+    <div class="action-row removable-row relative pr-7 grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+      <button type="button" class="row-remove-btn absolute top-0 right-0 text-gray-600 hover:text-rose-400 transition-colors text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-gray-800" title="Zeile entfernen" aria-label="Zeile entfernen">✕</button>
       <div class="sm:col-span-2">
         <label class="block text-xs text-gray-500 mb-1">Typ</label>
         <select name="action_type" class="action-type-select w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
@@ -180,6 +184,17 @@
 </div>
 
 <script>
+// #56: Wenn/Und/Außer-wenn/Dann-Zeilen einzeln entfernen können, ohne den ganzen
+// Trigger zu löschen — die Zeile verschwindet einfach aus dem DOM, ihre Felder werden
+// beim Speichern dadurch gar nicht erst mitgeschickt (Parser überspringt ohnehin leere
+// Zeilen positionsweise).
+document.querySelectorAll('.row-remove-btn').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var row = btn.closest('.removable-row');
+    if (row) row.remove();
+  });
+});
+
 document.querySelectorAll('.when-row').forEach(function (row) {
   var hidden = row.querySelector('.when-days-input');
   row.querySelectorAll('.day-chip').forEach(function (checkbox) {

@@ -49,6 +49,9 @@
     {% for a in item.actions %}
     <li>
       {% if a.get('say') %}Sage „{{ a.get('say') }}“ in {{ a.get('room') or 'all' }}
+      {% elif a.get('set_presence') %}Setze Anwesenheit von
+        <code class="font-mono text-xs bg-gray-800 rounded px-1 py-0.5">{{ residents_by_roomie_id.get(a['set_presence'].get('roomie', ''), a['set_presence'].get('roomie', '')) }}</code> =
+        <code class="font-mono text-xs bg-gray-800 rounded px-1 py-0.5">{{ presence_state_labels.get(a['set_presence'].get('state', ''), a['set_presence'].get('state', '')) }}</code>
       {% else %}Setze <code class="font-mono text-xs bg-gray-800 rounded px-1 py-0.5">{{ a.get('set_state', {}).get('id', '') }}</code> =
         <code class="font-mono text-xs bg-gray-800 rounded px-1 py-0.5">{{ a.get('set_state', {}).get('value', '') }}</code>{% endif %}
     </li>

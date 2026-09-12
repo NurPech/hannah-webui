@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.5.2
+### Fixed
+- Trigger overview page rendered `set_presence` actions as a blank "Setze &nbsp;=&nbsp;" line instead of the resident and status, since it only knew the `say`/`set_state` action shapes. Now shows e.g. "Setze Anwesenheit von Leonie = Schläft". Refs #56
+
 ## 2.5.1
 ### Fixed
 - CI: `normalize-manifest` pinned `quay.io/skopeo/stable:latest` to a digest that quay.io later garbage-collected under that mutable tag, breaking every tagged pipeline ("image ... not found"). Switched to the immutable `v1.22.2-immutable` tag, which quay.io publishes specifically so digest-pinning tools like Renovate don't hit this. Refs #55
