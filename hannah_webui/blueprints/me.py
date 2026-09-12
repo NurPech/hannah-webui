@@ -3,7 +3,7 @@ from urllib.parse import quote, urlsplit
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from hannah_webui.extensions import get_hannah, get_telegram_config, login_required
+from hannah_webui.extensions import TRUST_LEVELS, get_hannah, get_telegram_config, login_required
 from hannah_webui.route_helpers import _WEEKDAY_NAMES, _verify_telegram_auth
 
 bp = Blueprint("me", __name__)
@@ -36,10 +36,20 @@ def me():
             f"&request_access=write&return_to={quote(me_url, safe='')}"
         )
     alarms = sorted(hannah.get_alarms(session["user_id"]), key=lambda a: a.time)
+    satellites = hannah.get_satellites()
+    # Enrollment needs a live satellite to run the guided dialog on — unlike the alarm
+    # dropdown below, an offline target here isn't just harmless-but-useless, the request
+    # would go nowhere, so filter to connected ones upfront.
+    enrollment_satellites = [s for s in satellites if s.connected]
+    enrollable_users = (
+        [u for u in hannah.get_users() if u.active]
+        if session.get("trust_level", 0) >= TRUST_LEVELS["enroll_other_voice"] else []
+    )
     return render_template(
         "me.html", display_name=session.get("display_name"),
         linked_accounts=linked_accounts, telegram_login_url=telegram_login_url,
-        alarms=alarms, satellites=hannah.get_satellites(), weekday_names=_WEEKDAY_NAMES,
+        alarms=alarms, satellites=satellites, weekday_names=_WEEKDAY_NAMES,
+        enrollment_satellites=enrollment_satellites, enrollable_users=enrollable_users,
     )
 
 
@@ -135,4 +145,28 @@ def delete_alarm(alarm_id: int):
     alarm = next((a for a in hannah.get_alarms(session["user_id"]) if a.id == alarm_id), None)
     if alarm is not None:
         hannah.delete_alarm(alarm_id)
+    return redirect(url_for("me.me"))
+
+
+@bp.route("/me/voice-enrollment/start", methods=["POST"])
+@login_required
+def start_voice_enrollment():
+    hannah = get_hannah()
+    satellite_id = request.form.get("satellite_id", "").strip()
+    if not satellite_id:
+        flash("Satellit ist Pflicht.", "danger")
+        return redirect(url_for("me.me"))
+    # Self-enrollment is the default and needs no trust level (hannah-webui#52); enrolling
+    # someone else is additive and gated — silently ignore target_user_id below that level
+    # rather than trusting a tampered form field.
+    target_user_id = session["user_id"]
+    if session.get("trust_level", 0) >= TRUST_LEVELS["enroll_other_voice"]:
+        raw_target = request.form.get("target_user_id", "").strip()
+        if raw_target:
+            target_user_id = int(raw_target)
+    ok, message = hannah.start_voice_enrollment(satellite_id, target_user_id, session["user_id"])
+    if ok:
+        flash(message or "Voice-Enrollment gestartet.", "success")
+    else:
+        flash(message or "Voice-Enrollment konnte nicht gestartet werden.", "danger")
     return redirect(url_for("me.me"))

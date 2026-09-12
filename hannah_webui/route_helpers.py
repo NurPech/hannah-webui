@@ -20,6 +20,7 @@ _STATE_TYPE_WIDGET = {
 
 _SETTINGS_NEW_ROWS = 2
 _USER_TYPES = ("roomie", "guest", "pet")
+_PRESENCE_STATES = (("home", "Zuhause"), ("away", "Abwesend"), ("asleep", "Schläft"), ("awake", "Wach"))
 _WEEKDAY_NAMES = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
 _TRIGGER_NEW_WHEN_ROWS = 2
@@ -122,7 +123,8 @@ def _blank_state_row() -> dict:
 
 
 def _blank_action_row() -> dict:
-    return {"type": "say", "say": "", "room": "", "state_id": "", "state_value": ""}
+    return {"type": "say", "say": "", "room": "", "state_id": "", "state_value": "",
+            "roomie": "", "presence_state": ""}
 
 
 def _condition_to_row(cond: dict) -> dict:
@@ -146,9 +148,13 @@ def _action_to_row(action: dict) -> dict:
     if "set_state" in action:
         set_state = action.get("set_state") or {}
         return {"type": "state", "say": "", "room": "", "state_id": set_state.get("id", ""),
-                "state_value": str(set_state.get("value", ""))}
+                "state_value": str(set_state.get("value", "")), "roomie": "", "presence_state": ""}
+    if "set_presence" in action:
+        set_presence = action.get("set_presence") or {}
+        return {"type": "presence", "say": "", "room": "", "state_id": "", "state_value": "",
+                "roomie": set_presence.get("roomie", ""), "presence_state": set_presence.get("state", "")}
     return {"type": "say", "say": action.get("say", ""), "room": action.get("room", ""),
-            "state_id": "", "state_value": ""}
+            "state_id": "", "state_value": "", "roomie": "", "presence_state": ""}
 
 
 def _extract_also_unless(conditions: list[dict]) -> tuple[list[dict], str, list[dict]]:
@@ -252,12 +258,16 @@ def _attach_also_unless(conditions: list[dict], also, unless) -> list[dict]:
 
 def _parse_trigger_action_rows(form) -> list[dict]:
     """Wie _parse_action_rows, aber die Geräte-Variante setzt einen ioBroker-State direkt
-    (set_state) statt ein MQTT-Topic zu publishen (#101)."""
+    (set_state) statt ein MQTT-Topic zu publishen (#101). set_presence (#54) setzt den
+    Anwesenheits-Status eines Residents, ist keine gRPC-Erweiterung, sondern nur ein
+    weiterer von Core interpretierter Action-Key."""
     types = form.getlist("action_type")
     says = form.getlist("action_say")
     rooms = form.getlist("action_room")
     state_ids = form.getlist("action_state_id")
     state_values = form.getlist("action_state_value")
+    roomies = form.getlist("action_roomie")
+    presence_states = form.getlist("action_presence_state")
     actions = []
     for i, action_type in enumerate(types):
         if action_type == "say":
@@ -265,6 +275,11 @@ def _parse_trigger_action_rows(form) -> list[dict]:
             if say:
                 room = rooms[i].strip() if i < len(rooms) else ""
                 actions.append({"say": say, "room": room or "all"})
+        elif action_type == "presence":
+            roomie = roomies[i].strip() if i < len(roomies) else ""
+            if roomie:
+                state = presence_states[i].strip() if i < len(presence_states) else ""
+                actions.append({"set_presence": {"roomie": roomie, "state": state or _PRESENCE_STATES[0][0]}})
         else:
             state_id = state_ids[i].strip() if i < len(state_ids) else ""
             if state_id:

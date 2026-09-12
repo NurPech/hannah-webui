@@ -89,8 +89,9 @@
 
     <label class="block text-xs font-medium text-gray-400 mb-1">Dann</label>
     <div class="text-xs text-gray-500 mb-2">
-      Pro Zeile per "Typ" wählen: <span class="text-gray-400">Ansage</span> (Text + Raum) oder
-      <span class="text-gray-400">Gerät setzen</span> (Auslöser + Wert).
+      Pro Zeile per "Typ" wählen: <span class="text-gray-400">Ansage</span> (Text + Raum),
+      <span class="text-gray-400">Gerät setzen</span> (Auslöser + Wert) oder
+      <span class="text-gray-400">Anwesenheit setzen</span> (Bewohner + Status).
     </div>
     {% for row in action_rows %}
     {% set action_device_row = {"state": row.state_id, "value": row.state_value} %}
@@ -98,8 +99,9 @@
       <div class="sm:col-span-2">
         <label class="block text-xs text-gray-500 mb-1">Typ</label>
         <select name="action_type" class="action-type-select w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-          <option value="say" {% if row.type != 'state' %}selected{% endif %}>Ansage</option>
+          <option value="say" {% if row.type not in ('state', 'presence') %}selected{% endif %}>Ansage</option>
           <option value="state" {% if row.type == 'state' %}selected{% endif %}>Gerät setzen</option>
+          <option value="presence" {% if row.type == 'presence' %}selected{% endif %}>Anwesenheit setzen</option>
         </select>
       </div>
       <div class="action-say-field sm:col-span-3">
@@ -112,6 +114,23 @@
         {{ room_select('action_room', row.room, rooms) }}
       </div>
       {{ state_condition(action_device_row, action_device_options, 'action_state_id', 'action_state_value', 'sm:col-span-3', 'sm:col-span-2') }}
+      <div class="action-presence-field sm:col-span-4">
+        <label class="block text-xs text-gray-500 mb-1">Bewohner</label>
+        <select name="action_roomie" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+          <option value="">– Bewohner wählen –</option>
+          {% for r in residents %}
+          <option value="{{ r.roomie_id }}" {% if row.roomie == r.roomie_id %}selected{% endif %}>{{ r.display_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="action-presence-field sm:col-span-3">
+        <label class="block text-xs text-gray-500 mb-1">Status</label>
+        <select name="action_presence_state" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+          {% for value, label in presence_states %}
+          <option value="{{ value }}" {% if row.presence_state == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
     {% endfor %}
 
@@ -185,15 +204,16 @@ document.querySelectorAll('.when-row').forEach(function (row) {
   applyType();
 });
 
-// #30: pro Dann-Zeile nur die Felder zeigen, die zum gewählten Aktions-Typ passen —
-// Ansage -> Text/Raum, Gerät setzen -> Geräte-Auslöser/Wert (letztere sind die vom
-// state_condition-Makro gerenderten .scd-field-Zellen, ohne Vergleichsoperator).
+// #30/#54: pro Dann-Zeile nur die Felder zeigen, die zum gewählten Aktions-Typ passen —
+// Ansage -> Text/Raum, Gerät setzen -> Geräte-Auslöser/Wert (die vom state_condition-Makro
+// gerenderten .scd-field-Zellen, ohne Vergleichsoperator), Anwesenheit setzen -> Bewohner/Status.
 document.querySelectorAll('.action-row').forEach(function (row) {
   var select = row.querySelector('.action-type-select');
   function applyType() {
-    var isState = select.value === 'state';
-    row.querySelectorAll('.action-say-field').forEach(function (el) { el.classList.toggle('hidden', isState); });
-    row.querySelectorAll('.scd-field').forEach(function (el) { el.classList.toggle('hidden', !isState); });
+    var type = select.value;
+    row.querySelectorAll('.action-say-field').forEach(function (el) { el.classList.toggle('hidden', type !== 'say'); });
+    row.querySelectorAll('.scd-field').forEach(function (el) { el.classList.toggle('hidden', type !== 'state'); });
+    row.querySelectorAll('.action-presence-field').forEach(function (el) { el.classList.toggle('hidden', type !== 'presence'); });
   }
   select.addEventListener('change', applyType);
   applyType();

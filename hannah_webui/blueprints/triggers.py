@@ -4,6 +4,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from hannah_webui.extensions import TRUST_LEVELS, get_hannah, login_required, trust_level_required
 from hannah_webui.route_helpers import (
+    _PRESENCE_STATES,
     _TRIGGER_NEW_ACTION_ROWS,
     _TRIGGER_NEW_ALSO_ROWS,
     _TRIGGER_NEW_WHEN_ROWS,
@@ -62,6 +63,8 @@ def new_trigger():
         device_options=_device_state_options(devices),
         action_device_options=_device_state_options(devices, writable_only=True),
         rooms=hannah.get_rooms(),
+        residents=hannah.get_residents(),
+        presence_states=_PRESENCE_STATES,
     )
 
 
@@ -134,6 +137,8 @@ def edit_trigger(trigger_id: str):
         device_options=_device_state_options(devices),
         action_device_options=_device_state_options(devices, writable_only=True),
         rooms=hannah.get_rooms(),
+        residents=hannah.get_residents(),
+        presence_states=_PRESENCE_STATES,
     )
 
 

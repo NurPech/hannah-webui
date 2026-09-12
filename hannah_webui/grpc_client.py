@@ -337,6 +337,16 @@ class HannahClient:
         resp = self._stub.DeleteMessage(hannah_pb2.DeleteMessageRequest(requestor_id=requestor_id, id=message_id))
         return resp.ok
 
+    def start_voice_enrollment(self, satellite_id: str, user_id: int, requestor_id: int) -> tuple[bool, str]:
+        """Kicks off Core's guided voice-enrollment dialog at satellite_id — the dialog itself
+        (questions, TTS, mic capture) runs entirely on the Core/satellite side afterwards, this
+        call only starts it. user_id is who gets enrolled, requestor_id who asked (hannah#8)."""
+        assert self._stub, "call connect() first"
+        resp = self._stub.StartVoiceEnrollment(hannah_pb2.StartVoiceEnrollmentRequest(
+            requestor_id=requestor_id, user_id=user_id, satellite_id=satellite_id,
+        ))
+        return resp.ok, resp.message
+
     def stream_activity_audio(self, requestor_id: int, activity_log_id: int) -> tuple[bytes, int]:
         """Buffers the full server-streamed PCM response — activity log clips are short
         (a few seconds of spoken audio), so buffering server-side and serving a proper

@@ -22,6 +22,18 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.5.1
+### Fixed
+- CI: `normalize-manifest` pinned `quay.io/skopeo/stable:latest` to a digest that quay.io later garbage-collected under that mutable tag, breaking every tagged pipeline ("image ... not found"). Switched to the immutable `v1.22.2-immutable` tag, which quay.io publishes specifically so digest-pinning tools like Renovate don't hit this. Refs #55
+
+## 2.5.0
+### Added
+- "Anwesenheit setzen" action type in the trigger "Dann"-builder: sets a resident's presence state (home/away/asleep/awake) via the new `set_presence` action key — no gRPC change, just a new key in the existing JSON action list. Refs #54
+
+## 2.4.0
+### Added
+- "Lerne meine Stimme" action on `/me`: starts Core's guided voice-enrollment dialog on a chosen (connected) satellite via the new `StartVoiceEnrollment` RPC (`hannah-proto` 3.9.0). Self-enrollment needs no trust level; enrolling another user is additive and requires trust level 10. Refs #52
+
 ## 2.3.4
 ### Fixed
 - Wrong login credentials (unknown username, or wrong password for a known user) now show the normal "Ungültige Zugangsdaten." message again instead of the "Hannah Core nicht erreichbar" error page — Core now rejects both cases with a gRPC-level `UNAUTHENTICATED` status instead of `resp.found=False`, and `HannahClient.login()` didn't account for that. Refs #51

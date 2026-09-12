@@ -29,6 +29,18 @@ class FakeHannahClient:
                 "new_version": "",
                 "smalltalk_followup_listen": False,
             },
+            "bad-esp": {
+                "display_name": "Bad01",
+                "room_id": "bad",
+                "live_room": "",
+                "last_seen": "2026-06-20 08:00:00",
+                "connected": False,
+                "owner_user_id": 0,
+                "firmware_version": "1.4.0",
+                "update_available": False,
+                "new_version": "",
+                "smalltalk_followup_listen": False,
+            },
         }
         self._users = {"claude": "claude", "admin": "admin"}
         self._user_records = {
@@ -236,6 +248,14 @@ class FakeHannahClient:
             return False, "satellite not found"
         self._satellites[device_id]["smalltalk_followup_listen"] = enabled
         return True, "updated"
+
+    def start_voice_enrollment(self, satellite_id, user_id, requestor_id):
+        sat = self._satellites.get(satellite_id)
+        if sat is None:
+            return False, "satellite not found"
+        if not sat.get("connected", False):
+            return False, "satellite offline"
+        return True, "enrollment started"
 
     def get_settings(self):
         categories = [hannah_pb2.Category(id=cid, name=name) for cid, name in self._categories.items()]

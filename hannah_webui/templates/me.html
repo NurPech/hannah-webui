@@ -56,6 +56,42 @@
   </div>
 
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 lg:col-span-2">
+    <h3 class="text-sm font-semibold text-gray-100 mb-1">Lerne meine Stimme</h3>
+    <p class="text-xs text-gray-500 mb-3">Hannah führt am gewählten Satelliten einen kurzen Dialog, um deinen Stimmabdruck zu lernen.</p>
+    {% if enrollment_satellites %}
+    <form method="post" action="{{ url_for('me.start_voice_enrollment') }}" class="space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-md">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Satellit</label>
+          <select name="satellite_id" required
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+            <option value="" disabled selected>– Satellit wählen –</option>
+            {% for sat in enrollment_satellites %}
+            <option value="{{ sat.device_id }}">{{ sat.display_name or sat.device_id }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if enrollable_users %}
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Für wen <span class="text-gray-600">(Standard: ich selbst)</span></label>
+          <select name="target_user_id"
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+            <option value="">– ich selbst –</option>
+            {% for u in enrollable_users %}
+            <option value="{{ u.id }}">{{ u.display_name or u.user_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+      </div>
+      <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Enrollment starten</button>
+    </form>
+    {% else %}
+    <p class="text-sm text-gray-500">Kein verbundener Satellit verfügbar.</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 lg:col-span-2">
     <h3 class="text-sm font-semibold text-gray-100 mb-3">Wecker</h3>
 
     {% if alarms %}

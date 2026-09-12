@@ -164,6 +164,51 @@ class TestAlarms:
         assert 1 in hannah._alarms
 
 
+class TestVoiceEnrollment:
+    def test_me_only_lists_connected_satellite(self, logged_in_client):
+        # bad-esp (disconnected) still shows up once, in the unfiltered alarm dropdown —
+        # the enrollment dropdown's own options carry the same markup, so this counts
+        # occurrences of its value= attribute rather than the display name.
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert 'value="kueche-esp"' in body
+        assert body.count('value="bad-esp"') == 1
+
+    def test_regular_user_does_not_see_target_user_dropdown(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "target_user_id" not in body
+
+    def test_admin_sees_target_user_dropdown(self, admin_client):
+        body = admin_client.get("/me").get_data(as_text=True)
+        assert "target_user_id" in body
+        assert "Leonie" in body
+
+    def test_self_enrollment_starts_for_own_satellite(self, logged_in_client):
+        resp = logged_in_client.post("/me/voice-enrollment/start", data={"satellite_id": "kueche-esp"}, follow_redirects=True)
+        assert "enrollment started" in resp.get_data(as_text=True)
+
+    def test_enrollment_without_satellite_is_rejected(self, logged_in_client):
+        resp = logged_in_client.post("/me/voice-enrollment/start", data={}, follow_redirects=True)
+        assert "Satellit ist Pflicht" in resp.get_data(as_text=True)
+
+    def test_enrollment_on_offline_satellite_fails(self, logged_in_client):
+        resp = logged_in_client.post("/me/voice-enrollment/start", data={"satellite_id": "bad-esp"}, follow_redirects=True)
+        assert "satellite offline" in resp.get_data(as_text=True)
+
+    def test_regular_user_cannot_enroll_another_user(self, logged_in_client, hannah, monkeypatch):
+        """target_user_id must be ignored below the enroll_other_voice trust level, even if
+        a request forges the field directly (the dropdown itself is hidden client-side)."""
+        calls = []
+        monkeypatch.setattr(hannah, "start_voice_enrollment", lambda satellite_id, user_id, requestor_id: (calls.append(user_id), (True, "ok"))[1])
+        logged_in_client.post("/me/voice-enrollment/start", data={"satellite_id": "kueche-esp", "target_user_id": "2"})
+        assert calls == [1]  # own user_id (1), not the forged 2
+
+    def test_admin_can_enroll_another_user(self, admin_client, hannah, monkeypatch):
+        calls = []
+        monkeypatch.setattr(hannah, "start_voice_enrollment", lambda satellite_id, user_id, requestor_id: (calls.append((user_id, requestor_id)), (True, "ok"))[1])
+        admin_client.post("/me/voice-enrollment/start", data={"satellite_id": "kueche-esp", "target_user_id": "1"})
+        assert calls == [(1, 2)]  # user_id=1 (target), requestor_id=2 (admin)
+
+
 class TestRooms:
     def test_rooms_lists_seeded_rooms_and_group_badge(self, logged_in_client):
         resp = logged_in_client.get("/rooms")
@@ -538,6 +583,35 @@ class TestTriggers:
         created = hannah._triggers["zeit-trigger"]
         assert created["when"] == [{"time": "07:00", "days": ["mon", "tue"]}]
         assert created["actions"] == [{"set_state": {"id": "javascript.0.virtualDevice.Licht.test", "value": "true"}}]
+
+    def test_create_trigger_with_presence_action(self, logged_in_client, hannah):
+        """#54 — set_presence ist keine gRPC-Erweiterung, nur ein weiterer Action-Key."""
+        logged_in_client.post("/triggers/create", data=self._create_payload(
+            id="leonie-schlaeft",
+            when_type=["phrase"], when_state=[""], when_cmp=["value"], when_value=[""],
+            when_time=[""], when_days=[""], when_phrase=["gute nacht"],
+            action_type=["presence"], action_say=[""], action_room=[""],
+            action_roomie=["leonie"], action_presence_state=["asleep"],
+        ))
+        created = hannah._triggers["leonie-schlaeft"]
+        assert created["actions"] == [{"set_presence": {"roomie": "leonie", "state": "asleep"}}]
+
+    def test_new_trigger_form_lists_residents_for_presence_action(self, logged_in_client):
+        resp = logged_in_client.get("/triggers/new")
+        body = resp.get_data(as_text=True)
+        assert '<option value="leonie"' in body
+        assert '>Leonie<' in body
+
+    def test_edit_trigger_form_prefills_presence_action(self, logged_in_client, hannah):
+        hannah._triggers["schlafenszeit"] = {
+            "when": {"phrase": "schlafenszeit"}, "cancel_when": None, "on_response": [],
+            "actions": [{"set_presence": {"roomie": "leonie", "state": "asleep"}}],
+            "say": "", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+        }
+        resp = logged_in_client.get("/triggers/schlafenszeit/edit")
+        body = resp.get_data(as_text=True)
+        assert 'value="leonie" selected' in body
+        assert 'value="asleep" selected' in body
 
     def test_create_trigger_with_time_condition_and_also(self, logged_in_client, hannah):
         logged_in_client.post("/triggers/create", data=self._create_payload(
