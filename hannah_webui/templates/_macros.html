@@ -76,10 +76,14 @@
   Trigger.target/Action-target adressieren jetzt einen einzelnen Satelliten
   statt eines Raums, hannah-proto#5) — "Alle Satelliten" (value="") normalisiert
   serverseitig auf "all" (siehe route_helpers.py), daher hier direkt als leerer Wert.
+  "Angesprochener Satellit" (value="__self__", Core: SELF_DEVICE) löst zur Laufzeit auf
+  den Satelliten auf, der den Trigger ausgelöst hat — nur bei Phrase-Bedingungen bekannt,
+  bei State-/Zeit-Bedingungen ohne auslösendes Gerät wird die Aktion sonst übersprungen.
 #}
 {% macro satellite_select(name, current_target, satellites) %}
 <select name="{{ name }}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
   <option value="" {% if not current_target or current_target == 'all' %}selected{% endif %}>Alle Satelliten</option>
+  <option value="__self__" {% if current_target == '__self__' %}selected{% endif %}>Angesprochener Satellit</option>
   {% for s in satellites %}
   <option value="{{ s.device_id }}" {% if current_target == s.device_id %}selected{% endif %}>{{ s.display_name or s.device_id }}</option>
   {% endfor %}

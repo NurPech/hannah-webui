@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.6.1
+### Added
+- Trigger-target dropdowns (trigger scope + per-row "Ansage" action) gained a third option "Angesprochener Satellit", sending Core's `__self__` sentinel — resolves at runtime to whichever satellite actually triggered the phrase, alongside the existing "Alle Satelliten"/specific-satellite choices. Refs #58
+
 ## 2.6.0
 ### Fixed
 - Trigger scope and the "Ansage" action's destination sent the now-removed `room` field on `CreateTriggerRequest`/`UpdateTriggerRequest`, broken against the already-installed `hannah-proto` 4.0.0. Both now use the renamed `target` field and address a satellite instead of a room — trigger editor dropdowns list satellites, not rooms. Refs #57

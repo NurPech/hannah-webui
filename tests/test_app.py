@@ -522,6 +522,21 @@ class TestTriggers:
         resp = logged_in_client.get("/triggers/new")
         assert resp.status_code == 200
 
+    def test_new_trigger_form_offers_self_device_target(self, logged_in_client):
+        """#58 — "Angesprochener Satellit" (Core: SELF_DEVICE/__self__) muss neben "Alle
+        Satelliten" und den konkreten Satelliten in beiden Target-Dropdowns wählbar sein."""
+        resp = logged_in_client.get("/triggers/new")
+        body = resp.get_data(as_text=True)
+        assert '<option value="__self__"' in body
+
+    def test_create_trigger_with_self_device_target(self, logged_in_client, hannah):
+        logged_in_client.post("/triggers/create", data=self._create_payload(
+            id="selbstgespraech", satellite="__self__", action_target=["__self__"],
+        ))
+        created = hannah._triggers["selbstgespraech"]
+        assert created["target"] == "__self__"
+        assert created["actions"] == [{"say": "Fenster offen.", "target": "__self__"}]
+
     def test_new_trigger_form_hides_non_writable_state_in_action_dropdown(self, logged_in_client):
         """state_writable (hannah-proto #8) blendet nicht beschreibbare States wie den
         Fenstersensor in der Dann-Auswahl aus, bleibt aber in Wenn/Und/Außer-wenn sichtbar."""
