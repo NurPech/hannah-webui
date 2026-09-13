@@ -28,6 +28,9 @@ _TRIGGER_NEW_ALSO_ROWS = 2
 _TRIGGER_NEW_ACTION_ROWS = 2
 _CMP_KEYS = ("value", "above", "below")
 
+_PRESENCE_SOURCE_TYPES = (("iobroker_state", "ioBroker-State"), ("ble_tag", "BLE-Tag"))
+_PRESENCE_SOURCE_NEW_ROWS = 2
+
 _ACTIVITY_LOG_PAGE_SIZE = 30
 _ACTIVITY_LOG_CHANNEL_LABELS = {
     "telegram": "Telegram",
@@ -286,6 +289,62 @@ def _parse_trigger_action_rows(form) -> list[dict]:
                 value = state_values[i].strip() if i < len(state_values) else ""
                 actions.append({"set_state": {"id": state_id, "value": value or "true"}})
     return actions
+
+
+def _blank_presence_source_row() -> dict:
+    return {"id": "", "source_type": _PRESENCE_SOURCE_TYPES[0][0], "reference": "",
+            "home_confidence": "0.8", "away_confidence": "0.8", "enabled": True}
+
+
+def _presence_source_to_row(ps) -> dict:
+    """round() rundet gegen die Präzisionsartefakte von Core's single-precision
+    'float' (z.B. 0.9 -> 0.8999999761581421 auf dem Wire) — ungerundet verletzt der
+    Wert das step="0.05" des Zahlenfelds, was die native Browser-Validierung beim
+    Speichern lautlos blockiert, ohne dass der Request überhaupt abgeschickt wird."""
+    return {"id": str(ps.id), "source_type": ps.source_type, "reference": ps.reference,
+            "home_confidence": str(round(ps.home_confidence, 2)), "away_confidence": str(round(ps.away_confidence, 2)),
+            "enabled": ps.enabled}
+
+
+def _parse_presence_source_rows(form) -> list[dict]:
+    """Zeilen-Builder für die Presence-Quellen eines Users (#59): eine leere Referenz
+    markiert eine Zeile als unbenutzt (neue Blanko-Zeile) oder, falls sie eine 'id' trägt,
+    als zu löschen — dieselbe Konvention wie bei den Trigger-Zeilen (leer = überspringen),
+    ergänzt um die Löschen-Erkennung, weil Core hier (anders als bei Triggern) einzelne
+    Zeilen per ID adressiert statt einen ganzen JSON-Blob zu ersetzen."""
+    ids = form.getlist("ps_id")
+    types = form.getlist("ps_source_type")
+    references = form.getlist("ps_reference")
+    home_confidences = form.getlist("ps_home_confidence")
+    away_confidences = form.getlist("ps_away_confidence")
+    rows = []
+    for i, raw_reference in enumerate(references):
+        reference = raw_reference.strip()
+        row_id = ids[i].strip() if i < len(ids) else ""
+        if not reference:
+            if row_id:
+                rows.append({"id": int(row_id), "delete": True})
+            continue
+        try:
+            home_confidence = float(home_confidences[i]) if i < len(home_confidences) and home_confidences[i].strip() else 0.8
+        except ValueError:
+            home_confidence = 0.8
+        try:
+            away_confidence = float(away_confidences[i]) if i < len(away_confidences) and away_confidences[i].strip() else 0.8
+        except ValueError:
+            away_confidence = 0.8
+        row = {
+            "delete": False,
+            "source_type": types[i].strip() if i < len(types) else _PRESENCE_SOURCE_TYPES[0][0],
+            "reference": reference,
+            "home_confidence": home_confidence,
+            "away_confidence": away_confidence,
+            "enabled": form.get(f"ps_enabled_{i}") == "on",
+        }
+        if row_id:
+            row["id"] = int(row_id)
+        rows.append(row)
+    return rows
 
 
 def _prepare_setting_row(s) -> dict:

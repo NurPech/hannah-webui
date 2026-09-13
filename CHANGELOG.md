@@ -22,6 +22,13 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.7.0
+### Added
+- No-Code editor for per-user presence sources (ioBroker state / BLE tag, home/away confidence, enabled toggle), reachable from the user edit page. Refs #59
+
+### Changed
+- Bump `hannah-proto` to >=4.1.0 for the new `PresenceSource` CRUD RPCs (`gessinger/voice/hannah#294`). Refs #59
+
 ## 2.6.1
 ### Added
 - Trigger-target dropdowns (trigger scope + per-row "Ansage" action) gained a third option "Angesprochener Satellit", sending Core's `__self__` sentinel — resolves at runtime to whichever satellite actually triggered the phrase, alongside the existing "Alle Satelliten"/specific-satellite choices. Refs #58

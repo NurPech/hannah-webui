@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Presence-Quellen{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('users.users') }}" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">← User</a>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-100 mb-1">Presence-Quellen: {{ user.display_name }}</h2>
+<p class="text-xs text-gray-500 mb-5">Rohsignale, aus denen Hannah den Home/Away-Status ableitet (siehe gessinger/voice/hannah#294). Referenz leeren = Zeile entfernen.</p>
+
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+  <form method="post" action="{{ url_for('users.presence_sources', user_id=user.id) }}">
+    {% for row in source_rows %}
+    <div class="ps-row removable-row relative pr-7 grid grid-cols-2 sm:grid-cols-12 gap-2 items-end mb-2 pb-2 border-b border-gray-800">
+      <button type="button" class="row-remove-btn absolute top-0 right-0 text-gray-600 hover:text-rose-400 transition-colors text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-gray-800" title="Zeile entfernen" aria-label="Zeile entfernen">✕</button>
+      <input type="hidden" name="ps_id" value="{{ row.id }}">
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Typ</label>
+        <select name="ps_source_type" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+          {% for value, label in source_types %}
+          <option value="{{ value }}" {% if row.source_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="sm:col-span-4">
+        <label class="block text-xs text-gray-500 mb-1">Referenz <span class="text-gray-600">(State-ID bzw. Tag-Label)</span></label>
+        <input type="text" name="ps_reference" value="{{ row.reference }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Home-Konfidenz</label>
+        <input type="number" name="ps_home_confidence" min="0" max="1" step="0.05" value="{{ row.home_confidence }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-gray-500 mb-1">Away-Konfidenz</label>
+        <input type="number" name="ps_away_confidence" min="0" max="1" step="0.05" value="{{ row.away_confidence }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+      </div>
+      <div class="sm:col-span-2 flex items-end pb-1.5">
+        <label class="flex items-center gap-2 text-xs text-gray-300">
+          <input type="checkbox" name="ps_enabled_{{ loop.index0 }}" {% if row.enabled %}checked{% endif %} class="accent-emerald-500">
+          Aktiv
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="flex gap-2 mt-4">
+      <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Speichern</button>
+      <a href="{{ url_for('users.users') }}"
+         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</a>
+    </div>
+  </form>
+</div>
+
+<script>
+// Ein bereits gespeicherter Eintrag (hat eine ps_id) muss beim Speichern als Löschung
+// ankommen (leere Referenz + ID, siehe _parse_presence_source_rows) statt einfach aus
+// dem Formular zu verschwinden — sonst bleibt er in Core unverändert bestehen. Eine
+// frische Blanko-Zeile (keine ID) kann dagegen einfach aus dem DOM entfernt werden.
+document.querySelectorAll('.ps-row .row-remove-btn').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var row = btn.closest('.removable-row');
+    if (!row) return;
+    var idInput = row.querySelector('input[name="ps_id"]');
+    if (idInput && idInput.value) {
+      row.querySelector('input[name="ps_reference"]').value = '';
+      row.hidden = true;
+    } else {
+      row.remove();
+    }
+  });
+});
+</script>
+{% endblock %}

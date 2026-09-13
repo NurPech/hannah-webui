@@ -3,7 +3,14 @@ import json
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from hannah_webui.extensions import TRUST_LEVELS, get_hannah, login_required, trust_level_required
-from hannah_webui.route_helpers import _USER_TYPES
+from hannah_webui.route_helpers import (
+    _PRESENCE_SOURCE_NEW_ROWS,
+    _PRESENCE_SOURCE_TYPES,
+    _USER_TYPES,
+    _blank_presence_source_row,
+    _parse_presence_source_rows,
+    _presence_source_to_row,
+)
 
 bp = Blueprint("users", __name__)
 
@@ -97,3 +104,39 @@ def unlink_resident(user_id: int):
     hannah = get_hannah()
     hannah.unlink_account(user_id, "residents", session.get("user_id"))
     return redirect(url_for("users.users"))
+
+
+@bp.route("/users/<int:user_id>/presence-sources", methods=["GET", "POST"])
+@login_required
+@trust_level_required(TRUST_LEVELS["edit_presence_sources"])
+def presence_sources(user_id: int):
+    hannah = get_hannah()
+    user = next((u for u in hannah.get_users() if u.id == user_id), None)
+    if user is None:
+        return redirect(url_for("users.users"))
+    if request.method == "POST":
+        for row in _parse_presence_source_rows(request.form):
+            if row.get("delete"):
+                hannah.delete_presence_source(row["id"])
+            elif "id" in row:
+                ok, message = hannah.update_presence_source(
+                    row["id"], user_id, row["source_type"], row["reference"],
+                    row["home_confidence"], row["away_confidence"], row["enabled"],
+                )
+                if not ok:
+                    flash(message, "danger")
+            else:
+                ok, message = hannah.create_presence_source(
+                    user_id, row["source_type"], row["reference"],
+                    row["home_confidence"], row["away_confidence"], row["enabled"],
+                )
+                if not ok:
+                    flash(message, "danger")
+        return redirect(url_for("users.presence_sources", user_id=user_id))
+    sources = hannah.get_presence_sources(user_id)
+    return render_template(
+        "presence_sources.html", user=user,
+        source_rows=[_presence_source_to_row(s) for s in sources]
+        + [_blank_presence_source_row() for _ in range(_PRESENCE_SOURCE_NEW_ROWS)],
+        source_types=_PRESENCE_SOURCE_TYPES,
+    )

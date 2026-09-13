@@ -308,6 +308,38 @@ class HannahClient:
         resp = self._stub.DeleteCar(hannah_pb2.DeleteCarRequest(id=car_id))
         return resp.ok
 
+    def get_presence_sources(self, user_id: Optional[int] = None) -> list["hannah_pb2.PresenceSource"]:
+        """GetPresenceSources returns every source — like get_alarms(), Core has no
+        user_id filter on the RPC, so the per-user editor filters client-side."""
+        assert self._stub, "call connect() first"
+        sources = list(self._stub.GetPresenceSources(hannah_pb2.Empty()).presence_sources)
+        if user_id is not None:
+            sources = [s for s in sources if s.user_id == user_id]
+        return sources
+
+    def create_presence_source(self, user_id: int, source_type: str, reference: str,
+                                home_confidence: float, away_confidence: float, enabled: bool) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.CreatePresenceSource(hannah_pb2.CreatePresenceSourceRequest(
+            user_id=user_id, source_type=source_type, reference=reference,
+            home_confidence=home_confidence, away_confidence=away_confidence, enabled=enabled,
+        ))
+        return resp.ok, resp.message
+
+    def update_presence_source(self, source_id: int, user_id: int, source_type: str, reference: str,
+                                home_confidence: float, away_confidence: float, enabled: bool) -> tuple[bool, str]:
+        assert self._stub, "call connect() first"
+        resp = self._stub.UpdatePresenceSource(hannah_pb2.UpdatePresenceSourceRequest(
+            id=source_id, user_id=user_id, source_type=source_type, reference=reference,
+            home_confidence=home_confidence, away_confidence=away_confidence, enabled=enabled,
+        ))
+        return resp.ok, resp.message
+
+    def delete_presence_source(self, source_id: int) -> bool:
+        assert self._stub, "call connect() first"
+        resp = self._stub.DeletePresenceSource(hannah_pb2.DeletePresenceSourceRequest(id=source_id))
+        return resp.ok
+
     def list_activity_log(self, requestor_id: int, filter_user_id: int = 0,
                            page_size: int = 30, before_id: int = 0) -> tuple[list["hannah_pb2.ActivityLogEntry"], bool]:
         assert self._stub, "call connect() first"

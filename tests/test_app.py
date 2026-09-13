@@ -715,6 +715,55 @@ class TestUsers:
         assert "residents" not in hannah._user_records[1]["linked_accounts"]
 
 
+class TestPresenceSources:
+    def test_presence_sources_lists_seeded_source(self, admin_client):
+        resp = admin_client.get("/users/1/presence-sources")
+        body = resp.get_data(as_text=True)
+        assert "aa:bb:cc:dd:ee:ff" in body
+
+    def test_create_presence_source(self, admin_client, hannah):
+        admin_client.post("/users/1/presence-sources", data={
+            "ps_id": ["", ""],
+            "ps_source_type": ["iobroker_state", "iobroker_state"],
+            "ps_reference": ["cisco-checkpresence.0.presence.leonie.present", ""],
+            "ps_home_confidence": ["0.7", "0.8"],
+            "ps_away_confidence": ["0.5", "0.8"],
+            "ps_enabled_0": "on",
+        })
+        created = next(s for s in hannah._presence_sources.values()
+                       if s["reference"] == "cisco-checkpresence.0.presence.leonie.present")
+        assert created["user_id"] == 1
+        assert created["source_type"] == "iobroker_state"
+        assert created["home_confidence"] == 0.7
+        assert created["enabled"] is True
+
+    def test_update_presence_source(self, admin_client, hannah):
+        admin_client.post("/users/1/presence-sources", data={
+            "ps_id": ["1"],
+            "ps_source_type": ["ble_tag"],
+            "ps_reference": ["11:22:33:44:55:66"],
+            "ps_home_confidence": ["0.95"],
+            "ps_away_confidence": ["0.4"],
+        })
+        assert hannah._presence_sources[1]["reference"] == "11:22:33:44:55:66"
+        assert hannah._presence_sources[1]["enabled"] is False
+
+    def test_clearing_reference_deletes_presence_source(self, admin_client, hannah):
+        admin_client.post("/users/1/presence-sources", data={
+            "ps_id": ["1"],
+            "ps_source_type": ["ble_tag"],
+            "ps_reference": [""],
+            "ps_home_confidence": ["0.9"],
+            "ps_away_confidence": ["0.6"],
+        })
+        assert 1 not in hannah._presence_sources
+
+    def test_regular_user_redirected_from_presence_sources(self, logged_in_client):
+        resp = logged_in_client.get("/users/1/presence-sources")
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/me")
+
+
 class TestVersion:
     def test_version_endpoint_returns_json_without_login(self, client):
         resp = client.get("/version")

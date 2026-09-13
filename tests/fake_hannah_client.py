@@ -83,6 +83,13 @@ class FakeHannahClient:
             1: {"topic_prefix": "vwconnect/golf", "home_address": "Musterstraße 1", "owner_user_ids": [1], "name": "Golf"},
         }
         self._next_car_id = 2
+        self._presence_sources = {
+            1: {
+                "user_id": 1, "source_type": "ble_tag", "reference": "aa:bb:cc:dd:ee:ff",
+                "home_confidence": 0.9, "away_confidence": 0.6, "enabled": True,
+            },
+        }
+        self._next_presence_source_id = 2
         self._messages = {
             1: {
                 "user_id": 1, "content": "Es ist kalt draußen, Fenster prüfen.", "source": "weather",
@@ -459,6 +466,39 @@ class FakeHannahClient:
 
     def delete_car(self, car_id):
         return self._cars.pop(car_id, None) is not None
+
+    def get_presence_sources(self, user_id=None):
+        sources = [
+            hannah_pb2.PresenceSource(
+                id=sid, user_id=s["user_id"], source_type=s["source_type"], reference=s["reference"],
+                home_confidence=s["home_confidence"], away_confidence=s["away_confidence"], enabled=s["enabled"],
+            )
+            for sid, s in self._presence_sources.items()
+        ]
+        if user_id is not None:
+            sources = [s for s in sources if s.user_id == user_id]
+        return sources
+
+    def create_presence_source(self, user_id, source_type, reference, home_confidence, away_confidence, enabled):
+        source_id = self._next_presence_source_id
+        self._next_presence_source_id += 1
+        self._presence_sources[source_id] = {
+            "user_id": user_id, "source_type": source_type, "reference": reference,
+            "home_confidence": home_confidence, "away_confidence": away_confidence, "enabled": enabled,
+        }
+        return True, "created"
+
+    def update_presence_source(self, source_id, user_id, source_type, reference, home_confidence, away_confidence, enabled):
+        if source_id not in self._presence_sources:
+            return False, "not found"
+        self._presence_sources[source_id] = {
+            "user_id": user_id, "source_type": source_type, "reference": reference,
+            "home_confidence": home_confidence, "away_confidence": away_confidence, "enabled": enabled,
+        }
+        return True, "updated"
+
+    def delete_presence_source(self, source_id):
+        return self._presence_sources.pop(source_id, None) is not None
 
     def list_activity_log(self, requestor_id, filter_user_id=0, page_size=30, before_id=0):
         target_user_id = filter_user_id or requestor_id
