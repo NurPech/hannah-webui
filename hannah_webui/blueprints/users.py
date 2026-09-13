@@ -134,9 +134,11 @@ def presence_sources(user_id: int):
                     flash(message, "danger")
         return redirect(url_for("users.presence_sources", user_id=user_id))
     sources = hannah.get_presence_sources(user_id)
+    ble_tags = [t for t in hannah.get_ble_tags() if t.user_id == user_id]
     return render_template(
         "presence_sources.html", user=user,
         source_rows=[_presence_source_to_row(s) for s in sources]
         + [_blank_presence_source_row() for _ in range(_PRESENCE_SOURCE_NEW_ROWS)],
         source_types=_PRESENCE_SOURCE_TYPES,
+        ble_tags=ble_tags,
     )

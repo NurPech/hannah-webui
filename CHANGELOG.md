@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.7.1
+### Changed
+- Presence source editor: the `ble_tag` reference is now a dropdown of the user's own BLE tags (from `/ble-tags`, matched by MAC address) instead of a free-text field duplicating that existing user assignment. `iobroker_state` stays free text. Refs #59
+
 ## 2.7.0
 ### Added
 - No-Code editor for per-user presence sources (ioBroker state / BLE tag, home/away confidence, enabled toggle), reachable from the user edit page. Refs #59

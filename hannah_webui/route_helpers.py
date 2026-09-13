@@ -311,15 +311,25 @@ def _parse_presence_source_rows(form) -> list[dict]:
     markiert eine Zeile als unbenutzt (neue Blanko-Zeile) oder, falls sie eine 'id' trägt,
     als zu löschen — dieselbe Konvention wie bei den Trigger-Zeilen (leer = überspringen),
     ergänzt um die Löschen-Erkennung, weil Core hier (anders als bei Triggern) einzelne
-    Zeilen per ID adressiert statt einen ganzen JSON-Blob zu ersetzen."""
+    Zeilen per ID adressiert statt einen ganzen JSON-Blob zu ersetzen.
+
+    Die Referenz kommt je nach Typ aus einem von zwei Feldern (ps_reference_text
+    fürs Freitext-State-ID, ps_reference_ble fürs Dropdown über die BLE-Tags des
+    Users aus der bestehenden BLE-Tag-Verwaltung) — beide werden unabhängig vom
+    sichtbaren Feld immer mitgeschickt, das JS blendet nur die Anzeige um."""
     ids = form.getlist("ps_id")
     types = form.getlist("ps_source_type")
-    references = form.getlist("ps_reference")
+    ref_texts = form.getlist("ps_reference_text")
+    ref_bles = form.getlist("ps_reference_ble")
     home_confidences = form.getlist("ps_home_confidence")
     away_confidences = form.getlist("ps_away_confidence")
     rows = []
-    for i, raw_reference in enumerate(references):
-        reference = raw_reference.strip()
+    for i, source_type in enumerate(types):
+        source_type = source_type.strip() or _PRESENCE_SOURCE_TYPES[0][0]
+        if source_type == "ble_tag":
+            reference = ref_bles[i].strip() if i < len(ref_bles) else ""
+        else:
+            reference = ref_texts[i].strip() if i < len(ref_texts) else ""
         row_id = ids[i].strip() if i < len(ids) else ""
         if not reference:
             if row_id:
@@ -335,7 +345,7 @@ def _parse_presence_source_rows(form) -> list[dict]:
             away_confidence = 0.8
         row = {
             "delete": False,
-            "source_type": types[i].strip() if i < len(types) else _PRESENCE_SOURCE_TYPES[0][0],
+            "source_type": source_type,
             "reference": reference,
             "home_confidence": home_confidence,
             "away_confidence": away_confidence,

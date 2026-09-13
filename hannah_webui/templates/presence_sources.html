@@ -16,16 +16,27 @@
       <input type="hidden" name="ps_id" value="{{ row.id }}">
       <div class="sm:col-span-2">
         <label class="block text-xs text-gray-500 mb-1">Typ</label>
-        <select name="ps_source_type" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
+        <select name="ps_source_type" class="ps-type-select w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
           {% for value, label in source_types %}
           <option value="{{ value }}" {% if row.source_type == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="sm:col-span-4">
-        <label class="block text-xs text-gray-500 mb-1">Referenz <span class="text-gray-600">(State-ID bzw. Tag-Label)</span></label>
-        <input type="text" name="ps_reference" value="{{ row.reference }}"
-               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors">
+        <label class="block text-xs text-gray-500 mb-1">Referenz <span class="text-gray-600">(State-ID bzw. BLE-Tag)</span></label>
+        <input type="text" name="ps_reference_text"
+               value="{{ row.reference if row.source_type != 'ble_tag' else '' }}"
+               class="ps-ref-text-field w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors {% if row.source_type == 'ble_tag' %}hidden{% endif %}">
+        <select name="ps_reference_ble"
+                class="ps-ref-ble-field w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors {% if row.source_type != 'ble_tag' %}hidden{% endif %}">
+          <option value="">– Tag wählen –</option>
+          {% for t in ble_tags %}
+          <option value="{{ t.mac_address }}" {% if row.source_type == 'ble_tag' and row.reference == t.mac_address %}selected{% endif %}>{{ t.label }} ({{ t.mac_address }})</option>
+          {% endfor %}
+          {% if row.source_type == 'ble_tag' and row.reference and row.reference not in ble_tags|map(attribute='mac_address')|list %}
+          <option value="{{ row.reference }}" selected>{{ row.reference }} (nicht mehr zugeordnet)</option>
+          {% endif %}
+        </select>
       </div>
       <div class="sm:col-span-2">
         <label class="block text-xs text-gray-500 mb-1">Home-Konfidenz</label>
@@ -65,12 +76,27 @@ document.querySelectorAll('.ps-row .row-remove-btn').forEach(function (btn) {
     if (!row) return;
     var idInput = row.querySelector('input[name="ps_id"]');
     if (idInput && idInput.value) {
-      row.querySelector('input[name="ps_reference"]').value = '';
+      row.querySelector('input[name="ps_reference_text"]').value = '';
+      row.querySelector('select[name="ps_reference_ble"]').value = '';
       row.hidden = true;
     } else {
       row.remove();
     }
   });
+});
+
+// Pro Zeile nur das zum Quellen-Typ passende Referenz-Feld zeigen: BLE-Tag ->
+// Dropdown über die BLE-Tags dieses Users (schon in /ble-tags gepflegt, kein
+// Freitext-Duplikat einer bereits vorhandenen Zuordnung), ioBroker-State -> Freitext.
+document.querySelectorAll('.ps-row').forEach(function (row) {
+  var select = row.querySelector('.ps-type-select');
+  function applyType() {
+    var isBleTag = select.value === 'ble_tag';
+    row.querySelector('.ps-ref-text-field').classList.toggle('hidden', isBleTag);
+    row.querySelector('.ps-ref-ble-field').classList.toggle('hidden', !isBleTag);
+  }
+  select.addEventListener('change', applyType);
+  applyType();
 });
 </script>
 {% endblock %}

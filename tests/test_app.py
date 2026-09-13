@@ -721,11 +721,19 @@ class TestPresenceSources:
         body = resp.get_data(as_text=True)
         assert "aa:bb:cc:dd:ee:ff" in body
 
-    def test_create_presence_source(self, admin_client, hannah):
+    def test_ble_tag_reference_offers_only_this_users_tags(self, admin_client, hannah):
+        hannah._ble_tags[2] = {"mac_address": "22:22:22:22:22:22", "label": "Anderer User", "user_id": 2}
+        resp = admin_client.get("/users/1/presence-sources")
+        body = resp.get_data(as_text=True)
+        assert "Schlüsselanhänger" in body
+        assert "Anderer User" not in body
+
+    def test_create_presence_source_with_iobroker_state(self, admin_client, hannah):
         admin_client.post("/users/1/presence-sources", data={
             "ps_id": ["", ""],
             "ps_source_type": ["iobroker_state", "iobroker_state"],
-            "ps_reference": ["cisco-checkpresence.0.presence.leonie.present", ""],
+            "ps_reference_text": ["cisco-checkpresence.0.presence.leonie.present", ""],
+            "ps_reference_ble": ["", ""],
             "ps_home_confidence": ["0.7", "0.8"],
             "ps_away_confidence": ["0.5", "0.8"],
             "ps_enabled_0": "on",
@@ -737,22 +745,38 @@ class TestPresenceSources:
         assert created["home_confidence"] == 0.7
         assert created["enabled"] is True
 
-    def test_update_presence_source(self, admin_client, hannah):
+    def test_create_presence_source_with_ble_tag_dropdown(self, admin_client, hannah):
+        admin_client.post("/users/1/presence-sources", data={
+            "ps_id": ["", ""],
+            "ps_source_type": ["ble_tag", "iobroker_state"],
+            "ps_reference_text": ["", ""],
+            "ps_reference_ble": ["aa:bb:cc:dd:ee:ff", ""],
+            "ps_home_confidence": ["0.9", "0.8"],
+            "ps_away_confidence": ["0.6", "0.8"],
+        })
+        created = [s for s in hannah._presence_sources.values() if s["reference"] == "aa:bb:cc:dd:ee:ff"]
+        assert len(created) == 2  # the seeded one plus the newly created one
+        assert any(s["user_id"] == 1 and s["source_type"] == "ble_tag" for s in created)
+
+    def test_update_presence_source_switches_to_iobroker_state(self, admin_client, hannah):
         admin_client.post("/users/1/presence-sources", data={
             "ps_id": ["1"],
-            "ps_source_type": ["ble_tag"],
-            "ps_reference": ["11:22:33:44:55:66"],
+            "ps_source_type": ["iobroker_state"],
+            "ps_reference_text": ["some.other.state"],
+            "ps_reference_ble": [""],
             "ps_home_confidence": ["0.95"],
             "ps_away_confidence": ["0.4"],
         })
-        assert hannah._presence_sources[1]["reference"] == "11:22:33:44:55:66"
+        assert hannah._presence_sources[1]["reference"] == "some.other.state"
+        assert hannah._presence_sources[1]["source_type"] == "iobroker_state"
         assert hannah._presence_sources[1]["enabled"] is False
 
     def test_clearing_reference_deletes_presence_source(self, admin_client, hannah):
         admin_client.post("/users/1/presence-sources", data={
             "ps_id": ["1"],
             "ps_source_type": ["ble_tag"],
-            "ps_reference": [""],
+            "ps_reference_text": [""],
+            "ps_reference_ble": [""],
             "ps_home_confidence": ["0.9"],
             "ps_away_confidence": ["0.6"],
         })
