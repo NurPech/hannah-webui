@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import state_condition, room_select %}
+{% from "_macros.html" import state_condition, satellite_select %}
 {% block title %}Trigger {{ 'bearbeiten' if trigger else 'anlegen' }}{% endblock %}
 {% block content %}
 <div class="mb-3">
@@ -114,8 +114,8 @@
                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
       </div>
       <div class="action-say-field sm:col-span-2">
-        <label class="block text-xs text-gray-500 mb-1">Raum</label>
-        {{ room_select('action_room', row.room, rooms) }}
+        <label class="block text-xs text-gray-500 mb-1">Satellit</label>
+        {{ satellite_select('action_target', row.target, satellites) }}
       </div>
       {{ state_condition(action_device_row, action_device_options, 'action_state_id', 'action_state_value', 'sm:col-span-3', 'sm:col-span-2') }}
       <div class="action-presence-field sm:col-span-4">
@@ -140,8 +140,8 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-12 gap-2 mt-4">
       <div class="sm:col-span-3">
-        <label class="block text-xs text-gray-500 mb-1">Raum</label>
-        {{ room_select('room', trigger.room if trigger else 'all', rooms) }}
+        <label class="block text-xs text-gray-500 mb-1">Satellit</label>
+        {{ satellite_select('satellite', trigger.target if trigger else 'all', satellites) }}
       </div>
       <div class="sm:col-span-3">
         <label class="block text-xs text-gray-500 mb-1">Cooldown (Sekunden)</label>

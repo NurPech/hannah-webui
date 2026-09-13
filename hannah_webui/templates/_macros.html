@@ -72,14 +72,16 @@
 {% endmacro %}
 
 {#
-  Raum-Dropdown (#30) statt Freitext — "Alle Räume" (value="") normalisiert serverseitig
-  ohnehin schon auf "all" (siehe route_helpers.py), daher hier direkt als leerer Wert.
+  Satelliten-Dropdown fürs Trigger-Target (ersetzt den früheren Raum-Bezug,
+  Trigger.target/Action-target adressieren jetzt einen einzelnen Satelliten
+  statt eines Raums, hannah-proto#5) — "Alle Satelliten" (value="") normalisiert
+  serverseitig auf "all" (siehe route_helpers.py), daher hier direkt als leerer Wert.
 #}
-{% macro room_select(name, current_room, rooms) %}
+{% macro satellite_select(name, current_target, satellites) %}
 <select name="{{ name }}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-  <option value="" {% if not current_room or current_room == 'all' %}selected{% endif %}>Alle Räume</option>
-  {% for r in rooms %}
-  <option value="{{ r.room_id }}" {% if current_room == r.room_id %}selected{% endif %}>{{ r.display_name }}</option>
+  <option value="" {% if not current_target or current_target == 'all' %}selected{% endif %}>Alle Satelliten</option>
+  {% for s in satellites %}
+  <option value="{{ s.device_id }}" {% if current_target == s.device_id %}selected{% endif %}>{{ s.display_name or s.device_id }}</option>
   {% endfor %}
 </select>
 {% endmacro %}

@@ -48,7 +48,7 @@
   <ul class="text-sm text-gray-400 mt-2 ml-4 list-disc space-y-0.5">
     {% for a in item.actions %}
     <li>
-      {% if a.get('say') %}Sage „{{ a.get('say') }}“ in {{ a.get('room') or 'all' }}
+      {% if a.get('say') %}Sage „{{ a.get('say') }}“ auf {{ a.get('target') or 'all' }}
       {% elif a.get('set_presence') %}Setze Anwesenheit von
         <code class="font-mono text-xs bg-gray-800 rounded px-1 py-0.5">{{ residents_by_roomie_id.get(a['set_presence'].get('roomie', ''), a['set_presence'].get('roomie', '')) }}</code> =
         <code class="font-mono text-xs bg-gray-800 rounded px-1 py-0.5">{{ presence_state_labels.get(a['set_presence'].get('state', ''), a['set_presence'].get('state', '')) }}</code>

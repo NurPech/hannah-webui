@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.6.0
+### Fixed
+- Trigger scope and the "Ansage" action's destination sent the now-removed `room` field on `CreateTriggerRequest`/`UpdateTriggerRequest`, broken against the already-installed `hannah-proto` 4.0.0. Both now use the renamed `target` field and address a satellite instead of a room — trigger editor dropdowns list satellites, not rooms. Refs #57
+
 ## 2.5.2
 ### Fixed
 - Trigger overview page rendered `set_presence` actions as a blank "Setze &nbsp;=&nbsp;" line instead of the resident and status, since it only knew the `say`/`set_state` action shapes. Now shows e.g. "Setze Anwesenheit von Leonie = Schläft". Refs #56

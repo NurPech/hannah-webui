@@ -65,7 +65,7 @@ class FakeHannahClient:
                 "when": {"time": "23:00", "days": ["mon", "tue", "wed", "thu", "fri"]},
                 "cancel_when": None, "on_response": [], "actions": [],
                 "say": "Leonie, denk an die Außentüren.", "ask": "", "rephrase": True,
-                "room": "all", "cooldown": 3600, "delay": "",
+                "target": "all", "cooldown": 3600, "delay": "",
             },
         }
         self._alarms = {
@@ -348,27 +348,27 @@ class FakeHannahClient:
                 id=tid, when_json=json.dumps(t["when"]),
                 cancel_when_json=json.dumps(t["cancel_when"]) if t["cancel_when"] else "",
                 on_response_json=json.dumps(t["on_response"]), actions_json=json.dumps(t["actions"]),
-                say=t["say"], ask=t["ask"], rephrase=t["rephrase"], room=t["room"],
+                say=t["say"], ask=t["ask"], rephrase=t["rephrase"], target=t["target"],
                 cooldown=t["cooldown"], delay=t["delay"],
             )
             for tid, t in self._triggers.items()
         ]
 
-    def create_trigger(self, trigger_id, when, cancel_when, on_response, actions, say, ask, rephrase, room, cooldown, delay):
+    def create_trigger(self, trigger_id, when, cancel_when, on_response, actions, say, ask, rephrase, target, cooldown, delay):
         if trigger_id in self._triggers:
             return False, "id existiert bereits"
         self._triggers[trigger_id] = {
             "when": when, "cancel_when": cancel_when, "on_response": on_response, "actions": actions,
-            "say": say, "ask": ask, "rephrase": rephrase, "room": room, "cooldown": cooldown, "delay": delay,
+            "say": say, "ask": ask, "rephrase": rephrase, "target": target, "cooldown": cooldown, "delay": delay,
         }
         return True, "created"
 
-    def update_trigger(self, trigger_id, when, cancel_when, on_response, actions, say, ask, rephrase, room, cooldown, delay):
+    def update_trigger(self, trigger_id, when, cancel_when, on_response, actions, say, ask, rephrase, target, cooldown, delay):
         if trigger_id not in self._triggers:
             return False, "not found"
         self._triggers[trigger_id] = {
             "when": when, "cancel_when": cancel_when, "on_response": on_response, "actions": actions,
-            "say": say, "ask": ask, "rephrase": rephrase, "room": room, "cooldown": cooldown, "delay": delay,
+            "say": say, "ask": ask, "rephrase": rephrase, "target": target, "cooldown": cooldown, "delay": delay,
         }
         return True, "updated"
 

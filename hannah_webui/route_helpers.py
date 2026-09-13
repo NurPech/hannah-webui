@@ -123,7 +123,7 @@ def _blank_state_row() -> dict:
 
 
 def _blank_action_row() -> dict:
-    return {"type": "say", "say": "", "room": "", "state_id": "", "state_value": "",
+    return {"type": "say", "say": "", "target": "", "state_id": "", "state_value": "",
             "roomie": "", "presence_state": ""}
 
 
@@ -147,13 +147,13 @@ def _state_condition_to_row(cond: dict) -> dict:
 def _action_to_row(action: dict) -> dict:
     if "set_state" in action:
         set_state = action.get("set_state") or {}
-        return {"type": "state", "say": "", "room": "", "state_id": set_state.get("id", ""),
+        return {"type": "state", "say": "", "target": "", "state_id": set_state.get("id", ""),
                 "state_value": str(set_state.get("value", "")), "roomie": "", "presence_state": ""}
     if "set_presence" in action:
         set_presence = action.get("set_presence") or {}
-        return {"type": "presence", "say": "", "room": "", "state_id": "", "state_value": "",
+        return {"type": "presence", "say": "", "target": "", "state_id": "", "state_value": "",
                 "roomie": set_presence.get("roomie", ""), "presence_state": set_presence.get("state", "")}
-    return {"type": "say", "say": action.get("say", ""), "room": action.get("room", ""),
+    return {"type": "say", "say": action.get("say", ""), "target": action.get("target", ""),
             "state_id": "", "state_value": "", "roomie": "", "presence_state": ""}
 
 
@@ -263,7 +263,7 @@ def _parse_trigger_action_rows(form) -> list[dict]:
     weiterer von Core interpretierter Action-Key."""
     types = form.getlist("action_type")
     says = form.getlist("action_say")
-    rooms = form.getlist("action_room")
+    targets = form.getlist("action_target")
     state_ids = form.getlist("action_state_id")
     state_values = form.getlist("action_state_value")
     roomies = form.getlist("action_roomie")
@@ -273,8 +273,8 @@ def _parse_trigger_action_rows(form) -> list[dict]:
         if action_type == "say":
             say = says[i].strip() if i < len(says) else ""
             if say:
-                room = rooms[i].strip() if i < len(rooms) else ""
-                actions.append({"say": say, "room": room or "all"})
+                target = targets[i].strip() if i < len(targets) else ""
+                actions.append({"say": say, "target": target or "all"})
         elif action_type == "presence":
             roomie = roomies[i].strip() if i < len(roomies) else ""
             if roomie:

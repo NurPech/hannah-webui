@@ -67,7 +67,7 @@ def new_trigger():
         on_response_text="",
         device_options=_device_state_options(devices),
         action_device_options=_device_state_options(devices, writable_only=True),
-        rooms=hannah.get_rooms(),
+        satellites=hannah.get_satellites(),
         residents=hannah.get_residents(),
         presence_states=_PRESENCE_STATES,
     )
@@ -86,7 +86,7 @@ def create_trigger():
         actions = _parse_trigger_action_rows(request.form)
         ask = request.form.get("ask", "").strip()
         rephrase = request.form.get("rephrase") == "on"
-        room = request.form.get("room", "").strip() or "all"
+        satellite = request.form.get("satellite", "").strip() or "all"
         cooldown = int(request.form.get("cooldown") or 3600)
         delay = request.form.get("delay", "").strip()
         on_response_text = request.form.get("on_response_json", "").strip()
@@ -96,7 +96,7 @@ def create_trigger():
             flash(f"Ungültiges JSON in 'Erweitert: Antwortregeln': {e}", "danger")
             return redirect(url_for("triggers.new_trigger"))
         ok, message = hannah.create_trigger(
-            trigger_id, when, None, on_response, actions, "", ask, rephrase, room, cooldown, delay,
+            trigger_id, when, None, on_response, actions, "", ask, rephrase, satellite, cooldown, delay,
         )
         if not ok:
             flash(message, "danger")
@@ -141,7 +141,7 @@ def edit_trigger(trigger_id: str):
         on_response_text=on_response_text,
         device_options=_device_state_options(devices),
         action_device_options=_device_state_options(devices, writable_only=True),
-        rooms=hannah.get_rooms(),
+        satellites=hannah.get_satellites(),
         residents=hannah.get_residents(),
         presence_states=_PRESENCE_STATES,
     )
@@ -158,7 +158,7 @@ def save_trigger(trigger_id: str):
     actions = _parse_trigger_action_rows(request.form)
     ask = request.form.get("ask", "").strip()
     rephrase = request.form.get("rephrase") == "on"
-    room = request.form.get("room", "").strip() or "all"
+    satellite = request.form.get("satellite", "").strip() or "all"
     cooldown = int(request.form.get("cooldown") or 3600)
     delay = request.form.get("delay", "").strip()
     on_response_text = request.form.get("on_response_json", "").strip()
@@ -168,7 +168,7 @@ def save_trigger(trigger_id: str):
         flash(f"Ungültiges JSON in 'Erweitert: Antwortregeln': {e}", "danger")
         return redirect(url_for("triggers.edit_trigger", trigger_id=trigger_id))
     ok, message = hannah.update_trigger(
-        trigger_id, when, None, on_response, actions, "", ask, rephrase, room, cooldown, delay,
+        trigger_id, when, None, on_response, actions, "", ask, rephrase, satellite, cooldown, delay,
     )
     if not ok:
         flash(message, "danger")

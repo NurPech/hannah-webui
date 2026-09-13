@@ -201,22 +201,22 @@ class HannahClient:
         return list(self._stub.GetTriggers(hannah_pb2.Empty()).triggers)
 
     def create_trigger(self, trigger_id: str, when, cancel_when, on_response: list, actions: list,
-                        say: str, ask: str, rephrase: bool, room: str, cooldown: int, delay: str) -> tuple[bool, str]:
+                        say: str, ask: str, rephrase: bool, target: str, cooldown: int, delay: str) -> tuple[bool, str]:
         assert self._stub, "call connect() first"
         resp = self._stub.CreateTrigger(hannah_pb2.CreateTriggerRequest(
             id=trigger_id, when_json=json.dumps(when), cancel_when_json=json.dumps(cancel_when) if cancel_when else "",
             on_response_json=json.dumps(on_response or []), actions_json=json.dumps(actions or []),
-            say=say, ask=ask, rephrase=rephrase, room=room, cooldown=cooldown, delay=delay,
+            say=say, ask=ask, rephrase=rephrase, target=target, cooldown=cooldown, delay=delay,
         ))
         return resp.ok, resp.message
 
     def update_trigger(self, trigger_id: str, when, cancel_when, on_response: list, actions: list,
-                        say: str, ask: str, rephrase: bool, room: str, cooldown: int, delay: str) -> tuple[bool, str]:
+                        say: str, ask: str, rephrase: bool, target: str, cooldown: int, delay: str) -> tuple[bool, str]:
         assert self._stub, "call connect() first"
         resp = self._stub.UpdateTrigger(hannah_pb2.UpdateTriggerRequest(
             id=trigger_id, when_json=json.dumps(when), cancel_when_json=json.dumps(cancel_when) if cancel_when else "",
             on_response_json=json.dumps(on_response or []), actions_json=json.dumps(actions or []),
-            say=say, ask=ask, rephrase=rephrase, room=room, cooldown=cooldown, delay=delay,
+            say=say, ask=ask, rephrase=rephrase, target=target, cooldown=cooldown, delay=delay,
         ))
         return resp.ok, resp.message
 

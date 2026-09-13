@@ -483,7 +483,7 @@ class TestTriggers:
         Pill-Vorlage kannte nur time/state, nicht phrase)."""
         hannah._triggers["gute_nacht"] = {
             "when": {"phrase": "gute nacht"}, "cancel_when": None, "on_response": [], "actions": [],
-            "say": "Gute Nacht.", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+            "say": "Gute Nacht.", "ask": "", "rephrase": False, "target": "all", "cooldown": 0, "delay": "",
         }
         resp = logged_in_client.get("/triggers")
         body = resp.get_data(as_text=True)
@@ -495,7 +495,7 @@ class TestTriggers:
         hannah._triggers["gute_nacht"] = {
             "when": {"phrase": "gute nacht"}, "cancel_when": None, "on_response": [],
             "actions": [{"set_presence": {"roomie": "leonie", "state": "asleep"}}],
-            "say": "", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+            "say": "", "ask": "", "rephrase": False, "target": "all", "cooldown": 0, "delay": "",
         }
         resp = logged_in_client.get("/triggers")
         body = resp.get_data(as_text=True)
@@ -509,7 +509,7 @@ class TestTriggers:
         hannah._triggers["leere-bedingung"] = {
             "when": [{"phrase": "gute nacht"}, {"state": ""}], "cancel_when": None,
             "on_response": [], "actions": [], "say": "Gute Nacht.", "ask": "",
-            "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+            "rephrase": False, "target": "all", "cooldown": 0, "delay": "",
         }
         resp = logged_in_client.get("/triggers")
         body = resp.get_data(as_text=True)
@@ -544,9 +544,9 @@ class TestTriggers:
             "when_value": ["true"], "when_time": [""], "when_days": [""],
             "also_op": "and", "also_state": [], "also_cmp": [], "also_value": [],
             "unless_state": [], "unless_cmp": [], "unless_value": [],
-            "action_type": ["say"], "action_say": ["Fenster offen."], "action_room": ["all"],
+            "action_type": ["say"], "action_say": ["Fenster offen."], "action_target": ["all"],
             "action_state_id": [""], "action_state_value": [""],
-            "room": "all", "cooldown": "3600", "delay": "", "ask": "", "on_response_json": "",
+            "satellite": "all", "cooldown": "3600", "delay": "", "ask": "", "on_response_json": "",
         }
         payload.update(overrides)
         return payload
@@ -565,7 +565,7 @@ class TestTriggers:
         ]}
         assert created["when"][0]["unless"] == [{"state": "abwesend", "value": "true"}]
         assert created["when"][1]["also"] == created["when"][0]["also"]
-        assert created["actions"] == [{"say": "Fenster offen.", "room": "all"}]
+        assert created["actions"] == [{"say": "Fenster offen.", "target": "all"}]
 
     def test_create_trigger_with_phrase_condition(self, logged_in_client, hannah):
         """#28 — ersetzt die frühere separate Routinen-Verwaltung (hannah#139)."""
@@ -580,7 +580,7 @@ class TestTriggers:
     def test_edit_trigger_form_prefills_phrase_condition(self, logged_in_client, hannah):
         hannah._triggers["schlafenszeit"] = {
             "when": {"phrase": "schlafenszeit"}, "cancel_when": None, "on_response": [], "actions": [],
-            "say": "Gute Nacht.", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+            "say": "Gute Nacht.", "ask": "", "rephrase": False, "target": "all", "cooldown": 0, "delay": "",
         }
         resp = logged_in_client.get("/triggers/schlafenszeit/edit")
         body = resp.get_data(as_text=True)
@@ -591,7 +591,7 @@ class TestTriggers:
             id="zeit-trigger",
             when_type=["time"], when_state=[""], when_cmp=["value"], when_value=[""],
             when_time=["07:00"], when_days=["mon,tue"],
-            action_type=["state"], action_say=[""], action_room=[""],
+            action_type=["state"], action_say=[""], action_target=[""],
             action_state_id=["javascript.0.virtualDevice.Licht.test"], action_state_value=["true"],
         ))
         created = hannah._triggers["zeit-trigger"]
@@ -604,7 +604,7 @@ class TestTriggers:
             id="leonie-schlaeft",
             when_type=["phrase"], when_state=[""], when_cmp=["value"], when_value=[""],
             when_time=[""], when_days=[""], when_phrase=["gute nacht"],
-            action_type=["presence"], action_say=[""], action_room=[""],
+            action_type=["presence"], action_say=[""], action_target=[""],
             action_roomie=["leonie"], action_presence_state=["asleep"],
         ))
         created = hannah._triggers["leonie-schlaeft"]
@@ -620,7 +620,7 @@ class TestTriggers:
         hannah._triggers["schlafenszeit"] = {
             "when": {"phrase": "schlafenszeit"}, "cancel_when": None, "on_response": [],
             "actions": [{"set_presence": {"roomie": "leonie", "state": "asleep"}}],
-            "say": "", "ask": "", "rephrase": False, "room": "all", "cooldown": 0, "delay": "",
+            "say": "", "ask": "", "rephrase": False, "target": "all", "cooldown": 0, "delay": "",
         }
         resp = logged_in_client.get("/triggers/schlafenszeit/edit")
         body = resp.get_data(as_text=True)
@@ -643,11 +643,11 @@ class TestTriggers:
     def test_update_trigger(self, logged_in_client, hannah):
         logged_in_client.post("/triggers/aussentuer_abend/edit", data=self._create_payload(
             when_type=["time"], when_state=[""], when_cmp=["value"], when_value=[""],
-            when_time=["22:00"], when_days=[""], room="flur",
+            when_time=["22:00"], when_days=[""], satellite="flur",
         ))
         updated = hannah._triggers["aussentuer_abend"]
         assert updated["when"] == [{"time": "22:00"}]
-        assert updated["room"] == "flur"
+        assert updated["target"] == "flur"
 
     def test_delete_trigger(self, logged_in_client, hannah):
         logged_in_client.post("/triggers/aussentuer_abend/delete")
