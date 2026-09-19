@@ -1,4 +1,4 @@
-grpcio>=1.83.1      # gRPC-Laufzeit (Client) — Untergrenze an die grpcio-tools-Version gekoppelt, die hannah-proto zuletzt zur Stub-Generierung benutzt hat: hannah-proto>=3.9.0's generated *_pb2_grpc.py hard-fails at import below this (see hannah_pb2_grpc.py's version check)
+grpcio>=1.84.0      # gRPC-Laufzeit (Client) — Untergrenze an die grpcio-tools-Version gekoppelt, die hannah-proto zuletzt zur Stub-Generierung benutzt hat: hannah-proto>=4.2.1's generated *_pb2_grpc.py hard-fails at import below this (see hannah_pb2_grpc.py's version check)
 protobuf>=7.35.0    # von den generierten *_pb2.py-Stubs benötigt, kein transitives grpcio-Dependency
 flask>=3.0.0        # WebUI
 PyYAML>=6.0         # Config-Loading
@@ -8,4 +8,4 @@ cryptography>=42.0.0  # selbstsigniertes TLS-Zertifikat generieren (hannah_webui
 # Proto schema — published package instead of the git-submodule/local-codegen
 # pattern (#60); pins the runtime proto/gRPC-version coupling that used to be
 # handled by matching grpcio-tools' version locally
-hannah-proto>=4.1.0    # 4.1.0 adds PresenceSource CRUD (control.proto, gessinger/voice/hannah#294)
+hannah-proto>=4.2.1    # 4.2.1's generated stubs require grpcio>=1.84.0, see line above

@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.7.3
+### Fixed
+- Bumped `hannah-proto` to `>=4.2.1` and `grpcio` to `>=1.84.0` — older `grpcio` installs hard-fail at import with a `RuntimeError` from the generated `hannah_pb2_grpc.py` version check, crash-looping the whole service (`gunicorn` exits with status 3 before it can even bind).
+
 ## 2.7.2
 ### Added
 - Native TLS termination via a `tls.enabled`/`cert_file`/`key_file` config section (`HANNAH_WEBUI_TLS_ENABLED`/`_CERT_FILE`/`_KEY_FILE` for Docker). With no cert/key given, a self-signed certificate (~500 year validity) is generated on first start and persisted — under `/var/lib/hannah-webui/tls/` for systemd, `/data/tls/` for Docker (new `/data` volume) — so restarts and updates never invalidate a client's trust decision. Required for the Telegram Login Widget flow in `/me`, which needs HTTPS but doesn't validate the certificate's CA chain. Refs #61
