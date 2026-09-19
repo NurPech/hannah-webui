@@ -13,10 +13,12 @@ Environment=HANNAH_WEBUI_CONFIG=/etc/hannah-webui/config.yaml
 # C-Core scheitert beim Fork-Handling der gunicorn-Worker daran mit "Permission
 # denied" (#104). Gleiches Muster wie bei voiceid (siehe dessen .service).
 Environment=HOME=/opt/hannah/webui
-# Bind-Adresse ist hier festgelegt, nicht in config.yaml — gunicorn bindet den
-# Socket selbst, bevor die WSGI-App (wsgi.py) überhaupt geladen wird. config.yaml's
+# Bind-Adresse steht in gunicorn.conf.py, nicht in config.yaml — gunicorn bindet
+# den Socket selbst, bevor die WSGI-App (wsgi.py) überhaupt geladen wird. config.yaml's
 # host/port gelten nur für main.py's Flask-Dev-Server (lokale Entwicklung).
-ExecStart=/opt/hannah/webui/venv/bin/gunicorn --workers 2 --bind 0.0.0.0:5000 wsgi:app
+# --config statt inline --workers/--bind, damit gunicorn.conf.py auch hier greift
+# (u.a. TLS-Zertifikat/-Key fürs #61-Feature, siehe dort).
+ExecStart=/opt/hannah/webui/venv/bin/gunicorn --config gunicorn.conf.py wsgi:app
 Restart=on-failure
 RestartSec=5s
 
@@ -24,7 +26,10 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 ReadOnlyPaths=/etc/hannah-webui
-ReadWritePaths=/opt/hannah/webui
+# /var/lib/hannah-webui: persistiertes selbstsigniertes TLS-Zertifikat (#61) —
+# überlebt sowohl AutoDeploy-Updates (die /opt/hannah/webui austauschen) als
+# auch den read-only /etc/hannah-webui-Configpfad.
+ReadWritePaths=/opt/hannah/webui /var/lib/hannah-webui
 
 [Install]
 WantedBy=multi-user.target

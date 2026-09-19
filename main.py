@@ -15,6 +15,7 @@ import sys
 from hannah_webui.app import create_app
 from hannah_webui.config import load as load_config
 from hannah_webui.grpc_client import HannahClient
+from hannah_webui.tls import ensure_self_signed_certificate
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,9 +33,17 @@ def main(config_path: str) -> None:
 
     app = create_app(hannah, cfg.secret_key, cfg.telegram_bot_token, cfg.telegram_bot_username)
 
-    log.info("hannah-webui starting on %s:%d (gRPC=%s:%d)", cfg.host, cfg.port, cfg.grpc.host, cfg.grpc.port)
+    ssl_context = None
+    if cfg.tls.enabled:
+        ensure_self_signed_certificate(cfg.tls.cert_file, cfg.tls.key_file)
+        ssl_context = (cfg.tls.cert_file, cfg.tls.key_file)
+
+    log.info(
+        "hannah-webui starting on %s:%d (gRPC=%s:%d, tls=%s)",
+        cfg.host, cfg.port, cfg.grpc.host, cfg.grpc.port, cfg.tls.enabled,
+    )
     try:
-        app.run(host=cfg.host, port=cfg.port)
+        app.run(host=cfg.host, port=cfg.port, ssl_context=ssl_context)
     finally:
         hannah.close()
 

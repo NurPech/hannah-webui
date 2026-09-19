@@ -23,6 +23,7 @@ WEBUI_CHANNEL="${WEBUI_CHANNEL:-webui-stable}"
 # während die .service-Datei /opt/hannah/<name> erwartet (Refs #100).
 INSTALL_DIR="/opt/hannah/webui"
 CONFIG_DIR="/etc/hannah-webui"
+STATE_DIR="/var/lib/hannah-webui"
 SERVICE_NAME="hannah-webui"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 SERVICE_USER="hannah"
@@ -47,7 +48,7 @@ uninstall() {
     rm -f "${SERVICE_FILE}"
     systemctl daemon-reload
     rm -rf "${INSTALL_DIR}"
-    ok "Uninstalled. Config in ${CONFIG_DIR} was kept."
+    ok "Uninstalled. Config in ${CONFIG_DIR} and state in ${STATE_DIR} (incl. TLS cert) were kept."
 }
 
 [[ "${1:-}" == "--uninstall" ]] && { uninstall; exit 0; }
@@ -101,6 +102,13 @@ if [[ ! -d "$CONFIG_DIR" ]]; then
     mkdir -p "$CONFIG_DIR"
     chown "${SERVICE_USER}:${SERVICE_USER}" "$CONFIG_DIR"
     info "Created ${CONFIG_DIR} — place your config.yaml there."
+fi
+
+# ── State directory (persisted TLS cert, #61) ────────────────────────────────
+if [[ ! -d "$STATE_DIR" ]]; then
+    mkdir -p "$STATE_DIR"
+    chown "${SERVICE_USER}:${SERVICE_USER}" "$STATE_DIR"
+    info "Created ${STATE_DIR}."
 fi
 
 # ── systemd unit ──────────────────────────────────────────────────────────────

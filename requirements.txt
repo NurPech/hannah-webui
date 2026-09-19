@@ -3,6 +3,7 @@ protobuf>=7.35.0    # von den generierten *_pb2.py-Stubs benötigt, kein transit
 flask>=3.0.0        # WebUI
 PyYAML>=6.0         # Config-Loading
 gunicorn>=21.2.0    # Produktions-WSGI-Server (siehe deploy/hannah-webui.service); Flask-Dev-Server (main.py) bleibt nur für lokale Entwicklung
+cryptography>=42.0.0  # selbstsigniertes TLS-Zertifikat generieren (hannah_webui/tls.py, #61)
 
 # Proto schema — published package instead of the git-submodule/local-codegen
 # pattern (#60); pins the runtime proto/gRPC-version coupling that used to be

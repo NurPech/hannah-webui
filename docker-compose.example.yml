@@ -4,6 +4,10 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
+    volumes:
+      # Persistiert u.a. das selbstsignierte TLS-Zertifikat (#61) über
+      # Container-Neustarts hinweg
+      - hannah-webui-data:/data
     environment:
       # Signiert die Flask-Session-Cookie — muss über Neustarts hinweg stabil sein,
       # sonst werden Nutzer zufällig ausgeloggt. Generieren mit:
@@ -20,3 +24,11 @@ services:
       # freigeschaltet sein
       # HANNAH_WEBUI_TELEGRAM_BOT_TOKEN: ""
       # HANNAH_WEBUI_TELEGRAM_BOT_USERNAME: ""
+
+      # Optional: native TLS-Terminierung (#61) — verlangt vom Telegram Login
+      # Widget oben. Selbstsigniertes Zertifikat wird beim ersten Start generiert
+      # und unter /data/tls/ persistiert (siehe Volume oben).
+      # HANNAH_WEBUI_TLS_ENABLED: "true"
+
+volumes:
+  hannah-webui-data:

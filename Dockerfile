@@ -20,8 +20,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py gunicorn.conf.py wsgi.py ./
 COPY hannah_webui/ hannah_webui/
 
-# Daten-Verzeichnis (wird als Volume gemountet)
-RUN useradd -r -u 1000 appuser
+# Daten-Verzeichnis (wird als Volume gemountet) — hält u.a. das persistierte
+# selbstsignierte TLS-Zertifikat (hannah_webui/tls.py, #61)
+RUN useradd -r -u 1000 appuser \
+    && mkdir -p /data \
+    && chown appuser:appuser /data
+VOLUME ["/data"]
 USER appuser
 
 EXPOSE 5000

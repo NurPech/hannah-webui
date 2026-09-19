@@ -97,9 +97,19 @@ telegram_bot_username: ""
 grpc:
   host: "127.0.0.1"
   port: 50051
+
+# Native TLS-Terminierung (#61), z.B. fürs Telegram-Login-Widget in /me (verlangt
+# HTTPS). Bei leerem cert_file/key_file wird beim ersten Start ein selbstsigniertes
+# Zertifikat generiert und dauerhaft persistiert (Neustarts erzeugen es nie neu).
+tls:
+  enabled: false
+  cert_file: ""
+  key_file: ""
 ```
 
-Äquivalente Env-Vars (Docker-Pfad, kein `config.yaml` im Image): `HANNAH_WEBUI_SECRET_KEY`, `HANNAH_WEBUI_TELEGRAM_BOT_TOKEN`, `HANNAH_WEBUI_TELEGRAM_BOT_USERNAME`, `HANNAH_WEBUI_GRPC_HOST`, `HANNAH_WEBUI_GRPC_PORT`. `HANNAH_WEBUI_HOST`/`HANNAH_WEBUI_PORT` existieren zwar auch, wirken aber nur bei `main.py` (lokaler Dev-Server) — der Docker-Entrypoint `wsgi.py` liest `cfg.host`/`cfg.port` gar nicht, die Bind-Adresse steckt fest in `gunicorn.conf.py` (`0.0.0.0:5000`, siehe unten).
+Äquivalente Env-Vars (Docker-Pfad, kein `config.yaml` im Image): `HANNAH_WEBUI_SECRET_KEY`, `HANNAH_WEBUI_TELEGRAM_BOT_TOKEN`, `HANNAH_WEBUI_TELEGRAM_BOT_USERNAME`, `HANNAH_WEBUI_GRPC_HOST`, `HANNAH_WEBUI_GRPC_PORT`, `HANNAH_WEBUI_TLS_ENABLED`, `HANNAH_WEBUI_TLS_CERT_FILE`, `HANNAH_WEBUI_TLS_KEY_FILE`. `HANNAH_WEBUI_HOST`/`HANNAH_WEBUI_PORT` existieren zwar auch, wirken aber nur bei `main.py` (lokaler Dev-Server) — der Docker-Entrypoint `wsgi.py` liest `cfg.host`/`cfg.port` gar nicht, die Bind-Adresse steckt fest in `gunicorn.conf.py` (`0.0.0.0:5000`, siehe unten).
+
+Das selbstsignierte TLS-Zertifikat landet standardmäßig unter `/var/lib/hannah-webui/tls/` (systemd) bzw. `/data/tls/` (Docker, siehe [`docker-compose.example.yml`](docker-compose.example.yml) für den nötigen Volume-Mount) — beides Pfade, die Updates/Neustarts überstehen. Ein eigenes Cert/Key lässt sich über `cert_file`/`key_file` bzw. die Env-Vars stattdessen fest hinterlegen.
 
 ---
 

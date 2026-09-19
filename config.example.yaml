@@ -16,3 +16,14 @@ telegram_bot_username: ""
 grpc:
   host: "127.0.0.1"
   port: 50051
+
+# Native TLS-Terminierung (#61) — nötig, damit das Telegram-Login-Widget in /me
+# funktioniert (verlangt HTTPS, validiert aber keine CA-Kette; ein selbstsigniertes
+# Zertifikat reicht). Bei leerem cert_file/key_file wird beim ersten Start eines
+# generiert und dauerhaft unter /var/lib/hannah-webui/tls/ abgelegt (systemd) bzw.
+# muss hier für lokale Entwicklung explizit gesetzt werden. Ein Neustart erzeugt
+# das Zertifikat nie neu, solange die Datei existiert.
+tls:
+  enabled: false
+  cert_file: ""
+  key_file: ""
