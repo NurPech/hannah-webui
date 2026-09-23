@@ -25,6 +25,12 @@ services:
       # HANNAH_WEBUI_TELEGRAM_BOT_TOKEN: ""
       # HANNAH_WEBUI_TELEGRAM_BOT_USERNAME: ""
 
+      # Optional: Microsoft-Entra-Verknüpfung in /me — Single-Tenant-App-
+      # Registration, Redirect-URI https://<webui-host>/me/entra/callback
+      # HANNAH_WEBUI_ENTRA_CLIENT_ID: ""
+      # HANNAH_WEBUI_ENTRA_CLIENT_SECRET: ""
+      # HANNAH_WEBUI_ENTRA_TENANT: ""
+
       # Optional: native TLS-Terminierung (#61) — verlangt vom Telegram Login
       # Widget oben. Selbstsigniertes Zertifikat wird beim ersten Start generiert
       # und unter /data/tls/ persistiert (siehe Volume oben).

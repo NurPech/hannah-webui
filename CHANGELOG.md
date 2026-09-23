@@ -22,6 +22,14 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.8.0
+### Added
+- Link a Microsoft Entra account in `/me`, analogous to Telegram: OIDC authorization code flow with PKCE via `msal` against a single-tenant app registration, verified by the WebUI itself — Core only receives the ID token's `oid` as a `LinkAccount(service="entra")` (with `oid`/`tid`/`preferred_username`/`name` as provider payload). Configured via `entra_client_id`/`entra_client_secret`/`entra_tenant` (`HANNAH_WEBUI_ENTRA_*` for Docker); redirect URI is `https://<webui-host>/me/entra/callback`. Refs #62
+- Link a Telegram account in `/me` via a deep link to the bot instead of the Login Widget: shown whenever Core reports a connected Telegram adapter that supports linking (`GetChannels`); the button fetches a one-time link from Core (`CreateLinkToken`, `https://t.me/<bot>?start=<token>`), the adapter redeems it on `/start`, and `/me` polls until the link shows up. Needs no bot token, domain or TLS on the WebUI side. The Login Widget stays as a fallback while no adapter is connected; a Core without `GetChannels` simply hides the deep link. Refs #63
+
+### Changed
+- Requires `hannah-proto>=4.3.0`. Refs #63
+
 ## 2.7.3
 ### Fixed
 - Bumped `hannah-proto` to `>=4.2.1` and `grpcio` to `>=1.84.0` — older `grpcio` installs hard-fail at import with a `RuntimeError` from the generated `hannah_pb2_grpc.py` version check, crash-looping the whole service (`gunicorn` exits with status 3 before it can even bind).

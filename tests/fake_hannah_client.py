@@ -43,6 +43,7 @@ class FakeHannahClient:
             },
         }
         self._users = {"claude": "claude", "admin": "admin"}
+        self._channels = []
         self._user_records = {
             1: {
                 "user_name": "leonie", "display_name": "Leonie", "email": "leonie@example.com",
@@ -348,6 +349,17 @@ class FakeHannahClient:
             return False
         self._user_records[user_id]["linked_accounts"].pop(service, None)
         return True
+
+    def get_channels(self):
+        return list(self._channels)
+
+    def create_link_token(self, user_id, service):
+        channel = next((c for c in self._channels if c.service == service and c.supports_link), None)
+        if channel is None:
+            return hannah_pb2.CreateLinkTokenResponse(ok=False, message=f"Kein Adapter für {service} verbunden.")
+        return hannah_pb2.CreateLinkTokenResponse(
+            ok=True, token="tok123", link_url="https://t.me/HannahBot?start=tok123", expires_at=0,
+        )
 
     def get_triggers(self):
         return [

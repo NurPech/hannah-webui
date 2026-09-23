@@ -196,6 +196,14 @@ class HannahClient:
         ))
         return resp.ok
 
+    def get_channels(self) -> list["hannah_pb2.ChannelInfo"]:
+        assert self._stub, "call connect() first"
+        return list(self._stub.GetChannels(hannah_pb2.Empty()).channels)
+
+    def create_link_token(self, user_id: int, service: str) -> "hannah_pb2.CreateLinkTokenResponse":
+        assert self._stub, "call connect() first"
+        return self._stub.CreateLinkToken(hannah_pb2.CreateLinkTokenRequest(user_id=user_id, service=service))
+
     def get_triggers(self) -> list["hannah_pb2.Trigger"]:
         assert self._stub, "call connect() first"
         return list(self._stub.GetTriggers(hannah_pb2.Empty()).triggers)

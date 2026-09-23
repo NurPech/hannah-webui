@@ -92,6 +92,120 @@ class TestTelegramLinking:
         assert "Trennen" not in body
 
 
+class TestTelegramDeepLink:
+    @staticmethod
+    def _telegram_channel(supports_link=True):
+        from hannah_proto import hannah_pb2
+        return hannah_pb2.ChannelInfo(service="telegram", display_name="Telegram", supports_link=supports_link)
+
+    def test_no_adapter_hides_deep_link(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "/me/telegram/link" not in body
+
+    def test_adapter_without_link_support_hides_deep_link(self, logged_in_client, hannah):
+        hannah._channels = [self._telegram_channel(supports_link=False)]
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "/me/telegram/link" not in body
+
+    def test_adapter_with_link_support_shows_deep_link(self, logged_in_client, hannah):
+        hannah._channels = [self._telegram_channel()]
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "/me/telegram/link" in body
+
+    def test_deep_link_takes_precedence_over_widget(self, telegram_client, hannah):
+        hannah._channels = [self._telegram_channel()]
+        body = telegram_client.get("/me").get_data(as_text=True)
+        assert "/me/telegram/link" in body
+        assert "oauth.telegram.org/auth?" not in body
+
+    def test_get_channels_error_degrades_gracefully(self, logged_in_client, hannah, monkeypatch):
+        import grpc
+
+        def boom():
+            raise grpc.RpcError()
+        monkeypatch.setattr(hannah, "get_channels", boom)
+        resp = logged_in_client.get("/me")
+        assert resp.status_code == 200
+        assert "/me/telegram/link" not in resp.get_data(as_text=True)
+
+    def test_link_redirects_to_deep_link(self, logged_in_client, hannah):
+        hannah._channels = [self._telegram_channel()]
+        resp = logged_in_client.post("/me/telegram/link")
+        assert resp.status_code == 302
+        assert resp.headers["Location"] == "https://t.me/HannahBot?start=tok123"
+
+    def test_link_without_adapter_shows_error(self, logged_in_client):
+        resp = logged_in_client.post("/me/telegram/link")
+        body = logged_in_client.get(resp.headers["Location"]).get_data(as_text=True)
+        assert "Kein Adapter für telegram verbunden" in body
+
+    def test_linked_accounts_reports_telegram_once_linked(self, logged_in_client, hannah):
+        assert logged_in_client.get("/me/linked-accounts").get_json() == {}
+        hannah.link_account(1, "telegram", "555")
+        assert logged_in_client.get("/me/linked-accounts").get_json() == {"telegram": "555"}
+
+
+class TestEntraLinking:
+    def test_not_configured_shows_hint(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "Microsoft-Entra-Verknüpfung ist auf diesem Server nicht konfiguriert" in body
+        assert "/me/entra/login" not in body
+
+    def test_configured_shows_connect_link(self, entra_client):
+        body = entra_client.get("/me").get_data(as_text=True)
+        assert "/me/entra/login" in body
+
+    def test_login_redirects_to_entra_with_https_callback(self, entra_client, entra_app):
+        resp = entra_client.get("/me/entra/login")
+        assert resp.status_code == 302
+        assert resp.headers["Location"].startswith("https://login.microsoftonline.com/")
+        assert entra_app.initiate_kwargs["redirect_uri"] == "https://localhost/me/entra/callback"
+
+    def test_callback_links_oid(self, entra_client, hannah):
+        entra_client.get("/me/entra/login")
+        resp = entra_client.get("/me/entra/callback?code=x&state=abc")
+        assert resp.status_code == 302
+        user = next(u for u in hannah.get_users() if u.id == 1)
+        assert user.linked_accounts["entra"] == "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        body = entra_client.get("/me").get_data(as_text=True)
+        assert "Microsoft-Entra-Konto verknüpft" in body
+        assert "/me/entra/unlink" in body
+
+    def test_callback_without_pending_flow_fails(self, entra_client, hannah):
+        resp = entra_client.get("/me/entra/callback?code=x&state=abc")
+        body = entra_client.get(resp.headers["Location"]).get_data(as_text=True)
+        assert "keine laufende Anmeldung" in body
+
+    def test_callback_state_mismatch_fails(self, entra_client, entra_app):
+        entra_app.error = ValueError("state mismatch")
+        entra_client.get("/me/entra/login")
+        resp = entra_client.get("/me/entra/callback?code=x&state=evil")
+        body = entra_client.get(resp.headers["Location"]).get_data(as_text=True)
+        assert "Microsoft-Entra-Verknüpfung fehlgeschlagen" in body
+        assert "/me/entra/unlink" not in body
+
+    def test_callback_error_response_fails(self, entra_client, entra_app):
+        entra_app.result = {"error": "access_denied"}
+        entra_client.get("/me/entra/login")
+        resp = entra_client.get("/me/entra/callback?error=access_denied&state=abc")
+        body = entra_client.get(resp.headers["Location"]).get_data(as_text=True)
+        assert "Microsoft-Entra-Verknüpfung fehlgeschlagen" in body
+
+    def test_callback_foreign_tenant_fails(self, entra_client, entra_app):
+        entra_app.result["id_token_claims"]["tid"] = "99999999-0000-0000-0000-000000000000"
+        entra_client.get("/me/entra/login")
+        resp = entra_client.get("/me/entra/callback?code=x&state=abc")
+        body = entra_client.get(resp.headers["Location"]).get_data(as_text=True)
+        assert "fremden Tenant" in body
+
+    def test_unlink_removes_account(self, entra_client):
+        entra_client.get("/me/entra/login")
+        entra_client.get("/me/entra/callback?code=x&state=abc")
+        entra_client.post("/me/entra/unlink")
+        body = entra_client.get("/me").get_data(as_text=True)
+        assert "/me/entra/unlink" not in body
+
+
 class TestMe:
     def test_me_shows_display_name(self, logged_in_client):
         body = logged_in_client.get("/me").get_data(as_text=True)

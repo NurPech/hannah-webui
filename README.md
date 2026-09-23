@@ -19,7 +19,7 @@ Extrahiert aus dem Hannah-Monorepo (`webui/`), siehe `CHANGELOG.md`. Architektur
 - **Nutzerverwaltung** — User anlegen/bearbeiten/löschen, Trust-Level setzen, mit Residents verknüpfen
 - **Verlauf** — eigene geloggte Interaktionen (Transkript, Kanal, Intent, Antworttext) mit Audio-Wiedergabe; Trust-Level 10 sieht wahlweise den Verlauf anderer User
 - **Nachrichten** — passive Mailbox mit Antwort-Flow, Badge mit ungelesener Anzahl in der Navigation
-- **Self-Service (`/me`)** — eigenes Passwort ändern, Telegram-Konto verknüpfen/trennen (über das [Login Widget](https://core.telegram.org/widgets/login), WebUI verifiziert die Signatur selbst), Wecker verwalten
+- **Self-Service (`/me`)** — eigenes Passwort ändern, Telegram-Konto verknüpfen/trennen (bevorzugt per Deep-Link zum Bot, sobald Core einen verbundenen Telegram-Adapter meldet; sonst über das [Login Widget](https://core.telegram.org/widgets/login), WebUI verifiziert die Signatur selbst), Microsoft-Entra-Konto verknüpfen/trennen (OIDC-Login, Objekt-ID `oid` landet als `entra`-Account in Core), Wecker verwalten
 
 Ausführliche Bedienungsanleitung je Seite: [`docs/usage.md`](docs/usage.md).
 
@@ -94,6 +94,13 @@ secret_key: "..."
 telegram_bot_token: ""
 telegram_bot_username: ""
 
+# Microsoft Entra (Account-Verknüpfung in /me, OIDC-Login) — Single-Tenant-App-
+# Registration mit Client-Secret, keine API-Permissions nötig. Redirect-URI (Typ
+# "Web") dort eintragen: https://<webui-host>/me/entra/callback
+entra_client_id: ""
+entra_client_secret: ""
+entra_tenant: ""    # Tenant-ID (GUID)
+
 grpc:
   host: "127.0.0.1"
   port: 50051
@@ -107,7 +114,7 @@ tls:
   key_file: ""
 ```
 
-Äquivalente Env-Vars (Docker-Pfad, kein `config.yaml` im Image): `HANNAH_WEBUI_SECRET_KEY`, `HANNAH_WEBUI_TELEGRAM_BOT_TOKEN`, `HANNAH_WEBUI_TELEGRAM_BOT_USERNAME`, `HANNAH_WEBUI_GRPC_HOST`, `HANNAH_WEBUI_GRPC_PORT`, `HANNAH_WEBUI_TLS_ENABLED`, `HANNAH_WEBUI_TLS_CERT_FILE`, `HANNAH_WEBUI_TLS_KEY_FILE`. `HANNAH_WEBUI_HOST`/`HANNAH_WEBUI_PORT` existieren zwar auch, wirken aber nur bei `main.py` (lokaler Dev-Server) — der Docker-Entrypoint `wsgi.py` liest `cfg.host`/`cfg.port` gar nicht, die Bind-Adresse steckt fest in `gunicorn.conf.py` (`0.0.0.0:5000`, siehe unten).
+Äquivalente Env-Vars (Docker-Pfad, kein `config.yaml` im Image): `HANNAH_WEBUI_SECRET_KEY`, `HANNAH_WEBUI_TELEGRAM_BOT_TOKEN`, `HANNAH_WEBUI_TELEGRAM_BOT_USERNAME`, `HANNAH_WEBUI_ENTRA_CLIENT_ID`, `HANNAH_WEBUI_ENTRA_CLIENT_SECRET`, `HANNAH_WEBUI_ENTRA_TENANT`, `HANNAH_WEBUI_GRPC_HOST`, `HANNAH_WEBUI_GRPC_PORT`, `HANNAH_WEBUI_TLS_ENABLED`, `HANNAH_WEBUI_TLS_CERT_FILE`, `HANNAH_WEBUI_TLS_KEY_FILE`. `HANNAH_WEBUI_HOST`/`HANNAH_WEBUI_PORT` existieren zwar auch, wirken aber nur bei `main.py` (lokaler Dev-Server) — der Docker-Entrypoint `wsgi.py` liest `cfg.host`/`cfg.port` gar nicht, die Bind-Adresse steckt fest in `gunicorn.conf.py` (`0.0.0.0:5000`, siehe unten).
 
 Das selbstsignierte TLS-Zertifikat landet standardmäßig unter `/var/lib/hannah-webui/tls/` (systemd) bzw. `/data/tls/` (Docker, siehe [`docker-compose.example.yml`](docker-compose.example.yml) für den nötigen Volume-Mount) — beides Pfade, die Updates/Neustarts überstehen. Ein eigenes Cert/Key lässt sich über `cert_file`/`key_file` bzw. die Env-Vars stattdessen fest hinterlegen.
 

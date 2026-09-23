@@ -9,6 +9,7 @@ app.py (which imports every blueprint to register it) and the blueprints
 """
 from functools import wraps
 
+import msal
 from flask import current_app, flash, redirect, session, url_for
 
 from hannah_webui.grpc_client import HannahClient
@@ -59,6 +60,34 @@ def get_hannah() -> HannahClient:
 
 def get_telegram_config() -> tuple[str, str]:
     return current_app.config.get("TELEGRAM_BOT_TOKEN", ""), current_app.config.get("TELEGRAM_BOT_USERNAME", "")
+
+
+def get_entra_tenant() -> str:
+    return current_app.config.get("ENTRA_TENANT", "")
+
+
+def get_entra_app():
+    """MSAL-Client für die Entra-Verknüpfung in /me, oder None wenn nicht konfiguriert.
+    Lazy gebaut und in app.extensions gecacht — der Konstruktor holt die OIDC-Discovery
+    von login.microsoftonline.com, das soll weder beim App-Start noch pro Request passieren.
+    Tests hängen hier ein Fake ein (app.extensions["entra_msal"])."""
+    if "entra_msal" not in current_app.extensions:
+        client_id = current_app.config.get("ENTRA_CLIENT_ID", "")
+        client_secret = current_app.config.get("ENTRA_CLIENT_SECRET", "")
+        tenant = get_entra_tenant()
+        if not (client_id and client_secret and tenant):
+            return None
+        current_app.extensions["entra_msal"] = msal.ConfidentialClientApplication(
+            client_id, client_credential=client_secret,
+            authority=f"https://login.microsoftonline.com/{tenant}",
+        )
+    return current_app.extensions["entra_msal"]
+
+
+def entra_configured() -> bool:
+    return "entra_msal" in current_app.extensions or all(
+        current_app.config.get(k) for k in ("ENTRA_CLIENT_ID", "ENTRA_CLIENT_SECRET", "ENTRA_TENANT")
+    )
 
 
 def login_required(view):

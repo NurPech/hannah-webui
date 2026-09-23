@@ -34,7 +34,10 @@ log = logging.getLogger(__name__)
 _TEMPLATES = os.path.join(os.path.dirname(__file__), "templates")
 
 
-def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: str = "", telegram_bot_username: str = "") -> Flask:
+def create_app(
+    hannah: HannahClient, secret_key: str = "", telegram_bot_token: str = "", telegram_bot_username: str = "",
+    entra_client_id: str = "", entra_client_secret: str = "", entra_tenant: str = "",
+) -> Flask:
     app = Flask(__name__, template_folder=_TEMPLATES)
     if not secret_key:
         log.warning(
@@ -50,6 +53,9 @@ def create_app(hannah: HannahClient, secret_key: str = "", telegram_bot_token: s
     app.extensions["hannah"] = hannah
     app.config["TELEGRAM_BOT_TOKEN"] = telegram_bot_token
     app.config["TELEGRAM_BOT_USERNAME"] = telegram_bot_username
+    app.config["ENTRA_CLIENT_ID"] = entra_client_id
+    app.config["ENTRA_CLIENT_SECRET"] = entra_client_secret
+    app.config["ENTRA_TENANT"] = entra_tenant
 
     app_version = get_version()
 

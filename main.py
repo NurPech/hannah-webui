@@ -31,7 +31,10 @@ def main(config_path: str) -> None:
     hannah = HannahClient(cfg.grpc.host, cfg.grpc.port)
     hannah.connect()
 
-    app = create_app(hannah, cfg.secret_key, cfg.telegram_bot_token, cfg.telegram_bot_username)
+    app = create_app(
+        hannah, cfg.secret_key, cfg.telegram_bot_token, cfg.telegram_bot_username,
+        cfg.entra_client_id, cfg.entra_client_secret, cfg.entra_tenant,
+    )
 
     ssl_context = None
     if cfg.tls.enabled:

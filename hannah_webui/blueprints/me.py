@@ -1,9 +1,18 @@
 import json
 from urllib.parse import quote, urlsplit
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+import grpc
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
-from hannah_webui.extensions import TRUST_LEVELS, get_hannah, get_telegram_config, login_required
+from hannah_webui.extensions import (
+    TRUST_LEVELS,
+    entra_configured,
+    get_entra_app,
+    get_entra_tenant,
+    get_hannah,
+    get_telegram_config,
+    login_required,
+)
 from hannah_webui.route_helpers import _WEEKDAY_NAMES, _verify_telegram_auth
 
 bp = Blueprint("me", __name__)
@@ -35,6 +44,12 @@ def me():
             f"https://oauth.telegram.org/auth?bot_id={quote(bot_id)}&origin={quote(origin, safe='')}"
             f"&request_access=write&return_to={quote(me_url, safe='')}"
         )
+    # Ein Core ohne GetChannels (älter als hannah-proto 4.3.0) antwortet UNIMPLEMENTED —
+    # dann gibt es eben keinen Deep-Link-Weg, /me selbst darf daran nicht scheitern.
+    try:
+        telegram_deep_link = any(c.service == "telegram" and c.supports_link for c in hannah.get_channels())
+    except grpc.RpcError:
+        telegram_deep_link = False
     alarms = sorted(hannah.get_alarms(session["user_id"]), key=lambda a: a.time)
     satellites = hannah.get_satellites()
     # Enrollment needs a live satellite to run the guided dialog on — unlike the alarm
@@ -48,6 +63,8 @@ def me():
     return render_template(
         "me.html", display_name=session.get("display_name"),
         linked_accounts=linked_accounts, telegram_login_url=telegram_login_url,
+        telegram_deep_link=telegram_deep_link,
+        entra_configured=entra_configured(),
         alarms=alarms, satellites=satellites, weekday_names=_WEEKDAY_NAMES,
         enrollment_satellites=enrollment_satellites, enrollable_users=enrollable_users,
     )
@@ -67,12 +84,88 @@ def telegram_callback():
     return redirect(url_for("me.me"))
 
 
+@bp.route("/me/telegram/link", methods=["POST"])
+@login_required
+def telegram_link():
+    """Deep-Link-Verknüpfung (#63): Core stellt einen Einmal-Code aus und liefert den
+    fertigen t.me-Link, der Telegram-Adapter löst ihn beim /start ein. Die WebUI braucht
+    dafür weder Bot-Token noch Domain noch TLS."""
+    resp = get_hannah().create_link_token(session["user_id"], "telegram")
+    if not resp.ok:
+        flash(resp.message or "Telegram-Verknüpfung ist gerade nicht möglich.", "danger")
+        return redirect(url_for("me.me"))
+    return redirect(resp.link_url)
+
+
+@bp.route("/me/linked-accounts")
+@login_required
+def linked_accounts():
+    """Polling-Ziel für /me, solange eine Deep-Link-Verknüpfung auf "Start" in Telegram wartet."""
+    user = next((u for u in get_hannah().get_users() if u.id == session["user_id"]), None)
+    return jsonify(dict(user.linked_accounts) if user else {})
+
+
 @bp.route("/me/telegram/unlink", methods=["POST"])
 @login_required
 def telegram_unlink():
     hannah = get_hannah()
     hannah.unlink_account(session["user_id"], "telegram", session["user_id"])
     flash("Telegram-Konto getrennt.", "success")
+    return redirect(url_for("me.me"))
+
+
+@bp.route("/me/entra/login")
+@login_required
+def entra_login():
+    entra = get_entra_app()
+    if entra is None:
+        flash("Microsoft-Entra-Verknüpfung ist auf diesem Server nicht konfiguriert.", "danger")
+        return redirect(url_for("me.me"))
+    # Redirect-URI wie bei Telegram erzwungen auf https (TLS-terminierender Reverse-Proxy
+    # ohne X-Forwarded-Proto, siehe #9) — muss exakt so in der App-Registration stehen.
+    # response_mode bleibt beim Default "query": bei form_post käme der Callback als
+    # Cross-Site-POST, dem das (SameSite=Lax) Session-Cookie samt Flow-State fehlt.
+    flow = entra.initiate_auth_code_flow(
+        scopes=[], prompt="select_account",
+        redirect_uri=url_for("me.entra_callback", _external=True, _scheme="https"),
+    )
+    session["entra_flow"] = flow
+    return redirect(flow["auth_uri"])
+
+
+@bp.route("/me/entra/callback")
+@login_required
+def entra_callback():
+    entra = get_entra_app()
+    flow = session.pop("entra_flow", None)
+    if entra is None or flow is None:
+        flash("Microsoft-Entra-Verknüpfung fehlgeschlagen: keine laufende Anmeldung.", "danger")
+        return redirect(url_for("me.me"))
+    try:
+        # prüft state, nonce, PKCE und die ID-Token-Claims (aud/iss/exp)
+        result = entra.acquire_token_by_auth_code_flow(flow, request.args.to_dict())
+    except ValueError:
+        result = {"error": "invalid_state"}
+    claims = result.get("id_token_claims") or {}
+    if "error" in result or not claims.get("oid"):
+        flash("Microsoft-Entra-Verknüpfung fehlgeschlagen.", "danger")
+        return redirect(url_for("me.me"))
+    if claims.get("tid") != get_entra_tenant():
+        flash("Microsoft-Entra-Verknüpfung fehlgeschlagen: Konto gehört zu einem fremden Tenant.", "danger")
+        return redirect(url_for("me.me"))
+    hannah = get_hannah()
+    payload = {k: claims[k] for k in ("oid", "tid", "preferred_username", "name") if k in claims}
+    ok = hannah.link_account(session["user_id"], "entra", claims["oid"], json.dumps(payload))
+    flash("Microsoft-Entra-Konto verknüpft." if ok else "Verknüpfung fehlgeschlagen.", "success" if ok else "danger")
+    return redirect(url_for("me.me"))
+
+
+@bp.route("/me/entra/unlink", methods=["POST"])
+@login_required
+def entra_unlink():
+    hannah = get_hannah()
+    hannah.unlink_account(session["user_id"], "entra", session["user_id"])
+    flash("Microsoft-Entra-Konto getrennt.", "success")
     return redirect(url_for("me.me"))
 
 

@@ -29,30 +29,72 @@
 
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
     <h3 class="text-sm font-semibold text-gray-100 mb-3">Verknüpfte Konten</h3>
-    {% if linked_accounts.get('telegram') %}
-    <div class="flex items-center justify-between bg-gray-800/50 border border-gray-800 rounded-lg px-3 py-2.5">
-      <span class="flex items-center gap-2 text-sm text-gray-300">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]"></span>
-        Telegram
-      </span>
-      <form method="post" action="{{ url_for('me.telegram_unlink') }}">
-        <button class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">Trennen</button>
-      </form>
+    <div class="space-y-2">
+      {% if linked_accounts.get('telegram') %}
+      <div class="flex items-center justify-between bg-gray-800/50 border border-gray-800 rounded-lg px-3 py-2.5">
+        <span class="flex items-center gap-2 text-sm text-gray-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]"></span>
+          Telegram
+        </span>
+        <form method="post" action="{{ url_for('me.telegram_unlink') }}">
+          <button class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">Trennen</button>
+        </form>
+      </div>
+      {% elif telegram_deep_link %}
+      <div class="bg-gray-800/50 border border-gray-800 rounded-lg px-3 py-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-300">Telegram</span>
+          <form id="telegram-link-form" method="post" action="{{ url_for('me.telegram_link') }}" target="_blank">
+            <button class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-sky-400">
+                <path d="M9.036 16.572 8.75 20.62c.397 0 .568-.171.774-.376l1.86-1.782 3.855 2.823c.707.39 1.213.184 1.402-.653l2.542-11.923h.001c.222-1.028-.371-1.43-1.06-1.175L2.28 12.2c-1.006.39-.99.953-.17 1.207l4.52 1.41 10.5-6.63c.494-.33.945-.148.574.182L9.036 16.572z"/>
+              </svg>
+              Verbinden
+            </button>
+          </form>
+        </div>
+        <p id="telegram-link-waiting" class="hidden text-xs text-gray-500 mt-2">Drücke in Telegram auf „Start“. Diese Seite aktualisiert sich, sobald die Verknüpfung steht.</p>
+      </div>
+      {% elif telegram_login_url %}
+      <div class="flex items-center justify-between bg-gray-800/50 border border-gray-800 rounded-lg px-3 py-2.5">
+        <span class="text-sm text-gray-300">Telegram</span>
+        <a href="{{ telegram_login_url }}"
+           class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-sky-400">
+            <path d="M9.036 16.572 8.75 20.62c.397 0 .568-.171.774-.376l1.86-1.782 3.855 2.823c.707.39 1.213.184 1.402-.653l2.542-11.923h.001c.222-1.028-.371-1.43-1.06-1.175L2.28 12.2c-1.006.39-.99.953-.17 1.207l4.52 1.41 10.5-6.63c.494-.33.945-.148.574.182L9.036 16.572z"/>
+          </svg>
+          Verbinden
+        </a>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">Telegram-Verknüpfung ist auf diesem Server nicht konfiguriert.</p>
+      {% endif %}
+      {% if linked_accounts.get('entra') %}
+      <div class="flex items-center justify-between bg-gray-800/50 border border-gray-800 rounded-lg px-3 py-2.5">
+        <span class="flex items-center gap-2 text-sm text-gray-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]"></span>
+          Microsoft Entra
+        </span>
+        <form method="post" action="{{ url_for('me.entra_unlink') }}">
+          <button class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">Trennen</button>
+        </form>
+      </div>
+      {% elif entra_configured %}
+      <div class="flex items-center justify-between bg-gray-800/50 border border-gray-800 rounded-lg px-3 py-2.5">
+        <span class="text-sm text-gray-300">Microsoft Entra</span>
+        <a href="{{ url_for('me.entra_login') }}"
+           class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5">
+            <path fill="#f25022" d="M2 2h9.5v9.5H2z"/><path fill="#7fba00" d="M12.5 2H22v9.5h-9.5z"/>
+            <path fill="#00a4ef" d="M2 12.5h9.5V22H2z"/><path fill="#ffb900" d="M12.5 12.5H22V22h-9.5z"/>
+          </svg>
+          Verbinden
+        </a>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">Microsoft-Entra-Verknüpfung ist auf diesem Server nicht konfiguriert.</p>
+      {% endif %}
     </div>
-    {% elif telegram_login_url %}
-    <div class="flex items-center justify-between bg-gray-800/50 border border-gray-800 rounded-lg px-3 py-2.5">
-      <span class="text-sm text-gray-300">Telegram</span>
-      <a href="{{ telegram_login_url }}"
-         class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">
-        <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-sky-400">
-          <path d="M9.036 16.572 8.75 20.62c.397 0 .568-.171.774-.376l1.86-1.782 3.855 2.823c.707.39 1.213.184 1.402-.653l2.542-11.923h.001c.222-1.028-.371-1.43-1.06-1.175L2.28 12.2c-1.006.39-.99.953-.17 1.207l4.52 1.41 10.5-6.63c.494-.33.945-.148.574.182L9.036 16.572z"/>
-        </svg>
-        Verbinden
-      </a>
-    </div>
-    {% else %}
-    <p class="text-sm text-gray-500">Telegram-Verknüpfung ist auf diesem Server nicht konfiguriert.</p>
-    {% endif %}
   </div>
 
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 lg:col-span-2">
@@ -196,6 +238,26 @@ document.querySelectorAll('.alarm-form').forEach(function (form) {
     });
   });
 });
+</script>
+
+<script>
+(function () {
+  // Deep-Link-Verknüpfung (#63): der t.me-Link öffnet sich in einem neuen Tab bzw. der
+  // Telegram-App, diese Seite wartet derweil auf die Bestätigung per /start im Bot.
+  var form = document.getElementById("telegram-link-form");
+  if (!form) return;
+  form.addEventListener("submit", function () {
+    document.getElementById("telegram-link-waiting").classList.remove("hidden");
+    var deadline = Date.now() + 10 * 60 * 1000;
+    var timer = setInterval(function () {
+      if (Date.now() > deadline) { clearInterval(timer); return; }
+      fetch("{{ url_for('me.linked_accounts') }}", {credentials: "same-origin"})
+        .then(function (r) { return r.ok ? r.json() : {}; })
+        .then(function (accounts) { if (accounts.telegram) window.location.reload(); })
+        .catch(function () {});
+    }, 3000);
+  });
+})();
 </script>
 
 <script>

@@ -3,9 +3,10 @@ protobuf>=7.35.0    # von den generierten *_pb2.py-Stubs benötigt, kein transit
 flask>=3.0.0        # WebUI
 PyYAML>=6.0         # Config-Loading
 gunicorn>=21.2.0    # Produktions-WSGI-Server (siehe deploy/hannah-webui.service); Flask-Dev-Server (main.py) bleibt nur für lokale Entwicklung
+msal>=1.30.0         # Microsoft-Entra-Verknüpfung in /me (OIDC Auth Code Flow + PKCE, #62)
 cryptography>=42.0.0  # selbstsigniertes TLS-Zertifikat generieren (hannah_webui/tls.py, #61)
 
 # Proto schema — published package instead of the git-submodule/local-codegen
 # pattern (#60); pins the runtime proto/gRPC-version coupling that used to be
 # handled by matching grpcio-tools' version locally
-hannah-proto>=4.2.1    # 4.2.1's generated stubs require grpcio>=1.84.0, see line above
+hannah-proto>=4.3.0    # 4.3.0: GetChannels/CreateLinkToken (Telegram deep-link linking, #63); 4.2.1's generated stubs require grpcio>=1.84.0, see line above

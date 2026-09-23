@@ -35,6 +35,9 @@ class Config:
     secret_key: str = ""
     telegram_bot_token: str = ""
     telegram_bot_username: str = ""
+    entra_client_id: str = ""
+    entra_client_secret: str = ""
+    entra_tenant: str = ""
     grpc: GrpcConfig = field(default_factory=GrpcConfig)
     tls: TlsConfig = field(default_factory=TlsConfig)
 
@@ -48,6 +51,9 @@ def _load_from_env() -> Config:
         secret_key=os.environ.get("HANNAH_WEBUI_SECRET_KEY", ""),
         telegram_bot_token=os.environ.get("HANNAH_WEBUI_TELEGRAM_BOT_TOKEN", ""),
         telegram_bot_username=os.environ.get("HANNAH_WEBUI_TELEGRAM_BOT_USERNAME", ""),
+        entra_client_id=os.environ.get("HANNAH_WEBUI_ENTRA_CLIENT_ID", ""),
+        entra_client_secret=os.environ.get("HANNAH_WEBUI_ENTRA_CLIENT_SECRET", ""),
+        entra_tenant=os.environ.get("HANNAH_WEBUI_ENTRA_TENANT", ""),
         grpc=GrpcConfig(
             host=os.environ.get("HANNAH_WEBUI_GRPC_HOST", "127.0.0.1"),
             port=int(os.environ.get("HANNAH_WEBUI_GRPC_PORT", "50051")),
@@ -89,6 +95,9 @@ def load(path: str | Path = "config.yaml") -> Config:
         secret_key=raw.get("secret_key", ""),
         telegram_bot_token=raw.get("telegram_bot_token", ""),
         telegram_bot_username=raw.get("telegram_bot_username", ""),
+        entra_client_id=raw.get("entra_client_id", ""),
+        entra_client_secret=raw.get("entra_client_secret", ""),
+        entra_tenant=raw.get("entra_tenant", ""),
         grpc=_section(GrpcConfig, "grpc"),
         tls=tls,
     )

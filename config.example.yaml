@@ -12,6 +12,13 @@ secret_key: "IHR_SECRET_KEY"
 telegram_bot_token: ""
 telegram_bot_username: ""
 
+# Microsoft Entra (Account-Verknüpfung in /me, OIDC-Login) — Single-Tenant-App-
+# Registration mit Client-Secret, keine API-Permissions nötig. Redirect-URI (Typ
+# "Web") dort eintragen: https://<webui-host>/me/entra/callback
+entra_client_id: ""
+entra_client_secret: ""
+entra_tenant: ""    # Tenant-ID (GUID)
+
 # Hannah Core, per gRPC
 grpc:
   host: "127.0.0.1"
