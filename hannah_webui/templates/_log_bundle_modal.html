@@ -1,0 +1,148 @@
+{# Log bundle modal (#66), included by base.html from trust level export_logs. Loads the
+   collector's sources on open and downloads the export as a blob, so errors stay in the
+   modal instead of navigating away. #}
+<dialog id="log-bundle-modal"
+        class="m-auto w-full max-w-lg bg-gray-900 text-gray-100 border border-gray-800 rounded-xl p-0 backdrop:bg-black/60">
+  <form id="log-bundle-form" class="p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-semibold">Log-Bundle herunterladen</h2>
+      <button type="button" data-close class="text-gray-500 hover:text-gray-300 text-lg leading-none">&times;</button>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Komponenten <span class="text-gray-600">(keine Auswahl = alle)</span></label>
+      <div id="log-bundle-components" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-300">
+        <div class="text-xs text-gray-500">Lade Komponenten…</div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-gray-400 mb-2">Inhalte</label>
+      <label class="flex items-center gap-2 text-sm text-gray-300 mb-1.5">
+        <input type="checkbox" name="include_transcripts" value="1" class="accent-emerald-500">
+        Transkripte <span class="text-xs text-gray-500">(Gesprochenes der User)</span>
+      </label>
+      <label class="flex items-center gap-2 text-sm text-gray-300">
+        <input type="checkbox" name="include_metadata" value="1" class="accent-emerald-500">
+        Metadaten <span class="text-xs text-gray-500">(Raum-/Gerätenamen, Anwesenheit)</span>
+      </label>
+    </div>
+
+    <div class="mb-5">
+      <label class="block text-xs font-medium text-gray-400 mb-1">Zeitraum</label>
+      <select id="log-bundle-range"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+        <option value="all">Alles</option>
+        <option value="1">Letzte Stunde</option>
+        <option value="24">Letzte 24 Stunden</option>
+        <option value="168">Letzte 7 Tage</option>
+        <option value="custom">Benutzerdefiniert…</option>
+      </select>
+      <div id="log-bundle-custom-range" class="hidden">
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Von</label>
+          <input type="datetime-local" id="log-bundle-since"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Bis <span class="text-gray-600">(leer = jetzt)</span></label>
+          <input type="datetime-local" id="log-bundle-until"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div id="log-bundle-error" class="hidden mb-4 rounded-lg border px-3 py-2 text-sm bg-rose-500/10 text-rose-300 border-rose-500/25"></div>
+
+    <div class="flex justify-end gap-2">
+      <button type="button" data-close
+              class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 transition-colors">Abbrechen</button>
+      <button type="submit" id="log-bundle-submit"
+              class="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-wait text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-colors">Herunterladen</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  const modal = document.getElementById("log-bundle-modal");
+  const form = document.getElementById("log-bundle-form");
+  const list = document.getElementById("log-bundle-components");
+  const range = document.getElementById("log-bundle-range");
+  const customRange = document.getElementById("log-bundle-custom-range");
+  const errorBox = document.getElementById("log-bundle-error");
+  const submit = document.getElementById("log-bundle-submit");
+
+  const showError = (msg) => { errorBox.textContent = msg; errorBox.classList.toggle("hidden", !msg); };
+  const fmtDate = (ms) => ms ? new Date(ms).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" }) : "–";
+  const errorOf = async (resp) => {
+    try { return (await resp.json()).error || `Fehler ${resp.status}`; } catch { return `Fehler ${resp.status}`; }
+  };
+
+  async function loadComponents() {
+    list.replaceChildren(Object.assign(document.createElement("div"), { className: "text-xs text-gray-500", textContent: "Lade Komponenten…" }));
+    try {
+      const resp = await fetch("{{ url_for('logs.sources') }}");
+      if (!resp.ok) throw new Error(await errorOf(resp));
+      const { components } = await resp.json();
+      if (!components.length) {
+        list.firstChild.textContent = "Der Log-Collector hat noch keine Logs.";
+        return;
+      }
+      list.replaceChildren(...components.map((c) => {
+        const label = document.createElement("label");
+        label.className = "flex items-center gap-2";
+        label.title = `${c.entries} Einträge, ${fmtDate(c.oldest_ms)} – ${fmtDate(c.newest_ms)}`;
+        const box = Object.assign(document.createElement("input"), { type: "checkbox", name: "components", value: c.component, className: "accent-emerald-500" });
+        label.append(box, c.component);
+        return label;
+      }));
+    } catch (e) {
+      list.firstChild.textContent = "";
+      showError(e.message);
+    }
+  }
+
+  document.querySelectorAll("[data-open-log-bundle]").forEach((btn) => btn.addEventListener("click", () => {
+    showError("");
+    modal.showModal();
+    loadComponents();
+  }));
+  modal.querySelectorAll("[data-close]").forEach((btn) => btn.addEventListener("click", () => modal.close()));
+  range.addEventListener("change", () => customRange.classList.toggle("hidden", range.value !== "custom"));
+
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    showError("");
+    const data = new FormData(form);
+    if (range.value === "custom") {
+      const since = document.getElementById("log-bundle-since").value;
+      const until = document.getElementById("log-bundle-until").value;
+      if (since) data.set("since_ms", new Date(since).getTime());
+      if (until) data.set("until_ms", new Date(until).getTime());
+    } else if (range.value !== "all") {
+      data.set("since_ms", Date.now() - Number(range.value) * 3600 * 1000);
+    }
+
+    submit.disabled = true;
+    submit.textContent = "Wird erstellt…";
+    try {
+      const resp = await fetch("{{ url_for('logs.export') }}", { method: "POST", body: data });
+      if (!resp.ok) throw new Error(await errorOf(resp));
+      const blob = await resp.blob();
+      const name = (resp.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/)?.[1] || "hannah-logs.tar.gz";
+      const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: name });
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 60000);
+      modal.close();
+    } catch (e) {
+      showError(e.message === "Failed to fetch" ? "Download abgebrochen – Verbindung verloren." : e.message);
+    } finally {
+      submit.disabled = false;
+      submit.textContent = "Herunterladen";
+    }
+  });
+})();
+</script>

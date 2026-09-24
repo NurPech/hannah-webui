@@ -8,6 +8,7 @@ import logging
 import os
 
 import grpc
+import hannah_logging
 from flask import Flask, jsonify, render_template, session
 from werkzeug.exceptions import HTTPException
 
@@ -17,6 +18,7 @@ from hannah_webui.blueprints import (
     ble_tags,
     cars,
     groups,
+    logs,
     me,
     messages,
     rooms,
@@ -25,7 +27,7 @@ from hannah_webui.blueprints import (
     triggers,
     users,
 )
-from hannah_webui.extensions import TRUST_LEVELS
+from hannah_webui.extensions import TRUST_LEVELS, log_collector_available
 from hannah_webui.grpc_client import HannahClient
 from hannah_webui.version import get_version
 
@@ -37,6 +39,7 @@ _TEMPLATES = os.path.join(os.path.dirname(__file__), "templates")
 def create_app(
     hannah: HannahClient, secret_key: str = "", telegram_bot_token: str = "", telegram_bot_username: str = "",
     entra_client_id: str = "", entra_client_secret: str = "", entra_tenant: str = "",
+    log_shipping: hannah_logging.LogShipping | None = None,
 ) -> Flask:
     app = Flask(__name__, template_folder=_TEMPLATES)
     if not secret_key:
@@ -51,6 +54,8 @@ def create_app(
     app.config["PROPAGATE_EXCEPTIONS"] = False
 
     app.extensions["hannah"] = hannah
+    # Source of the log collector address for the log bundle export (#66).
+    app.extensions["log_shipping"] = log_shipping
     app.config["TELEGRAM_BOT_TOKEN"] = telegram_bot_token
     app.config["TELEGRAM_BOT_USERNAME"] = telegram_bot_username
     app.config["ENTRA_CLIENT_ID"] = entra_client_id
@@ -75,6 +80,11 @@ def create_app(
         except grpc.RpcError:
             count = 0
         return {"pending_messages_count": count}
+
+    @app.context_processor
+    def inject_log_collector_available():
+        # Log bundle button/modal in base.html only while Hannah announces a collector (#66).
+        return {"log_collector_available": log_collector_available()}
 
     @app.route("/version")
     def version():
@@ -108,7 +118,7 @@ def create_app(
             message="Da ist etwas schiefgelaufen. Bitte versuche es erneut.",
         ), 500
 
-    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users, activity_log, messages):
+    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users, activity_log, messages, logs):
         app.register_blueprint(blueprint_module.bp)
 
     return app

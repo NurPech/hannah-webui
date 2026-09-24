@@ -22,6 +22,11 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+
+## 2.10.0
+### Added
+- Log bundle download for trust level 10: a "Logs" button in the top menu opens a dialog to pick components, include transcripts and metadata (both left out by default) and limit the time range, then downloads the logs as a `tar.gz` archive from the log collector that Hannah announces. The button only shows while Hannah announces a log collector. Refs #66
+
 ## 2.9.1
 ### Added
 - The WebUI logs its version at startup, also in the regular installation. Refs #65

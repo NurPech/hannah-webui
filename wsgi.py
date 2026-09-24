@@ -18,7 +18,7 @@ from hannah_webui.grpc_client import HannahClient
 cfg = load_config(os.environ.get("HANNAH_WEBUI_CONFIG", "config.yaml"))
 # Logging + log shipping. Runs once per gunicorn worker (no preload), each worker ships
 # its own lines; the collector merges them into the same source.
-log_shipping.setup(cfg)
+shipping = log_shipping.setup(cfg)
 
 hannah = HannahClient(cfg.grpc.host, cfg.grpc.port)
 hannah.connect()
@@ -26,4 +26,5 @@ hannah.connect()
 app = create_app(
     hannah, cfg.secret_key, cfg.telegram_bot_token, cfg.telegram_bot_username,
     cfg.entra_client_id, cfg.entra_client_secret, cfg.entra_tenant,
+    log_shipping=shipping,
 )

@@ -13,6 +13,7 @@ import msal
 from flask import current_app, flash, redirect, session, url_for
 
 from hannah_webui.grpc_client import HannahClient
+from hannah_webui.log_collector import LogCollectorClient
 
 TRUST_LEVELS = {
     "list_rooms": 3,
@@ -51,6 +52,7 @@ TRUST_LEVELS = {
     "list_activity_log": 0,
     "filter_activity_log": 10,
     "list_messages": 0,
+    "export_logs": 10,
 }
 
 
@@ -88,6 +90,28 @@ def entra_configured() -> bool:
     return "entra_msal" in current_app.extensions or all(
         current_app.config.get(k) for k in ("ENTRA_CLIENT_ID", "ENTRA_CLIENT_SECRET", "ENTRA_TENANT")
     )
+
+
+def get_log_collector() -> LogCollectorClient | None:
+    """Client für den aktuell von Hannah Core gemeldeten Log-Collector, oder None solange
+    keiner bekannt ist. Die Adresse kommt aus der Discovery des Log-Shippings
+    (app.extensions["log_shipping"]), neu pro Aufruf — der Collector kann umziehen.
+    Aufrufer schließen den Client selbst. Tests hängen hier ein Fake ein
+    (app.extensions["log_collector"])."""
+    if "log_collector" in current_app.extensions:
+        return current_app.extensions["log_collector"]
+    address = _log_collector_address()
+    return LogCollectorClient(address) if address else None
+
+
+def log_collector_available() -> bool:
+    """Ob gerade ein Log-Collector bekannt ist — ohne Channel-Aufbau, für die Nav in base.html."""
+    return "log_collector" in current_app.extensions or bool(_log_collector_address())
+
+
+def _log_collector_address() -> str | None:
+    shipping = current_app.extensions.get("log_shipping")
+    return shipping.collector_address if shipping is not None else None
 
 
 def login_required(view):
