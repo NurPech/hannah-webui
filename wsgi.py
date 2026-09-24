@@ -10,11 +10,15 @@ convention leaves no room for a --config CLI argument.
 """
 import os
 
+from hannah_webui import log_shipping
 from hannah_webui.app import create_app
 from hannah_webui.config import load as load_config
 from hannah_webui.grpc_client import HannahClient
 
 cfg = load_config(os.environ.get("HANNAH_WEBUI_CONFIG", "config.yaml"))
+# Logging + log shipping. Runs once per gunicorn worker (no preload), each worker ships
+# its own lines; the collector merges them into the same source.
+log_shipping.setup(cfg)
 
 hannah = HannahClient(cfg.grpc.host, cfg.grpc.port)
 hannah.connect()

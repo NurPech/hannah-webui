@@ -22,6 +22,15 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.9.1
+### Added
+- The WebUI logs its version at startup, also in the regular installation. Refs #65
+
+### Fixed
+- The log shipping added in 2.9.0 now also runs in the regular installation (systemd and Docker). Before, it was only active in the local development server, so no WebUI logs reached the log collector. Refs #65
+- Passwords, tokens and keys from the WebUI configuration are now masked before a log line is sent to the log collector. Refs #65
+- WebUI logs are no longer marked as metadata. They contain no personal data, so a log export that leaves out metadata keeps them. Refs #65
+
 ## 2.9.0
 ### Added
 * Added: WebUI can send its logs to the log collector as well as soon as Hannah reports a log collector. The usual log output stays as it is, and without the setting nothing changes. Since VoiceID's logs are about people, they are marked as metadata, so a log export can leave them out
