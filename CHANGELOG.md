@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.9.0
+### Added
+* Added: WebUI can send its logs to the log collector as well as soon as Hannah reports a log collector. The usual log output stays as it is, and without the setting nothing changes. Since VoiceID's logs are about people, they are marked as metadata, so a log export can leave them out
+
 ## 2.8.0
 ### Added
 - Link a Microsoft Entra account in `/me`, analogous to Telegram: OIDC authorization code flow with PKCE via `msal` against a single-tenant app registration, verified by the WebUI itself — Core only receives the ID token's `oid` as a `LinkAccount(service="entra")` (with `oid`/`tid`/`preferred_username`/`name` as provider payload). Configured via `entra_client_id`/`entra_client_secret`/`entra_tenant` (`HANNAH_WEBUI_ENTRA_*` for Docker); redirect URI is `https://<webui-host>/me/entra/callback`. Refs #62

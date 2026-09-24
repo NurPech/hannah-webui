@@ -16,6 +16,8 @@ from hannah_webui.app import create_app
 from hannah_webui.config import load as load_config
 from hannah_webui.grpc_client import HannahClient
 from hannah_webui.tls import ensure_self_signed_certificate
+from hannah_webui.version import get_version
+from hannah_webui import log_shipping
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,6 +29,16 @@ log = logging.getLogger("hannah_webui")
 
 def main(config_path: str) -> None:
     cfg = load_config(config_path)
+
+    # Buffer logs as early as possible; start shipping once Hannah announces the log collector.
+    log_shipper = log_shipping.install(
+        get_version(),
+        hannah_address=f"{cfg.grpc.host}:{cfg.grpc.port}",
+        cfg=cfg,
+    )
+    for secret in log_shipping.config_secrets(cfg):
+        log_shipper.add_secret(secret)
+
 
     hannah = HannahClient(cfg.grpc.host, cfg.grpc.port)
     hannah.connect()
