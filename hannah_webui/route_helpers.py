@@ -7,7 +7,7 @@ import json
 import re
 import time
 
-from hannah_proto import hannah_pb2
+from hannah_proto.v1 import hannah_pb2
 
 _TELEGRAM_AUTH_MAX_AGE = 300  # Sekunden, gegen Replay alter Callback-URLs
 

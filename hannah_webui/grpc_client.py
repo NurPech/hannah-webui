@@ -9,37 +9,52 @@ from typing import Optional
 
 import grpc
 
-from hannah_webui.grpc_interceptors import ProtocolVersionClientInterceptor, read_proto_version
-from hannah_proto import hannah_pb2, hannah_pb2_grpc
-from hannah_proto.interceptor.compat_interceptor import CompatVersionSyncClientInterceptor
+from hannah_grpc import client as hannah_client
+from hannah_proto.v1 import hannah_pb2
 
 log = logging.getLogger(__name__)
 
 
 class HannahClient:
-    """Thin synchronous wrapper around the Hannah gRPC stub."""
+    """Thin synchronous wrapper around the Hannah gRPC stub.
+
+    Works with hannah.v1 types only. Against a Core too old for hannah.v1, calls go to the
+    unversioned N−1 path instead (hannah_grpc.client.SyncVersionedStub, #67)."""
 
     def __init__(self, host: str, port: int) -> None:
         self._address = f"{host}:{port}"
+        self._raw_channel: Optional[grpc.Channel] = None
         self._channel: Optional[grpc.Channel] = None
-        self._stub: Optional[hannah_pb2_grpc.HannahServiceStub] = None
+        self._stubs: Optional[hannah_client.SyncVersionedStub] = None
+        self._was_ready = False
 
     def connect(self) -> None:
-        # compat_version (hannah-proto#10/hannah#217) runs additively next
-        # to ProtocolVersionClientInterceptor, not as a replacement — a
-        # breaking change scoped to one message no longer has to reject
-        # every client, only calls that actually use the affected message.
-        service = hannah_pb2.DESCRIPTOR.services_by_name["HannahService"]
-        channel = grpc.insecure_channel(self._address)
-        self._channel = grpc.intercept_channel(
-            channel,
-            ProtocolVersionClientInterceptor(read_proto_version()),
-            CompatVersionSyncClientInterceptor(service),
-        )
-        self._stub = hannah_pb2_grpc.HannahServiceStub(self._channel)
+        # x-proto-version and x-compat-version (hannah-proto#10/hannah#217) on every call,
+        # x-compat-version per service path (v1 or N−1).
+        self._raw_channel = grpc.insecure_channel(self._address)
+        self._raw_channel.subscribe(self._on_connectivity)
+        self._channel = grpc.intercept_channel(self._raw_channel, *hannah_client.sync_interceptors())
+        self._stubs = hannah_client.SyncVersionedStub(self._channel)
         log.info("gRPC channel to Hannah at %s created", self._address)
 
+    def _on_connectivity(self, state: grpc.ChannelConnectivity) -> None:
+        # The connection to Core dropped (restart, maybe an update or downgrade): probe the
+        # API generation again on the next call.
+        if state == grpc.ChannelConnectivity.READY:
+            self._was_ready = True
+        elif self._was_ready and state in (grpc.ChannelConnectivity.TRANSIENT_FAILURE, grpc.ChannelConnectivity.IDLE):
+            self._was_ready = False
+            if self._stubs:
+                self._stubs.reset()
+
+    @property
+    def _stub(self):
+        assert self._stubs, "call connect() first"
+        return self._stubs.resolve()
+
     def close(self) -> None:
+        if self._raw_channel:
+            self._raw_channel.unsubscribe(self._on_connectivity)
         if self._channel:
             self._channel.close()
 

@@ -2,7 +2,7 @@
 log collector — no real collector or network needed."""
 import grpc
 import pytest
-from hannah_proto import logging_pb2
+from hannah_proto.v1 import logging_pb2
 
 from hannah_webui.extensions import get_log_collector
 from hannah_webui.log_collector import LogCollectorClient

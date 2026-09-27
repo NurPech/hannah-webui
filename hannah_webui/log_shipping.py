@@ -1,4 +1,4 @@
-"""WebUI-Logs zusätzlich an den Log-Collector senden, über die Lib hannah-logging.
+"""WebUI-Logs zusätzlich an den Log-Collector senden, über die Lib hannah-grpc-lib (hannah_grpc.logging).
 
 Die bestehende Ausgabe (stdout/journald) bleibt unverändert. Die Lib puffert ab install()
 und schickt, sobald Hannah Core einen Collector meldet (Discovery über die gRPC-Adresse
@@ -15,7 +15,7 @@ import re
 import sys
 from typing import Any, Iterator
 
-import hannah_logging
+import hannah_grpc.logging as hannah_logging
 
 from hannah_webui.version import get_version
 

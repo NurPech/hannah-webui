@@ -22,6 +22,10 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.11.0
+### Changed
+- The WebUI talks to Hannah Core and the log collector over their versioned API `hannah.v1`. With an older Hannah Core or log collector it falls back to the previous API on its own and logs a warning that it should be updated, so the WebUI can be updated first. Refs #67
+- Log shipping to the log collector moved from `hannah-logging` to its successor `hannah-grpc-lib` 0.6.0. Refs #67
 
 ## 2.10.0
 ### Added

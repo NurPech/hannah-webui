@@ -95,7 +95,7 @@ class TestTelegramLinking:
 class TestTelegramDeepLink:
     @staticmethod
     def _telegram_channel(supports_link=True):
-        from hannah_proto import hannah_pb2
+        from hannah_proto.v1 import hannah_pb2
         return hannah_pb2.ChannelInfo(service="telegram", display_name="Telegram", supports_link=supports_link)
 
     def test_no_adapter_hides_deep_link(self, logged_in_client):

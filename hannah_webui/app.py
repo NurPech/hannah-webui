@@ -8,7 +8,7 @@ import logging
 import os
 
 import grpc
-import hannah_logging
+import hannah_grpc.logging as hannah_logging
 from flask import Flask, jsonify, render_template, session
 from werkzeug.exceptions import HTTPException
 

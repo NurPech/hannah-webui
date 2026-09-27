@@ -31,7 +31,7 @@ def test_config_secrets_skips_empty_values():
 def test_install_passes_component_address_and_secrets():
     cfg = Config(secret_key="flask-secret")
 
-    with patch("hannah_logging.install") as install:
+    with patch("hannah_grpc.logging.install") as install:
         log_shipping.install("2.9.1", hannah_address="core:50051", cfg=cfg)
 
     kwargs = install.call_args.kwargs
@@ -44,7 +44,7 @@ def test_install_passes_component_address_and_secrets():
 def test_setup_uses_grpc_address_from_config():
     cfg = Config(grpc=GrpcConfig(host="hannah-core", port=50052))
 
-    with patch("hannah_logging.install") as install:
+    with patch("hannah_grpc.logging.install") as install:
         log_shipping.setup(cfg)
 
     assert install.call_args.kwargs["hannah_address"] == "hannah-core:50052"
