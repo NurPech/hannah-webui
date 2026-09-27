@@ -368,6 +368,11 @@ class TestDevices:
         resp = logged_in_client.get("/devices", follow_redirects=True)
         assert "Zugriff verweigert" in resp.get_data(as_text=True)
 
+    def test_devices_links_to_smart_home_docs(self, admin_client):
+        resp = admin_client.get("/devices")
+        body = resp.get_data(as_text=True)
+        assert "hannah-docs.leonie.network/manual/smart-home-integration/" in body
+
 
 class TestChat:
     def test_chat_page_loads_without_login(self, client):
@@ -496,10 +501,6 @@ class TestSettings:
         assert "turn_on_words" in body
         assert "einschalten" in body
 
-    def test_settings_links_to_smart_home_docs_on_iobroker_category(self, admin_client):
-        resp = admin_client.get("/settings")
-        body = resp.get_data(as_text=True)
-        assert "hannah-docs.leonie.network/manual/smart-home-integration/" in body
 
     def test_settings_renders_list_type_as_line_inputs(self, admin_client):
         resp = admin_client.get("/settings")
@@ -964,6 +965,12 @@ class TestVersion:
     def test_me_shows_version_badge(self, logged_in_client):
         body = logged_in_client.get("/me").get_data(as_text=True)
         assert "dev" in body
+
+
+class TestFooter:
+    def test_footer_links_to_docs(self, logged_in_client):
+        body = logged_in_client.get("/me").get_data(as_text=True)
+        assert "https://hannah-docs.leonie.network" in body
 
 
 import grpc

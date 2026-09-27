@@ -22,6 +22,14 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.12.1
+### Added
+- A footer link to the [Hannah docs](https://hannah-docs.leonie.network) on every page. Refs #60
+- The device overview links to the [Smart-Home-Integration docs](https://hannah-docs.leonie.network/manual/smart-home-integration/), which explain canonicalKeys and the `common.custom` override. Refs #60
+
+### Changed
+- Moved the Smart-Home-Integration docs link from the Settings page (whose ioBroker category no longer exists) to the device overview, where canonicalKeys are actually shown. Refs #60
+
 ## 2.12.0
 ### Added
 - Read-only device overview at trust level 10: every room, device and state with its current value, type and writability, exactly as Hannah Core sees it (not ioBroker directly) — helps debugging cases where the WebUI/Core value has drifted from ioBroker's. Refs #68
