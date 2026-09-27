@@ -252,6 +252,16 @@ class HannahClient:
         assert self._stub, "call connect() first"
         return list(self._stub.GetDevices(hannah_pb2.Empty()).rooms)
 
+    def submit_text(self, text: str, source_service: str = "", source_user_id: str = "") -> tuple[str, str]:
+        """source_service/source_user_id identify the caller via the linked-accounts
+        table (like ControlDevice) — Core resolves the user itself, an empty pair is
+        treated as an anonymous guest."""
+        assert self._stub, "call connect() first"
+        resp = self._stub.SubmitText(hannah_pb2.SubmitTextRequest(
+            text=text, source_service=source_service, source_user_id=source_user_id,
+        ))
+        return resp.answer, resp.intent_name
+
     def get_alarms(self, user_id: Optional[int] = None) -> list["hannah_pb2.Alarm"]:
         """GetAlarms returns every alarm — Core has no user_id filter on the RPC — so
         callers scoping to a single user (i.e. /me, where alarms are personal data)

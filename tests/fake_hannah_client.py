@@ -200,6 +200,15 @@ class FakeHannahClient:
             hannah_pb2.RoomInfo(key="wohnzimmer", name="Wohnzimmer", devices=[licht, fenster]),
         ]
 
+    def submit_text(self, text, source_service="", source_user_id=""):
+        who = "Gast"
+        if source_service and source_user_id:
+            for user_id, u in self._user_records.items():
+                if u["linked_accounts"].get(source_service) == source_user_id:
+                    who = u["display_name"]
+                    break
+        return f"Echo für {who}: {text}", "echo"
+
     def get_satellites(self):
         result = []
         for device_id, sat in self._satellites.items():

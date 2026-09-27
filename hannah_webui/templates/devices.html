@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Geräte{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-5">
+  <h2 class="text-lg font-semibold text-gray-100">Geräte</h2>
+  <a href="{{ url_for('devices.devices') }}"
+     class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">Neu laden</a>
+</div>
+<p class="text-xs text-gray-500 mb-5">
+  Geräte und State-Werte so, wie Hannah Core sie gerade sieht (gecachter Stand nach dem ioBroker-Suffix-Mapping) — nicht live aus ioBroker.
+</p>
+
+{% if not rooms %}
+<div class="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
+  Keine Geräte gefunden.
+</div>
+{% endif %}
+
+{% for entry in rooms %}
+{% if entry.devices %}
+<div class="mb-6">
+  <h3 class="text-sm font-semibold text-gray-300 mb-2">{{ entry.room.name }}</h3>
+  {% for d in entry.devices %}
+  <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-3">
+    <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+      <div>
+        <span class="font-medium text-gray-100">{{ d.device.name }}</span>
+        <span class="text-xs text-gray-500 ml-2">{{ d.device.category }}</span>
+      </div>
+      <span class="font-mono text-[11px] text-gray-600">{{ d.device.id }}</span>
+    </div>
+    {% if d.rows %}
+    <table class="w-full text-sm hidden sm:table">
+      <thead>
+        <tr class="border-b border-gray-800 text-gray-500 text-xs">
+          <th class="text-left px-4 py-2">Key</th>
+          <th class="text-left px-4 py-2">ioBroker-ID</th>
+          <th class="text-left px-4 py-2">Typ</th>
+          <th class="text-left px-4 py-2">Wert</th>
+          <th class="text-left px-4 py-2">Beschreibbar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in d.rows %}
+        <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30">
+          <td class="px-4 py-2 font-mono text-xs text-gray-300">{{ row.key }}</td>
+          <td class="px-4 py-2 font-mono text-xs text-gray-500">{{ row.iobroker_id }}</td>
+          <td class="px-4 py-2 text-xs text-gray-400">{{ row.type_label }}</td>
+          <td class="px-4 py-2 text-xs text-gray-100">{{ row.value }}</td>
+          <td class="px-4 py-2 text-xs">
+            {% if row.writable %}
+            <span class="text-emerald-400">Ja</span>
+            {% else %}
+            <span class="text-gray-600">Nein</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="sm:hidden divide-y divide-gray-800/50">
+      {% for row in d.rows %}
+      <div class="p-4">
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs text-gray-300">{{ row.key }}</span>
+          <span class="text-xs text-gray-100">{{ row.value }}</span>
+        </div>
+        <div class="font-mono text-[11px] text-gray-600 mt-0.5">{{ row.iobroker_id }}</div>
+        <div class="text-xs text-gray-500 mt-1">
+          {{ row.type_label }}
+          ·
+          {% if row.writable %}
+          <span class="text-emerald-400">beschreibbar</span>
+          {% else %}
+          <span class="text-gray-600">read-only</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="p-4 text-xs text-gray-600">Keine States.</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

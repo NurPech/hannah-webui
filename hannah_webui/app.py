@@ -17,6 +17,8 @@ from hannah_webui.blueprints import (
     auth,
     ble_tags,
     cars,
+    chat,
+    devices,
     groups,
     logs,
     me,
@@ -118,7 +120,7 @@ def create_app(
             message="Da ist etwas schiefgelaufen. Bitte versuche es erneut.",
         ), 500
 
-    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, triggers, users, activity_log, messages, logs):
+    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, devices, chat, triggers, users, activity_log, messages, logs):
         app.register_blueprint(blueprint_module.bp)
 
     return app

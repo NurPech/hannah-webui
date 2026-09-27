@@ -22,6 +22,16 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.12.0
+### Added
+- Read-only device overview at trust level 10: every room, device and state with its current value, type and writability, exactly as Hannah Core sees it (not ioBroker directly) — helps debugging cases where the WebUI/Core value has drifted from ioBroker's. Refs #68
+- "Chat with Hannah" at `/chat`: a standalone chat window (no WebUI nav/frame, works in its own browser window) that talks to Hannah via the new `SubmitText` RPC. Without connecting it works as a guest, same as any unlinked channel; "Verbinden" logs in via the normal WebUI session once and links the browser to your account through a permanent token stored in its own localStorage (service `webchat`) — no OAuth flow, no expiry, revoke only by deleting the linked account. Refs #70
+
+### Changed
+- The satellite display name field no longer shows the device ID as a placeholder, and its submit button is now labeled "Setzen" instead of an icon-only arrow. Refs #69
+- Bumped the `hannah-proto` pin to 4.7.1. Refs #68
+- The Settings page now links from the ioBroker category to the [Smart-Home-Integration docs](https://hannah-docs.leonie.network/manual/smart-home-integration/), which explain canonicalKeys and the `common.custom` override. Refs #60
+
 ## 2.11.0
 ### Changed
 - The WebUI talks to Hannah Core and the log collector over their versioned API `hannah.v1`. With an older Hannah Core or log collector it falls back to the previous API on its own and logs a warning that it should be updated, so the WebUI can be updated first. Refs #67

@@ -355,6 +355,54 @@ class TestGroups:
         assert "Noch keine Gruppen angelegt" in resp.get_data(as_text=True)
 
 
+class TestDevices:
+    def test_devices_lists_seeded_room_device_and_states(self, admin_client):
+        resp = admin_client.get("/devices")
+        body = resp.get_data(as_text=True)
+        assert "Wohnzimmer" in body
+        assert "DeckeSeite" in body
+        assert "javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite.on" in body
+        assert "Boolean" in body
+
+    def test_devices_requires_trust_level_10(self, logged_in_client):
+        resp = logged_in_client.get("/devices", follow_redirects=True)
+        assert "Zugriff verweigert" in resp.get_data(as_text=True)
+
+
+class TestChat:
+    def test_chat_page_loads_without_login(self, client):
+        resp = client.get("/chat")
+        assert resp.status_code == 200
+        assert "Chat with Hannah" in resp.get_data(as_text=True)
+
+    def test_chat_authorize_requires_login(self, client):
+        resp = client.get("/chat/authorize")
+        assert resp.status_code == 302
+        assert "/login" in resp.headers["Location"]
+
+    def test_chat_authorize_links_account_and_redirects_with_token(self, logged_in_client, hannah):
+        resp = logged_in_client.get("/chat/authorize")
+        assert resp.status_code == 302
+        assert resp.headers["Location"].startswith("/chat?token=")
+        token = resp.headers["Location"].split("token=", 1)[1]
+        assert hannah._user_records[1]["linked_accounts"]["webchat"] == token
+
+    def test_chat_send_without_token_is_guest(self, client):
+        resp = client.post("/chat/send", json={"text": "Hallo"})
+        assert resp.status_code == 200
+        assert resp.get_json()["answer"] == "Echo für Gast: Hallo"
+
+    def test_chat_send_with_token_resolves_linked_user(self, logged_in_client):
+        auth_resp = logged_in_client.get("/chat/authorize")
+        token = auth_resp.headers["Location"].split("token=", 1)[1]
+        resp = logged_in_client.post("/chat/send", json={"text": "Hallo", "token": token})
+        assert resp.get_json()["answer"] == "Echo für Leonie: Hallo"
+
+    def test_chat_send_requires_text(self, client):
+        resp = client.post("/chat/send", json={"text": ""})
+        assert resp.status_code == 400
+
+
 class TestSatellites:
     def test_satellites_lists_seeded_satellite(self, admin_client):
         resp = admin_client.get("/satellites")
@@ -447,6 +495,11 @@ class TestSettings:
         assert "nlu" in body
         assert "turn_on_words" in body
         assert "einschalten" in body
+
+    def test_settings_links_to_smart_home_docs_on_iobroker_category(self, admin_client):
+        resp = admin_client.get("/settings")
+        body = resp.get_data(as_text=True)
+        assert "hannah-docs.leonie.network/manual/smart-home-integration/" in body
 
     def test_settings_renders_list_type_as_line_inputs(self, admin_client):
         resp = admin_client.get("/settings")

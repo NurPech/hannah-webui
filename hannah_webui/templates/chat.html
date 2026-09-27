@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat with Hannah</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+  <meta name="theme-color" content="#111827">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-20 bg-gray-900/80 backdrop-blur border-b border-gray-800 px-4 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5">
+      <span id="status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+      <span class="font-bold tracking-tight text-sm">Chat with Hannah</span>
+    </div>
+    <a id="connect-link" href="{{ url_for('chat.chat_authorize') }}"
+       class="hidden bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">Verbinden</a>
+  </header>
+
+  <main id="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 max-w-2xl w-full mx-auto"></main>
+
+  <form id="send-form" class="border-t border-gray-800 bg-gray-900/80 backdrop-blur px-4 py-3">
+    <div class="max-w-2xl w-full mx-auto flex gap-2">
+      <input id="text-input" type="text" autocomplete="off" placeholder="Nachricht an Hannah…"
+             class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+      <button type="submit"
+              class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">Senden</button>
+    </div>
+  </form>
+
+<script>
+(function () {
+  const TOKEN_KEY = "hannah_webchat_token";
+  const messagesEl = document.getElementById("messages");
+  const statusDot = document.getElementById("status-dot");
+  const connectLink = document.getElementById("connect-link");
+  const form = document.getElementById("send-form");
+  const input = document.getElementById("text-input");
+
+  function getToken() {
+    try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; }
+  }
+
+  function captureTokenFromUrl() {
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("token");
+    if (!token) return;
+    try { localStorage.setItem(TOKEN_KEY, token); } catch (e) { /* ignore */ }
+    url.searchParams.delete("token");
+    history.replaceState(null, "", url.pathname + url.search);
+  }
+
+  function updateStatus() {
+    const connected = !!getToken();
+    statusDot.className = "w-2 h-2 rounded-full " + (connected ? "bg-emerald-400" : "bg-gray-600");
+    connectLink.classList.toggle("hidden", connected);
+  }
+
+  function addMessage(text, from) {
+    const row = document.createElement("div");
+    row.className = from === "user" ? "flex justify-end" : "flex justify-start";
+    const bubble = document.createElement("div");
+    bubble.className = (from === "user"
+      ? "bg-emerald-600 text-white"
+      : "bg-gray-800 text-gray-100") + " rounded-xl px-3 py-2 text-sm max-w-[80%] whitespace-pre-wrap";
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  form.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    addMessage(text, "user");
+    try {
+      const resp = await fetch("{{ url_for('chat.chat_send') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text, token: getToken() }),
+      });
+      const data = await resp.json();
+      addMessage(data.answer || data.error || "(keine Antwort)", "hannah");
+    } catch (e) {
+      addMessage("Verbindung zu Hannah fehlgeschlagen.", "hannah");
+    }
+  });
+
+  captureTokenFromUrl();
+  updateStatus();
+})();
+</script>
+</body>
+</html>

@@ -49,6 +49,7 @@ TRUST_LEVELS = {
     "delete_user": 10,
     "link_resident": 10,
     "edit_presence_sources": 10,
+    "list_devices": 10,
     "list_activity_log": 0,
     "filter_activity_log": 10,
     "list_messages": 0,

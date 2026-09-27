@@ -58,6 +58,10 @@
     <a href="{{ url_for('satellites.satellites') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'satellites.satellites' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Satelliten</a>
     {% endif %}
+    {% if trust >= trust_levels['list_devices'] %}
+    <a href="{{ url_for('devices.devices') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'devices.devices' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Geräte</a>
+    {% endif %}
     {% if trust >= trust_levels['list_settings'] %}
     <a href="{{ url_for('settings.settings') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'settings.settings' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Settings</a>

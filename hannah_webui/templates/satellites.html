@@ -49,9 +49,9 @@
 
         <td class="px-4 py-3">
           <form method="post" action="{{ url_for('satellites.set_satellite_name', device_id=sat.device_id) }}" class="flex gap-1">
-            <input type="text" name="display_name" value="{{ sat.display_name or '' }}" placeholder="{{ sat.device_id }}"
+            <input type="text" name="display_name" value="{{ sat.display_name or '' }}"
                    class="w-40 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 transition-colors">
-            <button class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-300 transition-colors">↵</button>
+            <button class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-2 py-1 text-xs font-medium transition-colors">Setzen</button>
           </form>
         </td>
 

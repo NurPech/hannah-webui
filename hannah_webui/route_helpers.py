@@ -18,6 +18,15 @@ _STATE_TYPE_WIDGET = {
     hannah_pb2.COLOR: "enum",  # gleiche Widget-Logik wie ENUM: Dropdown aus den erlaubten Werten
 }
 
+_STATE_TYPE_LABELS = {
+    hannah_pb2.BOOLEAN: "Boolean",
+    hannah_pb2.NUMERIC: "Numerisch",
+    hannah_pb2.ENUM: "Enum",
+    hannah_pb2.COLOR: "Farbe",
+    hannah_pb2.TEXT: "Text",
+    hannah_pb2.STATE_TYPE_UNSPECIFIED: "?",
+}
+
 _SETTINGS_NEW_ROWS = 2
 _USER_TYPES = ("roomie", "guest", "pet")
 _PRESENCE_STATES = (("home", "Zuhause"), ("away", "Abwesend"), ("asleep", "Schläft"), ("awake", "Wach"))
@@ -115,6 +124,30 @@ def _device_state_options(rooms, writable_only: bool = False) -> list[dict]:
                     "enum_values": enum_values,
                 })
     return options
+
+
+def _device_overview_rooms(rooms) -> list[dict]:
+    """Baut die Zeilen für die Device-Overview (#68): pro Raum -> Gerät -> States, so wie
+    Hannah Core sie über GetDevices sieht (Debugging-Ansicht, rein lesend). Die ioBroker-ID
+    pro State ist device.id + '.' + state-key — dieselbe Konvention wie im Trigger-Editor-
+    Zustands-Dropdown (_device_state_options)."""
+    result = []
+    for room in rooms:
+        devices = []
+        for device in room.devices:
+            rows = []
+            for state_key in device.states:
+                state_type = device.state_types.get(state_key, hannah_pb2.STATE_TYPE_UNSPECIFIED)
+                rows.append({
+                    "key": state_key,
+                    "iobroker_id": f"{device.id}.{state_key}",
+                    "type_label": _STATE_TYPE_LABELS.get(state_type, "?"),
+                    "value": device.current.get(state_key, ""),
+                    "writable": device.state_writable.get(state_key, True),
+                })
+            devices.append({"device": device, "rows": rows})
+        result.append({"room": room, "devices": devices})
+    return result
 
 
 def _blank_when_row() -> dict:
