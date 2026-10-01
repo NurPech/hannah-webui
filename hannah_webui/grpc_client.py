@@ -10,7 +10,7 @@ from typing import Optional
 import grpc
 
 from hannah_grpc import client as hannah_client
-from hannah_proto.v1 import hannah_pb2
+from hannah_proto.v2 import hannah_pb2
 
 log = logging.getLogger(__name__)
 
@@ -18,8 +18,8 @@ log = logging.getLogger(__name__)
 class HannahClient:
     """Thin synchronous wrapper around the Hannah gRPC stub.
 
-    Works with hannah.v1 types only. Against a Core too old for hannah.v1, calls go to the
-    unversioned N−1 path instead (hannah_grpc.client.SyncVersionedStub, #67)."""
+    Works with hannah.v2 types only. Against a Core too old for hannah.v2, calls go to the
+    hannah.v1 path (N−1) and are translated by hannah_grpc.client.SyncVersionedStub (#71)."""
 
     def __init__(self, host: str, port: int) -> None:
         self._address = f"{host}:{port}"
@@ -30,7 +30,7 @@ class HannahClient:
 
     def connect(self) -> None:
         # x-proto-version and x-compat-version (hannah-proto#10/hannah#217) on every call,
-        # x-compat-version per service path (v1 or N−1).
+        # x-compat-version per service path (v2 or N−1).
         self._raw_channel = grpc.insecure_channel(self._address)
         self._raw_channel.subscribe(self._on_connectivity)
         self._channel = grpc.intercept_channel(self._raw_channel, *hannah_client.sync_interceptors())
@@ -50,7 +50,7 @@ class HannahClient:
     @property
     def _stub(self):
         assert self._stubs, "call connect() first"
-        return self._stubs.resolve()
+        return self._stubs.resolve_translated()
 
     def close(self) -> None:
         if self._raw_channel:

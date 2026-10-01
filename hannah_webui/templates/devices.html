@@ -7,12 +7,12 @@
      class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">Neu laden</a>
 </div>
 <p class="text-xs text-gray-500 mb-5">
-  Geräte und State-Werte so, wie Hannah Core sie gerade sieht (gecachter Stand nach dem ioBroker-Suffix-Mapping) — nicht live aus ioBroker.
+  Geräte mit Klasse und Slots so, wie Hannah Core sie gerade sieht (gecachter Stand, nicht live aus ioBroker). Die Werte sind auf die Skalen von Hannah normalisiert (Helligkeit 0–100 %, Position 100 = offen); Trigger vergleichen dagegen den Rohwert des Adapters. Ein Slot ohne Bezeichner kann in Triggern nicht verwendet werden.
 </p>
 
 <a href="https://hannah-docs.leonie.network/manual/smart-home-integration/" target="_blank" rel="noopener"
    class="flex items-center gap-2 bg-sky-500/10 hover:bg-sky-500/15 border border-sky-500/25 rounded-lg px-4 py-2.5 mb-5 text-sm text-sky-300 hover:text-sky-200 transition-colors">
-  Wie Hannah ioBroker-States canonicalKeys zuordnet und wie der Override dafür funktioniert: <span class="underline decoration-dotted font-medium">Smart-Home-Integration (Doku)</span>
+  Wie der Adapter ioBroker-States zu Geräten und Slots zusammenfasst und wie der Override dafür funktioniert: <span class="underline decoration-dotted font-medium">Smart-Home-Integration (Doku)</span>
 </a>
 
 {% if not rooms %}
@@ -30,7 +30,8 @@
     <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
       <div>
         <span class="font-medium text-gray-100">{{ d.device.name }}</span>
-        <span class="text-xs text-gray-500 ml-2">{{ d.device.category }}</span>
+        <span class="text-xs text-gray-500 ml-2">{{ d.category }}</span>
+        {% if not d.device.available %}<span class="text-xs text-amber-400 ml-2">nicht erreichbar</span>{% endif %}
       </div>
       <span class="font-mono text-[11px] text-gray-600">{{ d.device.id }}</span>
     </div>
@@ -38,9 +39,9 @@
     <table class="w-full text-sm hidden sm:table">
       <thead>
         <tr class="border-b border-gray-800 text-gray-500 text-xs">
-          <th class="text-left px-4 py-2">Key</th>
-          <th class="text-left px-4 py-2">ioBroker-ID</th>
-          <th class="text-left px-4 py-2">Typ</th>
+          <th class="text-left px-4 py-2">Slot</th>
+          <th class="text-left px-4 py-2">Bezeichner</th>
+          <th class="text-left px-4 py-2">Art</th>
           <th class="text-left px-4 py-2">Wert</th>
           <th class="text-left px-4 py-2">Beschreibbar</th>
         </tr>
@@ -49,7 +50,7 @@
         {% for row in d.rows %}
         <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30">
           <td class="px-4 py-2 font-mono text-xs text-gray-300">{{ row.key }}</td>
-          <td class="px-4 py-2 font-mono text-xs text-gray-500">{{ row.iobroker_id }}</td>
+          <td class="px-4 py-2 font-mono text-xs text-gray-500">{{ row.identifier or '—' }}</td>
           <td class="px-4 py-2 text-xs text-gray-400">{{ row.type_label }}</td>
           <td class="px-4 py-2 text-xs text-gray-100">{{ row.value }}</td>
           <td class="px-4 py-2 text-xs">
@@ -70,7 +71,7 @@
           <span class="font-mono text-xs text-gray-300">{{ row.key }}</span>
           <span class="text-xs text-gray-100">{{ row.value }}</span>
         </div>
-        <div class="font-mono text-[11px] text-gray-600 mt-0.5">{{ row.iobroker_id }}</div>
+        <div class="font-mono text-[11px] text-gray-600 mt-0.5">{{ row.identifier or '—' }}</div>
         <div class="text-xs text-gray-500 mt-1">
           {{ row.type_label }}
           ·
@@ -84,7 +85,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="p-4 text-xs text-gray-600">Keine States.</div>
+    <div class="p-4 text-xs text-gray-600">Keine Slots.</div>
     {% endif %}
   </div>
   {% endfor %}

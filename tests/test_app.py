@@ -95,7 +95,7 @@ class TestTelegramLinking:
 class TestTelegramDeepLink:
     @staticmethod
     def _telegram_channel(supports_link=True):
-        from hannah_proto.v1 import hannah_pb2
+        from hannah_proto.v2 import hannah_pb2
         return hannah_pb2.ChannelInfo(service="telegram", display_name="Telegram", supports_link=supports_link)
 
     def test_no_adapter_hides_deep_link(self, logged_in_client):
@@ -362,7 +362,16 @@ class TestDevices:
         assert "Wohnzimmer" in body
         assert "DeckeSeite" in body
         assert "javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite.on" in body
-        assert "Boolean" in body
+        assert "Licht" in body and "An/Aus" in body and "Helligkeit" in body
+        assert "75 %" in body
+        assert "#FF8000" in body
+
+    def test_devices_shows_class_subtype_availability_and_missing_identifier(self, admin_client):
+        body = admin_client.get("/devices").get_data(as_text=True)
+        assert "Klimagerät" in body
+        assert "Kontakt (Fenster)" in body
+        assert "nicht erreichbar" in body
+        assert "—" in body  # slot without identifier
 
     def test_devices_requires_trust_level_10(self, logged_in_client):
         resp = logged_in_client.get("/devices", follow_redirects=True)
@@ -706,13 +715,26 @@ class TestTriggers:
         assert created["actions"] == [{"say": "Fenster offen.", "target": "__self__"}]
 
     def test_new_trigger_form_hides_non_writable_state_in_action_dropdown(self, logged_in_client):
-        """state_writable (hannah-proto #8) blendet nicht beschreibbare States wie den
-        Fenstersensor in der Dann-Auswahl aus, bleibt aber in Wenn/Und/Außer-wenn sichtbar."""
+        """Nicht beschreibbare Slots wie der Fenstersensor fehlen in der Dann-Auswahl, bleiben aber
+        in Wenn/Und/Außer-wenn sichtbar."""
         resp = logged_in_client.get("/triggers/new")
         body = resp.get_data(as_text=True)
-        # 2 Wenn- + 2 Und- + 2 Außer-wenn-Zeilen zeigen den State, die 2 Dann-Zeilen nicht
+        # 2 Wenn- + 2 Und- + 2 Außer-wenn-Zeilen zeigen den Slot, die 2 Dann-Zeilen nicht
         # (8 Vorkommen wären es, würde die Action-Dropdown den Sensor nicht ausblenden).
-        assert body.count('value="fenster.wz.open.open"') == 6
+        assert body.count('value="fenster.wz.open"') == 6
+
+    def test_new_trigger_form_offers_slots_by_identifier_and_skips_slots_without_one(self, logged_in_client):
+        """#71 — der Zustands-Dropdown bietet Slots über ihren Bezeichner an; ein Slot ohne
+        Bezeichner (hier die Temperatur des Klimageräts) ist nicht adressierbar und fehlt."""
+        body = logged_in_client.get("/triggers/new").get_data(as_text=True)
+        assert 'value="javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite.level"' in body
+        assert "Klima – Modus" in body
+        assert "Klima – Temperatur" not in body
+
+    def test_new_trigger_form_gives_a_mode_slot_an_enum_widget_with_its_options(self, logged_in_client):
+        body = logged_in_client.get("/triggers/new").get_data(as_text=True)
+        assert 'value="klima.wz.mode" data-widget="enum"' in body
+        assert '"cool": "cool"' in body or '{"cool":"cool"' in body or '"cool":"cool"' in body
 
     def test_edit_trigger_form_prefills_time_condition(self, logged_in_client):
         resp = logged_in_client.get("/triggers/aussentuer_abend/edit")

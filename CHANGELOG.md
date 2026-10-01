@@ -22,6 +22,12 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.13.0
+### Changed
+- The WebUI now speaks the new `hannah.v2` API to Hannah Core and the log collector. Against a Core that only knows `hannah.v1` it keeps working (calls are translated), but a Core older than `hannah.v1`, which predates the versioned API, is no longer supported. Requires `hannah-proto>=5.2.0` and `hannah-grpc-lib>=0.8.1`. Refs #71
+- The trigger editor offers the slots of a device by the identifier the adapter gives them (for ioBroker the state ID) instead of building it from the device ID and a state key. Slots without an identifier cannot be used in triggers and are not listed; states can still be typed in as free text. Triggers compare the raw value of the state, which can differ from the normalized value the device overview shows. Refs #71
+- The device overview shows each device with its class (and window/door subtype), whether it is reachable, and its slots with a readable name, identifier, value and whether it can be written. Refs #71
+
 ## 2.12.1
 ### Added
 - A footer link to the [Hannah docs](https://hannah-docs.leonie.network) on every page. Refs #60

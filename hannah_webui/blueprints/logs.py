@@ -6,7 +6,7 @@ from datetime import datetime
 
 import grpc
 from flask import Blueprint, Response, jsonify, request, stream_with_context
-from hannah_proto.v1 import logging_pb2
+from hannah_proto.v2 import logging_pb2
 
 from hannah_webui.extensions import TRUST_LEVELS, get_log_collector, login_required, trust_level_required
 

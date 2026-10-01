@@ -3,7 +3,7 @@ no real Hannah Core needed. Built from real hannah_pb2 messages so route/templat
 is exercised against the exact wire types Core actually sends."""
 import json
 
-from hannah_proto.v1 import hannah_pb2
+from hannah_proto.v2 import hannah_pb2
 
 
 class FakeHannahClient:
@@ -177,27 +177,39 @@ class FakeHannahClient:
         return True
 
     def get_devices(self):
+        base = "javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite"
         licht = hannah_pb2.DeviceInfo(
-            id="javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite",
-            name="DeckeSeite", category="Licht",
-            states=["on", "level", "color"],
-            current={"on": "true", "level": "75", "color": "warm"},
-            state_types={
-                "on": hannah_pb2.BOOLEAN, "level": hannah_pb2.NUMERIC, "color": hannah_pb2.ENUM,
-            },
-            state_enum_values={
-                "color": hannah_pb2.EnumValues(values={"warm": "Warmweiß", "kalt": "Kaltweiß"}),
-            },
-            state_writable={"on": True, "level": True, "color": True},
+            id=base, name="DeckeSeite", device_class=hannah_pb2.DEVICE_CLASS_LIGHT, available=True,
+            slots=[
+                hannah_pb2.Slot(slot_id="on", kind=hannah_pb2.SLOT_KIND_ON, writable=True, identifier=f"{base}.on",
+                                value=hannah_pb2.SlotValue(boolean=True)),
+                hannah_pb2.Slot(slot_id="brightness", kind=hannah_pb2.SLOT_KIND_BRIGHTNESS, writable=True,
+                                identifier=f"{base}.level", unit="%", value=hannah_pb2.SlotValue(number=75)),
+                hannah_pb2.Slot(slot_id="color", kind=hannah_pb2.SLOT_KIND_COLOR, writable=True,
+                                identifier=f"{base}.color", value=hannah_pb2.SlotValue(rgb=0xFF8000)),
+            ],
+        )
+        klima = hannah_pb2.DeviceInfo(
+            id="klima.wz", name="Klima", device_class=hannah_pb2.DEVICE_CLASS_CLIMATE, available=True,
+            slots=[
+                hannah_pb2.Slot(slot_id="mode", kind=hannah_pb2.SLOT_KIND_MODE, writable=True,
+                                identifier="klima.wz.mode", options=["cool", "heat"],
+                                value=hannah_pb2.SlotValue(text="cool")),
+                # No identifier: a trigger cannot address this slot
+                hannah_pb2.Slot(slot_id="temperature", kind=hannah_pb2.SLOT_KIND_TEMPERATURE,
+                                value=hannah_pb2.SlotValue(number=21.5)),
+            ],
         )
         fenster = hannah_pb2.DeviceInfo(
-            id="fenster.wz.open", name="Fenster", category="Fenster",
-            states=["open"], current={"open": "false"},
-            state_types={"open": hannah_pb2.BOOLEAN},
-            state_writable={"open": False},
+            id="fenster.wz", name="Fenster", device_class=hannah_pb2.DEVICE_CLASS_CONTACT, available=False,
+            subtype=hannah_pb2.DEVICE_SUBTYPE_WINDOW,
+            slots=[
+                hannah_pb2.Slot(slot_id="open", kind=hannah_pb2.SLOT_KIND_OPEN, identifier="fenster.wz.open",
+                                value=hannah_pb2.SlotValue(boolean=False)),
+            ],
         )
         return [
-            hannah_pb2.RoomInfo(key="wohnzimmer", name="Wohnzimmer", devices=[licht, fenster]),
+            hannah_pb2.RoomInfo(key="wohnzimmer", name="Wohnzimmer", devices=[licht, klima, fenster]),
         ]
 
     def submit_text(self, text, source_service="", source_user_id=""):

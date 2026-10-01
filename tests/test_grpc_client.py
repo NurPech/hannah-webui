@@ -2,7 +2,7 @@ from concurrent import futures
 
 import grpc
 import pytest
-from hannah_proto import hannah_pb2, hannah_pb2_grpc
+from hannah_proto.v2 import hannah_pb2, hannah_pb2_grpc
 
 from hannah_webui.grpc_client import HannahClient
 
@@ -10,6 +10,10 @@ from hannah_webui.grpc_client import HannahClient
 class _LoginServicer(hannah_pb2_grpc.HannahServiceServicer):
     """Mimics Core rejecting bad credentials with a gRPC-level UNAUTHENTICATED
     status (hannah-webui#51) rather than resp.found=False."""
+
+    def GetSatellites(self, request, context):
+        # The client's API generation probe
+        return hannah_pb2.GetSatellitesResponse()
 
     def Login(self, request, context):
         if request.username == "known" and request.password == "correct":

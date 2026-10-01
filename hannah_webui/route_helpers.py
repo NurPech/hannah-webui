@@ -7,24 +7,66 @@ import json
 import re
 import time
 
-from hannah_proto.v1 import hannah_pb2
+from hannah_proto.v2 import hannah_pb2
 
 _TELEGRAM_AUTH_MAX_AGE = 300  # Sekunden, gegen Replay alter Callback-URLs
 
-_STATE_TYPE_WIDGET = {
-    hannah_pb2.BOOLEAN: "boolean",
-    hannah_pb2.NUMERIC: "numeric",
-    hannah_pb2.ENUM: "enum",
-    hannah_pb2.COLOR: "enum",  # gleiche Widget-Logik wie ENUM: Dropdown aus den erlaubten Werten
+K = hannah_pb2.SlotKind
+C = hannah_pb2.DeviceClass
+
+# Slot-Art -> Widget im Trigger-Editor (Wertfeld der Bedingung/Aktion). Alles Numerische ist
+# "numeric", Text und Farbe bleiben Freitext; MODE/FAN_SPEED werden nur mit Slot.options "enum".
+_BOOLEAN_KINDS = {K.SLOT_KIND_ON, K.SLOT_KIND_OPEN, K.SLOT_KIND_MOTION, K.SLOT_KIND_STOP, K.SLOT_KIND_GENERIC_BOOL}
+_ENUM_KINDS = {K.SLOT_KIND_MODE, K.SLOT_KIND_FAN_SPEED}
+_TEXT_KINDS = {K.SLOT_KIND_COLOR, K.SLOT_KIND_GENERIC_TEXT, K.SLOT_KIND_UNSPECIFIED}
+
+_SLOT_KIND_LABELS = {
+    K.SLOT_KIND_ON: "An/Aus",
+    K.SLOT_KIND_BRIGHTNESS: "Helligkeit",
+    K.SLOT_KIND_COLOR: "Farbe",
+    K.SLOT_KIND_COLOR_TEMPERATURE: "Farbtemperatur",
+    K.SLOT_KIND_POWER: "Leistung",
+    K.SLOT_KIND_ENERGY: "Energie",
+    K.SLOT_KIND_VOLTAGE: "Spannung",
+    K.SLOT_KIND_CURRENT: "Strom",
+    K.SLOT_KIND_TARGET_TEMPERATURE: "Solltemperatur",
+    K.SLOT_KIND_TEMPERATURE: "Temperatur",
+    K.SLOT_KIND_HUMIDITY: "Luftfeuchtigkeit",
+    K.SLOT_KIND_VALVE: "Ventil",
+    K.SLOT_KIND_MODE: "Modus",
+    K.SLOT_KIND_FAN_SPEED: "Lüfterstufe",
+    K.SLOT_KIND_POSITION: "Position",
+    K.SLOT_KIND_TILT: "Neigung",
+    K.SLOT_KIND_STOP: "Stopp",
+    K.SLOT_KIND_OPEN: "Offen",
+    K.SLOT_KIND_MOTION: "Bewegung",
+    K.SLOT_KIND_ILLUMINANCE: "Helligkeit (Sensor)",
+    K.SLOT_KIND_PRESSURE: "Luftdruck",
+    K.SLOT_KIND_CO2: "CO₂",
+    K.SLOT_KIND_IAQ: "Luftqualität",
+    K.SLOT_KIND_VOC: "VOC",
+    K.SLOT_KIND_GENERIC_NUMBER: "Zahl",
+    K.SLOT_KIND_GENERIC_BOOL: "Ja/Nein",
+    K.SLOT_KIND_GENERIC_TEXT: "Text",
+    K.SLOT_KIND_UNSPECIFIED: "?",
 }
 
-_STATE_TYPE_LABELS = {
-    hannah_pb2.BOOLEAN: "Boolean",
-    hannah_pb2.NUMERIC: "Numerisch",
-    hannah_pb2.ENUM: "Enum",
-    hannah_pb2.COLOR: "Farbe",
-    hannah_pb2.TEXT: "Text",
-    hannah_pb2.STATE_TYPE_UNSPECIFIED: "?",
+_DEVICE_CLASS_LABELS = {
+    C.DEVICE_CLASS_LIGHT: "Licht",
+    C.DEVICE_CLASS_SOCKET: "Steckdose",
+    C.DEVICE_CLASS_GENERIC_BINARY_SWITCH: "Schalter",
+    C.DEVICE_CLASS_THERMOSTAT: "Thermostat",
+    C.DEVICE_CLASS_COVER: "Rollladen/Jalousie",
+    C.DEVICE_CLASS_SENSOR: "Sensor",
+    C.DEVICE_CLASS_CONTACT: "Kontakt",
+    C.DEVICE_CLASS_GENERIC: "Sonstiges",
+    C.DEVICE_CLASS_CLIMATE: "Klimagerät",
+    C.DEVICE_CLASS_UNSPECIFIED: "?",
+}
+
+_DEVICE_SUBTYPE_LABELS = {
+    hannah_pb2.DEVICE_SUBTYPE_WINDOW: "Fenster",
+    hannah_pb2.DEVICE_SUBTYPE_DOOR: "Tür",
 }
 
 _SETTINGS_NEW_ROWS = 2
@@ -93,59 +135,97 @@ def _as_condition_list(also_or_unless) -> tuple[list[dict], str]:
     return [also_or_unless], "and"
 
 
+def _slot_widget(slot) -> str:
+    if slot.kind in _BOOLEAN_KINDS:
+        return "boolean"
+    if slot.kind in _ENUM_KINDS and slot.options:
+        return "enum"
+    if slot.kind in _TEXT_KINDS or slot.kind in _ENUM_KINDS:
+        return "text"
+    return "numeric"
+
+
+def _slot_label(slot) -> str:
+    """Name eines Slots für Menschen: bei Standard-Arten die deutsche Bezeichnung, bei
+    generischen Slots deren Label (sonst die Slot-ID)."""
+    if slot.kind in (K.SLOT_KIND_GENERIC_NUMBER, K.SLOT_KIND_GENERIC_BOOL, K.SLOT_KIND_GENERIC_TEXT):
+        return slot.label or slot.slot_id
+    return _SLOT_KIND_LABELS.get(slot.kind, slot.slot_id)
+
+
+def _slot_value_text(slot) -> str:
+    if not slot.HasField("value"):
+        return ""
+    which = slot.value.WhichOneof("value")
+    if which == "boolean":
+        return "true" if slot.value.boolean else "false"
+    if which == "number":
+        number = slot.value.number
+        return str(int(number)) if number == int(number) else str(number)
+    if which == "rgb":
+        return f"#{slot.value.rgb & 0xFFFFFF:06X}"
+    if which == "text":
+        return slot.value.text
+    return ""
+
+
+def _device_category_label(device) -> str:
+    label = _DEVICE_CLASS_LABELS.get(device.device_class, "?")
+    subtype = _DEVICE_SUBTYPE_LABELS.get(device.subtype)
+    return f"{label} ({subtype})" if subtype else label
+
+
 def _device_state_options(rooms, writable_only: bool = False) -> list[dict]:
     """Flacht GetDevices() (RoomInfo -> DeviceInfo) zu einer Liste von Dropdown-Optionen
-    fürs Trigger-Editor-Zustands-Widget ab (#16). Der Options-'value' ist die volle
-    ioBroker-State-ID (device.id + '.' + state-key) — exakt das Format, das das
-    Freitext-Feld schon immer erwartet hat, damit alte/manuell eingetragene States
-    unverändert weiter funktionieren.
+    fürs Trigger-Editor-Zustands-Widget ab (#16). Der Options-'value' ist der Bezeichner
+    (Slot.identifier), den der Adapter für den Wert hinter dem Slot vergibt — bei ioBroker die
+    volle State-ID, exakt das Format, das das Freitext-Feld schon immer erwartet hat, damit
+    alte/manuell eingetragene States unverändert weiter funktionieren. Ein Slot ohne
+    Bezeichner ist für Trigger nicht adressierbar und erscheint nicht (#71).
 
-    writable_only blendet nicht beschreibbare States aus (z.B. Fenster-/Tür-/Temperatur-
+    writable_only blendet nicht beschreibbare Slots aus (z.B. Fenster-/Tür-/Temperatur-
     Sensoren) — fürs Aktions-Dropdown ("Dann"), da dort nur Geräte gesetzt werden können.
-    Fehlt ein State in state_writable (ältere Core-Version ohne das Feld), gilt er als
-    schreibbar, damit die Auswahl nicht grundlos leerläuft."""
+
+    Trigger vergleichen gegen den Rohwert des Adapters, nicht gegen den normalisierten
+    Slot-Wert, den die Geräteübersicht zeigt."""
     options = []
     for room in rooms:
         for device in room.devices:
-            for state_key in device.states:
-                if writable_only and not device.state_writable.get(state_key, True):
+            for slot in device.slots:
+                if not slot.identifier:
                     continue
-                state_type = device.state_types.get(state_key, hannah_pb2.STATE_TYPE_UNSPECIFIED)
-                enum_values = (
-                    dict(device.state_enum_values[state_key].values)
-                    if state_key in device.state_enum_values else {}
-                )
+                if writable_only and not slot.writable:
+                    continue
+                widget = _slot_widget(slot)
                 options.append({
-                    "value": f"{device.id}.{state_key}",
+                    "value": slot.identifier,
                     "room": room.name,
                     "device": device.name,
-                    "state": state_key,
-                    "widget": _STATE_TYPE_WIDGET.get(state_type, "text"),
-                    "enum_values": enum_values,
+                    "state": _slot_label(slot),
+                    "widget": widget,
+                    "enum_values": {o: o for o in slot.options} if widget == "enum" else {},
                 })
     return options
 
 
 def _device_overview_rooms(rooms) -> list[dict]:
-    """Baut die Zeilen für die Device-Overview (#68): pro Raum -> Gerät -> States, so wie
-    Hannah Core sie über GetDevices sieht (Debugging-Ansicht, rein lesend). Die ioBroker-ID
-    pro State ist device.id + '.' + state-key — dieselbe Konvention wie im Trigger-Editor-
-    Zustands-Dropdown (_device_state_options)."""
+    """Baut die Zeilen für die Device-Overview (#68): pro Raum -> Gerät -> Slots, so wie
+    Hannah Core sie über GetDevices sieht (Debugging-Ansicht, rein lesend). Der Bezeichner pro
+    Slot ist derselbe, den der Trigger-Editor als Zustand anbietet (_device_state_options)."""
     result = []
     for room in rooms:
         devices = []
         for device in room.devices:
             rows = []
-            for state_key in device.states:
-                state_type = device.state_types.get(state_key, hannah_pb2.STATE_TYPE_UNSPECIFIED)
+            for slot in device.slots:
                 rows.append({
-                    "key": state_key,
-                    "iobroker_id": f"{device.id}.{state_key}",
-                    "type_label": _STATE_TYPE_LABELS.get(state_type, "?"),
-                    "value": device.current.get(state_key, ""),
-                    "writable": device.state_writable.get(state_key, True),
+                    "key": slot.slot_id,
+                    "identifier": slot.identifier,
+                    "type_label": _slot_label(slot),
+                    "value": _slot_value_text(slot) + (f" {slot.unit}" if slot.unit and slot.HasField("value") else ""),
+                    "writable": slot.writable,
                 })
-            devices.append({"device": device, "rows": rows})
+            devices.append({"device": device, "category": _device_category_label(device), "rows": rows})
         result.append({"room": room, "devices": devices})
     return result
 

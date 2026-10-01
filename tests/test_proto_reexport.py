@@ -1,18 +1,18 @@
 """
-Regression test: hannah_webui.proto.__init__ patches every scope-split
-*_pb2 module's public names onto hannah_pb2 (see the comment in that file
-for why). This walks every *_pb2.py file next to __init__.py and asserts
-nothing got left out of the patch — same class of bug as gessinger/voice/hannah#125.
+Regression test: hannah_proto.v2 re-exports every scope-split *_pb2 module's public names onto
+hannah_pb2 (the WebUI uses hannah_pb2.User, hannah_pb2.Room, ... for all of them). This walks
+every *_pb2 module of the package and asserts nothing got left out — same class of bug as
+gessinger/voice/hannah#125.
 """
 
 import pkgutil
 
-import hannah_proto
-from hannah_proto import hannah_pb2
+from hannah_proto import v2
+from hannah_proto.v2 import hannah_pb2
 
 
 def _scope_pb2_modules():
-    for _, name, _ in pkgutil.iter_modules(hannah_proto.__path__):
+    for _, name, _ in pkgutil.iter_modules(v2.__path__):
         if name.endswith("_pb2") and name != "hannah_pb2":
             yield name
 
@@ -23,7 +23,7 @@ def test_every_scope_module_is_patched_onto_hannah_pb2():
 
     missing = []
     for module_name in scope_modules:
-        module = __import__(f"hannah_proto.{module_name}", fromlist=["_"])
+        module = __import__(f"hannah_proto.v2.{module_name}", fromlist=["_"])
         for name in dir(module):
             if name.startswith("_"):
                 continue
