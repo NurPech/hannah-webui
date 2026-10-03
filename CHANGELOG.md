@@ -22,6 +22,11 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.14.0
+### Added
+- Changed: WebUI names itself and its version in every call to Hannah Core, so Core can tell which version is connected and name it in its notice about outdated components. Requires `hannah-grpc-lib` 0.9 (below 0.10.0) (Refs #397)
+- Changed: WebUI tells Hannah Core every 30 seconds that it is running, so Core still knows it when it holds no open connection. Needs a Core that knows the call, an older Core is left alone after one log line. Requires `hannah-grpc-lib` 0.10 (below 0.11.0) (Refs #399)
+
 ## 2.13.0
 ### Changed
 - The WebUI now speaks the new `hannah.v2` API to Hannah Core and the log collector. Against a Core that only knows `hannah.v1` it keeps working (calls are translated), but a Core older than `hannah.v1`, which predates the versioned API, is no longer supported. Requires `hannah-proto>=5.2.0` and `hannah-grpc-lib>=0.8.1`. Refs #71

@@ -9,7 +9,7 @@ cryptography>=42.0.0  # selbstsigniertes TLS-Zertifikat generieren (hannah_webui
 # Proto schema — published package instead of the git-submodule/local-codegen
 # pattern (#60); pins the runtime proto/gRPC-version coupling that used to be
 # handled by matching grpcio-tools' version locally
-hannah-proto>=5.2.0    # hannah.v2 incl. Slot.identifier; the generated stubs require grpcio>=1.84.0, see line above
+hannah-proto>=5.3.0    # hannah.v2 incl. Slot.identifier; the generated stubs require grpcio>=1.84.0, see line above
 
 # Log shipping to the Hannah log collector (#341) and the hannah.v2 client with hannah.v1 (N−1) fallback (#71)
-hannah-grpc-lib>=0.8.1
+hannah-grpc-lib>=0.10.0
