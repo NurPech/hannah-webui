@@ -22,6 +22,16 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.14.1
+### Added
+- gunicorn logs the effective TLS state at startup (enabled/disabled, raw `HANNAH_WEBUI_TLS_ENABLED` value, whether a config file is present), so unexpected `[SSL: HTTP_REQUEST]` warnings can be traced to their cause. Refs #73
+
+### Changed
+- gunicorn now runs the `gthread` worker class (2 workers x 4 threads) instead of sync workers, so a stalled or half-open connection no longer blocks a whole worker until the 60 s timeout kills it. Refs #72
+
+### Fixed
+- Disabled gunicorn's control socket, which failed at container startup with `Permission denied: '/home/appuser'` (the image user has no home directory) and is not used here. Refs #72
+
 ## 2.14.0
 ### Added
 - Changed: WebUI names itself and its version in every call to Hannah Core, so Core can tell which version is connected and name it in its notice about outdated components. Requires `hannah-grpc-lib` 0.9 (below 0.10.0) (Refs #397)
