@@ -22,6 +22,24 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.15.2
+### Changed
+- The components page lists identical entries once with a count (e.g. `×2`) instead of repeating them. The WebUI runs two gunicorn workers that both report themselves to Core, so it used to show up as two identical rows. Entries that differ in version or status stay separate. Refs #80
+
+## 2.15.1
+### Changed
+- The components page is no longer a menu entry: the WebUI version number at the top left of the header is now the link to it (trust level 10 and up, plain text below, highlighted while on the page). Refs #78
+- Raised the pin to `hannah-grpc-lib>=0.13.0`, so the WebUI reports its hostname to Core. Refs #79
+- The components page and the update banner show versions without a leading `v` (public versions arrive as tag names like `v0.102.6`, running ones without), so both columns look alike. Display only. Refs #77
+
+## 2.15.0
+### Added
+- Subtle update banner for admins (trust level 10) on every page when Hannah Core reports a component with an update available. It links to the new components page and is cached for a minute per process, so it never costs a gRPC call per page view and never breaks a page when Core cannot answer. Refs #76
+- Components page (`/components`, trust level 10, nav entry "Komponenten") listing every running component instance with its version, the latest public version and the comparison status. A component newer than the public version is shown neutral, without public versions (`latest_available = false`) only the running versions are shown, and a Core that cannot report versions (no `GetComponentVersions`, or only `hannah.v1`) gets a hint instead of an error page. Refs #76
+
+### Changed
+- Raised the pins to `hannah-proto>=5.6.0` and `hannah-grpc-lib>=0.12.1` for `GetComponentVersions`. Refs #76
+
 ## 2.14.1
 ### Added
 - gunicorn logs the effective TLS state at startup (enabled/disabled, raw `HANNAH_WEBUI_TLS_ENABLED` value, whether a config file is present), so unexpected `[SSL: HTTP_REQUEST]` warnings can be traced to their cause. Refs #73

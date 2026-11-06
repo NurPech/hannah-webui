@@ -67,7 +67,9 @@ hannah-webui/
 Zwei unabhängige Wege, **kein Auto-Update beim Container-Pfad**:
 
 1. **systemd** (`deploy/install.sh` + `deploy/hannah-webui.service`) — lädt Releases vom [Hannah Update Server](https://hannah-update.sgessinger.de) (Channel `webui-stable`), Python-venv, gunicorn als User `hannah` (siehe Deploy-Konventionen im Monorepo — alle Services laufen als gemeinsamer User `hannah`). Bind-Adresse/Worker-Anzahl steht in der `.service`-Unit, nicht in `config.yaml` (gunicorn bindet den Socket vor dem WSGI-App-Import). `install.sh` ist nur für Erst-Install/manuelle Reinstalls — im laufenden Betrieb hält AutoDeploy (`hannah-autodeploy`, generischer Update-Agent für alle Hannah-Komponenten, siehe Monorepo) die Installation automatisch aktuell: pollt den Update Server auf Channel `webui-stable`, tauscht bei neuer Version die Dateien, führt den `post_install`-Hook (`pip install -r requirements.txt`) aus und restartet `hannah-webui.service`.
-2. **Docker** — Multi-Arch-Image (amd64/arm64, Kaniko-Build in der CI), Push in die eigene Container Registry (`registry.dev.kernstock.net/gessinger/voice/hannah-webui`), getaggt mit Versionsnummer + `latest`. Konfiguration ausschließlich per Env-Vars (`HANNAH_WEBUI_HOST`/`PORT`/`SECRET_KEY`/`GRPC_HOST`/`GRPC_PORT`), da kein `config.yaml` im Image liegt.
+2. **Docker** — Multi-Arch-Image (amd64/arm64, Kaniko-Build in der CI) auf quay.io (`quay.io/m1kad0/hannah-webui`), getaggt mit Versionsnummer + `latest` (beides erst nach dem Promote, siehe unten). Die eigene GitLab Container Registry wird für Release-Images nicht mehr befüllt. Konfiguration ausschließlich per Env-Vars (`HANNAH_WEBUI_HOST`/`PORT`/`SECRET_KEY`/`GRPC_HOST`/`GRPC_PORT`), da kein `config.yaml` im Image liegt.
+
+**Gestaffelte Releases (hannah#489):** Ein Tag veröffentlicht nichts für Dritte. Der Tarball geht in den privaten Kind-Channel `webui-stable-rc` (der AutoDeploy der eigenen Systeme folgt diesem Channel), das Image zusätzlich als `<v>-rc-<arch>` und Manifest-Liste `<v>-rc` nach quay.io — ohne `latest`; `guard-staged-tags` verhindert, dass ein vorhandener `-rc`-Tag überschrieben wird. Hat sich die Version bewährt, startet der manuelle Job `promote:webui` die zentrale Promote-Pipeline in `gessinger/voice/hannah-release-hub`: sie verschiebt exakt das Gebaute (gleiche sha256 / gleicher Image-Digest) in den öffentlichen Channel `webui-stable` sowie auf `<v>` und `latest` bei quay.io und spielt danach den manuellen Job `sync:public` (öffentlicher Mirror). Es wird nichts neu gebaut.
 
 `secret_key` muss über alle gunicorn-Worker und Neustarts hinweg stabil sein, sonst zufälliger Logout (siehe CHANGELOG, war ein Produktionsbug in der Monorepo-Phase).
 
@@ -76,7 +78,7 @@ Zwei unabhängige Wege, **kein Auto-Update beim Container-Pfad**:
 ## CI/CD-Pipeline (`.gitlab-ci.yml`)
 
 ```
-test → container-build → upload → release
+test → container-build → upload → release → sync → promote
 ```
 
 - **test** — pytest gegen `FakeHannahClient`
@@ -84,6 +86,8 @@ test → container-build → upload → release
 - **container-build** — `.build-container` (Kaniko) als Matrix-Template für `build-container:amd64`/`:arm64`, dann `merge-manifests` (multi-arch Manifest). Läuft auf jedem Tag — **keine Change-Detection nötig**, jeder Commit in diesem Repo ist per Definition eine WebUI-Änderung (genau das war der Grund für die Extraktion aus dem Monorepo, siehe #105/#106 dort)
 - **upload** — Tarball zum Update Server (Channel `webui-stable`) + Release-Notes aus `CHANGELOG.md`
 - **release** — GitLab Release mit Changelog-Auszug
+- **sync** — `sync:public`, manuell (wird vom Promote gestartet)
+- **promote** — `promote:webui`, manueller Bridge-Job zur zentralen Promote-Pipeline im Release-Hub
 
 Versionsstand: Fresh Start bei `v1.0.0` (keine Fortführung der Monorepo-Versionsnummer `v0.46.1`, bewusste Entscheidung).
 

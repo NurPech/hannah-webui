@@ -14,15 +14,24 @@
 <body class="bg-gray-950 text-gray-100 min-h-screen">
 {% if session.get('user_id') %}
 <header class="sticky top-0 z-20 bg-gray-900/80 backdrop-blur border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center gap-4">
-  <a href="/" class="flex items-center gap-2.5 mr-2">
-    {% if core_unreachable %}
-    <span class="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_6px_2px_rgba(251,113,133,0.4)]" title="Hannah Core nicht erreichbar"></span>
+  <div class="flex items-center gap-2.5 mr-2">
+    <a href="/" class="flex items-center gap-2.5">
+      {% if core_unreachable %}
+      <span class="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_6px_2px_rgba(251,113,133,0.4)]" title="Hannah Core nicht erreichbar"></span>
+      {% else %}
+      <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" title="Hannah Core erreichbar"></span>
+      {% endif %}
+      <span class="font-bold tracking-tight text-sm">Hannah</span>
+    </a>
+    {# The version is the entry to the components page (#78) — a link of its own, since the logo link above must not nest it #}
+    {% set app_version_label = 'v' + app_version if app_version != 'dev' else app_version %}
+    {% if session.get('trust_level', 0) >= trust_levels['list_components'] %}
+    <a href="{{ url_for('components.components') }}" title="WebUI-Version – Komponenten und Versionen"
+       class="text-xs font-mono rounded px-1.5 py-0.5 transition-colors {% if request.endpoint == 'components.components' %}bg-gray-800 text-gray-100{% else %}text-gray-600 hover:text-gray-300{% endif %}">{{ app_version_label }}</a>
     {% else %}
-    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" title="Hannah Core erreichbar"></span>
+    <span class="text-xs text-gray-600 font-mono" title="WebUI-Version">{{ app_version_label }}</span>
     {% endif %}
-    <span class="font-bold tracking-tight text-sm">Hannah</span>
-    <span class="text-xs text-gray-600 font-mono" title="WebUI-Version">{{ 'v' + app_version if app_version != 'dev' else app_version }}</span>
-  </a>
+  </div>
 
   <button type="button" onclick="document.getElementById('nav-links').classList.toggle('hidden')"
           class="ml-auto sm:hidden bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg p-1.5 transition-colors text-gray-400 hover:text-gray-200">
@@ -99,6 +108,15 @@
        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs transition-colors text-gray-400 hover:text-gray-200">Abmelden</a>
   </div>
 </header>
+{% if component_updates %}
+{# Subtle on purpose (#76): a thin strip, not dismissable, nothing that begs for a click #}
+<div class="bg-amber-500/5 border-b border-amber-500/15 px-4 sm:px-6 py-1.5 text-xs text-amber-300/80">
+  <a href="{{ url_for('components.components') }}" class="hover:text-amber-200 transition-colors">
+    Update verfügbar:
+    {% for c in component_updates %}<span class="font-mono">{{ c.component }} {{ c.version | display_version }} → {{ c.latest_version | display_version }}</span>{% if not loop.last %}, {% endif %}{% endfor %}
+  </a>
+</div>
+{% endif %}
 {% endif %}
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">

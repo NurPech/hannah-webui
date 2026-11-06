@@ -7,10 +7,13 @@ current_app proxy at request time, which avoids circular imports between
 app.py (which imports every blueprint to register it) and the blueprints
 (which only import from here, never from app.py).
 """
+import time
 from functools import wraps
 
+import grpc
 import msal
 from flask import current_app, flash, redirect, session, url_for
+from hannah_proto.v2 import hannah_pb2
 
 from hannah_webui.grpc_client import HannahClient
 from hannah_webui.log_collector import LogCollectorClient
@@ -50,6 +53,7 @@ TRUST_LEVELS = {
     "link_resident": 10,
     "edit_presence_sources": 10,
     "list_devices": 10,
+    "list_components": 10,
     "list_activity_log": 0,
     "filter_activity_log": 10,
     "list_messages": 0,
@@ -59,6 +63,37 @@ TRUST_LEVELS = {
 
 def get_hannah() -> HannahClient:
     return current_app.extensions["hannah"]
+
+
+_COMPONENT_UPDATES_TTL_S = 60
+
+
+def get_component_updates() -> list:
+    """Component instances with an update available, for the banner in base.html (#76).
+    Cached per process for a minute — the banner renders on every page, and Core already
+    caches the public versions itself (version_check.cache_ttl_s), so this only saves the
+    gRPC roundtrip. Never raises: Core without the RPC, unreachable or a hannah.v1-only
+    Core all just mean "no banner" (the /components page is where that gets explained)."""
+    cache = current_app.extensions.setdefault("component_updates_cache", {})
+    now = time.monotonic()
+    if "at" in cache and now - cache["at"] < _COMPONENT_UPDATES_TTL_S:
+        return cache["updates"]
+    try:
+        info = get_hannah().get_component_versions()
+    except grpc.RpcError:
+        info = None
+    updates = []
+    if info is not None and info.latest_available:
+        # One entry per instance on the wire — during a rollout two instances of a component can
+        # run the same outdated version, the banner names that only once.
+        seen = set()
+        for c in info.components:
+            key = (c.component, c.version, c.latest_version)
+            if c.comparison == hannah_pb2.VERSION_COMPARISON_UPDATE_AVAILABLE and key not in seen:
+                seen.add(key)
+                updates.append(c)
+    cache.update(at=now, updates=updates)
+    return updates
 
 
 def get_telegram_config() -> tuple[str, str]:

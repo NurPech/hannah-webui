@@ -11,6 +11,29 @@ from hannah_proto.v2 import hannah_pb2
 
 _TELEGRAM_AUTH_MAX_AGE = 300  # Sekunden, gegen Replay alter Callback-URLs
 
+
+def group_components(components) -> list[tuple["hannah_pb2.ComponentVersionInfo", int]]:
+    """Components page (#80): identical entries as one (entry, count) pair. The WebUI runs two
+    gunicorn workers, each reports itself to Core, and with the hostname as instance both show
+    up with the same component, instance and version. Entries that differ in version or status
+    stay apart — a host on two versions during a rollout must not be hidden. Sorted by
+    component and instance."""
+    groups: dict[tuple, list] = {}
+    for c in components:
+        key = (c.component, c.instance_id, c.version, c.latest_version, c.comparison)
+        if key in groups:
+            groups[key][1] += 1
+        else:
+            groups[key] = [c, 1]
+    return sorted(((c, n) for c, n in groups.values()), key=lambda cn: (cn[0].component, cn[0].instance_id))
+
+
+def display_version(version: str) -> str:
+    """Version for display (#77): drops a leading "v" before a digit — public versions come
+    with the tag name ("v0.102.6"), running ones without ("0.102.6"). Display only, Core does
+    the comparison. Anything else ("vnext", "dev", "") stays as it is."""
+    return version[1:] if re.match(r"v\d", version) else version
+
 K = hannah_pb2.SlotKind
 C = hannah_pb2.DeviceClass
 

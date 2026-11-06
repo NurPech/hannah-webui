@@ -10,6 +10,7 @@ from typing import Optional
 import grpc
 
 from hannah_grpc import client as hannah_client
+from hannah_grpc.translate import NotTranslatable
 from hannah_proto.v2 import hannah_pb2
 
 log = logging.getLogger(__name__)
@@ -251,6 +252,22 @@ class HannahClient:
     def get_devices(self) -> list["hannah_pb2.RoomInfo"]:
         assert self._stub, "call connect() first"
         return list(self._stub.GetDevices(hannah_pb2.Empty()).rooms)
+
+    def get_component_versions(self) -> Optional["hannah_pb2.GetComponentVersionsResponse"]:
+        """Running component instances with their version and the comparison against the latest
+        public version (#76). None = Core cannot tell: either it runs hannah.v2 without the RPC
+        (UNIMPLEMENTED) or it only serves hannah.v1, where the call has no counterpart
+        (NotTranslatable) — both mean "no version info available", not an error. Any other
+        RpcError (Core actually unreachable) still propagates."""
+        assert self._stub, "call connect() first"
+        try:
+            return self._stub.GetComponentVersions(hannah_pb2.Empty())
+        except NotTranslatable:
+            return None
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.UNIMPLEMENTED:
+                return None
+            raise
 
     def submit_text(self, text: str, source_service: str = "", source_user_id: str = "") -> tuple[str, str]:
         """source_service/source_user_id identify the caller via the linked-accounts

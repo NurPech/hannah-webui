@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Komponenten{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-5">
+  <h2 class="text-lg font-semibold text-gray-100">Komponenten</h2>
+  <a href="{{ url_for('components.components') }}"
+     class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors">Neu laden</a>
+</div>
+<p class="text-xs text-gray-500 mb-5">
+  Laufende Komponenten-Instanzen von Hannah mit ihrer Version, verglichen mit der neuesten öffentlichen Version. Satelliten stehen nicht hier, ihr Firmware-Stand steht auf der Seite „Satelliten“.
+  Der Abgleich lässt sich in den <a href="{{ url_for('settings.settings') }}" class="underline decoration-dotted hover:text-gray-300">Settings</a> in der Kategorie <span class="font-mono">version_check</span> steuern.
+</p>
+
+{% if info is none %}
+<div class="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
+  Dieser Hannah Core kann keine Versionsinformationen liefern (zu alt für diese Abfrage).
+</div>
+{% else %}
+{% if not info.latest_available %}
+<div class="flex items-start gap-3 rounded-lg border px-4 py-3 mb-5 text-sm bg-gray-800/50 text-gray-400 border-gray-700">
+  Die öffentlichen Versionen sind gerade nicht abrufbar, deshalb werden nur die laufenden Versionen angezeigt.
+</div>
+{% elif checked_at %}
+<p class="text-xs text-gray-500 mb-3">Öffentliche Versionen Stand {{ checked_at }}</p>
+{% endif %}
+
+{% if not components %}
+<div class="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
+  Keine laufenden Komponenten gemeldet.
+</div>
+{% else %}
+{# Full literal class strings per status — see the Tailwind note in base.html #}
+{% set statuses = {
+  1: ('aktuell', 'text-emerald-400'),
+  2: ('Update verfügbar', 'text-amber-300'),
+  3: ('neuer als öffentlich', 'text-gray-400'),
+} %}
+<div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-xs text-gray-500 border-b border-gray-800">
+          <th class="px-2 sm:px-4 py-2.5 font-medium">Komponente</th>
+          <th class="px-2 sm:px-4 py-2.5 font-medium hidden sm:table-cell">Instanz</th>
+          <th class="px-2 sm:px-4 py-2.5 font-medium">Läuft</th>
+          <th class="px-2 sm:px-4 py-2.5 font-medium">Öffentlich</th>
+          <th class="px-2 sm:px-4 py-2.5 font-medium">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c, count in components %}
+        {% set status = statuses.get(c.comparison) if info.latest_available else none %}
+        <tr class="border-b border-gray-800/60 last:border-0">
+          <td class="px-2 sm:px-4 py-2.5 text-gray-100">
+            {{ c.component }}
+            <span class="block sm:hidden font-mono text-[11px] text-gray-600">{{ c.instance_id }}{% if count > 1 %} ×{{ count }}{% endif %}</span>
+          </td>
+          <td class="px-2 sm:px-4 py-2.5 font-mono text-xs text-gray-500 hidden sm:table-cell">{{ c.instance_id }}{% if count > 1 %} <span class="text-gray-400">×{{ count }}</span>{% endif %}</td>
+          <td class="px-2 sm:px-4 py-2.5 font-mono text-xs text-gray-300">{{ c.version | display_version if c.version else '–' }}</td>
+          <td class="px-2 sm:px-4 py-2.5 font-mono text-xs text-gray-400">{{ c.latest_version | display_version if info.latest_available and c.latest_version else '–' }}</td>
+          <td class="px-2 sm:px-4 py-2.5 text-xs whitespace-nowrap {{ status[1] if status else 'text-gray-600' }}">{{ status[0] if status else '–' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

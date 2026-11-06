@@ -44,6 +44,15 @@ class FakeHannahClient:
         }
         self._users = {"claude": "claude", "admin": "admin"}
         self._channels = []
+        self.component_versions = hannah_pb2.GetComponentVersionsResponse(
+            latest_available=True, latest_checked_at=1782000000,
+            components=[
+                hannah_pb2.ComponentVersionInfo(
+                    component="core", instance_id="core-1", version="2.14.1", latest_version="2.14.1",
+                    comparison=hannah_pb2.VERSION_COMPARISON_UP_TO_DATE,
+                ),
+            ],
+        )
         self._user_records = {
             1: {
                 "user_name": "leonie", "display_name": "Leonie", "email": "leonie@example.com",
@@ -176,8 +185,13 @@ class FakeHannahClient:
         self._groups[group_id]["device_ids"] = list(device_ids)
         return True
 
+    def get_component_versions(self):
+        # None = Core cannot tell (hannah.v1-only or without the RPC), like the real client.
+        # Tests replace this attribute to seed UPDATE_AVAILABLE & co.
+        return self.component_versions
+
     def get_devices(self):
-        base = "javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite"
+        base ="javascript.0.virtualDevice.Licht.EG.Wohnzimmer.DeckeSeite"
         licht = hannah_pb2.DeviceInfo(
             id=base, name="DeckeSeite", device_class=hannah_pb2.DEVICE_CLASS_LIGHT, available=True,
             slots=[

@@ -18,6 +18,7 @@ from hannah_webui.blueprints import (
     ble_tags,
     cars,
     chat,
+    components,
     devices,
     groups,
     logs,
@@ -29,8 +30,9 @@ from hannah_webui.blueprints import (
     triggers,
     users,
 )
-from hannah_webui.extensions import TRUST_LEVELS, log_collector_available
+from hannah_webui.extensions import TRUST_LEVELS, get_component_updates, log_collector_available
 from hannah_webui.grpc_client import HannahClient
+from hannah_webui.route_helpers import display_version
 from hannah_webui.version import get_version
 
 log = logging.getLogger(__name__)
@@ -54,6 +56,8 @@ def create_app(
     # Error handlers below must run even with TESTING=True (used by the test suite's
     # fixtures) — otherwise Flask re-raises instead of rendering error.html.
     app.config["PROPAGATE_EXCEPTIONS"] = False
+
+    app.add_template_filter(display_version)
 
     app.extensions["hannah"] = hannah
     # Source of the log collector address for the log bundle export (#66).
@@ -82,6 +86,14 @@ def create_app(
         except grpc.RpcError:
             count = 0
         return {"pending_messages_count": count}
+
+    @app.context_processor
+    def inject_component_updates():
+        # Update banner in base.html (#76) — admins only, and never a reason for a page to fail
+        # (get_component_updates() swallows gRPC errors itself).
+        if session.get("trust_level", 0) < TRUST_LEVELS["list_components"]:
+            return {"component_updates": []}
+        return {"component_updates": get_component_updates()}
 
     @app.context_processor
     def inject_log_collector_available():
@@ -120,7 +132,7 @@ def create_app(
             message="Da ist etwas schiefgelaufen. Bitte versuche es erneut.",
         ), 500
 
-    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, devices, chat, triggers, users, activity_log, messages, logs):
+    for blueprint_module in (auth, me, rooms, groups, satellites, settings, ble_tags, cars, devices, components, chat, triggers, users, activity_log, messages, logs):
         app.register_blueprint(blueprint_module.bp)
 
     return app
