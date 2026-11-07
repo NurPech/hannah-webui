@@ -22,6 +22,14 @@ All notable changes are documented here, in the [Keep a Changelog](https://keepa
     `**BREAKING:**` prefix within their category. Every entry ends with `Refs #ID`.
 -->
 
+## 2.15.4
+### Changed
+- The header navigation is grouped by purpose with subtle dividers (desktop only): daily use (Verlauf, Nachrichten), house & hardware (Räume, Gruppen, Satelliten, Geräte, BLE-Tags, Cars) and configuration & admin (Trigger, User, Settings, Logs). "Settings" moved from the middle of the hardware pages to the admin group. Refs #83
+
+## 2.15.3
+### Changed
+- Boolean settings on `/settings` are shown as a Yes/No toggle switch instead of an "Advanced" raw JSON textarea. Refs #82
+
 ## 2.15.2
 ### Changed
 - The components page lists identical entries once with a count (e.g. `×2`) instead of repeating them. The WebUI runs two gunicorn workers that both report themselves to Core, so it used to show up as two identical rows. Entries that differ in version or status stay separate. Refs #80

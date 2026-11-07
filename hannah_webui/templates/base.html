@@ -55,7 +55,10 @@
       {% endif %}
     </a>
     {% endif %}
+    {# Groups (#83): daily use | house & hardware | configuration & admin. A divider is tied to the
+       trust level of the first entry of the group after it, so it never stands alone. #}
     {% if trust >= trust_levels['list_rooms'] %}
+    <span class="hidden sm:block w-px h-4 bg-gray-700 mx-1.5" aria-hidden="true"></span>
     <a href="{{ url_for('rooms.rooms') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'rooms.rooms' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Räume</a>
     {% endif %}
@@ -71,10 +74,6 @@
     <a href="{{ url_for('devices.devices') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'devices.devices' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Geräte</a>
     {% endif %}
-    {% if trust >= trust_levels['list_settings'] %}
-    <a href="{{ url_for('settings.settings') }}"
-       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'settings.settings' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Settings</a>
-    {% endif %}
     {% if trust >= trust_levels['list_ble_tags'] %}
     <a href="{{ url_for('ble_tags.ble_tags') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'ble_tags.ble_tags' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">BLE-Tags</a>
@@ -84,12 +83,17 @@
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('cars.cars', 'cars.edit_car') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Cars</a>
     {% endif %}
     {% if trust >= trust_levels['list_triggers'] %}
+    <span class="hidden sm:block w-px h-4 bg-gray-700 mx-1.5" aria-hidden="true"></span>
     <a href="{{ url_for('triggers.triggers') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('triggers.triggers', 'triggers.new_trigger', 'triggers.edit_trigger') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Trigger</a>
     {% endif %}
     {% if trust >= trust_levels['list_users'] %}
     <a href="{{ url_for('users.users') }}"
        class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint in ('users.users', 'users.create_user', 'users.edit_user') %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">User</a>
+    {% endif %}
+    {% if trust >= trust_levels['list_settings'] %}
+    <a href="{{ url_for('settings.settings') }}"
+       class="px-3 py-1.5 rounded-lg text-sm transition-colors {% if request.endpoint == 'settings.settings' %}bg-gray-800 text-gray-100{% else %}text-gray-500 hover:text-gray-300{% endif %}">Settings</a>
     {% endif %}
     {% if trust >= trust_levels['export_logs'] and log_collector_available %}
     <button type="button" data-open-log-bundle

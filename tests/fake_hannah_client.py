@@ -69,6 +69,7 @@ class FakeHannahClient:
             1: {"category_id": 1, "name": "turn_on_words", "value": ["an", "einschalten"]},
             2: {"category_id": 2, "name": "system_prompt", "value": "Du bist Hannah.\nDeine Antworten werden per Sprachausgabe vorgelesen."},
             3: {"category_id": 3, "name": "state_names", "value": {"on": "on", "level": "level"}},
+            4: {"category_id": 1, "name": "enabled", "value": True},
         }
         self._triggers = {
             "aussentuer_abend": {

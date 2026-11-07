@@ -30,6 +30,15 @@
         <textarea name="text_value" rows="5"
                   class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors resize-y">{{ item.text_value }}</textarea>
 
+        {% elif item.value_type == 'bool' %}
+        <label class="inline-flex items-center gap-3 cursor-pointer select-none">
+          <input type="checkbox" name="bool_value" value="true" {% if item.bool_value %}checked{% endif %} class="peer sr-only">
+          <span class="relative w-10 h-5.5 rounded-full bg-gray-700 border border-gray-600 transition-colors peer-checked:bg-emerald-600 peer-checked:border-emerald-500 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500
+                       after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:rounded-full after:bg-gray-300 after:transition-transform peer-checked:after:translate-x-[18px] peer-checked:after:bg-white"></span>
+          <span class="text-sm text-gray-500 peer-checked:hidden">Nein</span>
+          <span class="text-sm text-emerald-400 hidden peer-checked:inline">Ja</span>
+        </label>
+
         {% elif item.value_type == 'list' %}
         <div class="space-y-1.5">
           {% for v in item.list_rows %}

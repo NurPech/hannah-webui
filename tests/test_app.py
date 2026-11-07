@@ -528,6 +528,24 @@ class TestSettings:
         assert 'name="kv_key" value="on"' in body
         assert 'name="kv_value" value="on"' in body
 
+    def test_settings_renders_bool_type_as_checked_toggle(self, admin_client):
+        body = admin_client.get("/settings").get_data(as_text=True)
+        assert 'name="bool_value" value="true" checked' in body
+
+    def test_settings_renders_false_bool_as_unchecked_toggle(self, admin_client, hannah):
+        hannah._settings[4]["value"] = False
+        body = admin_client.get("/settings").get_data(as_text=True)
+        assert 'name="bool_value"' in body
+        assert 'name="bool_value" value="true" checked' not in body
+
+    def test_update_setting_bool_type_checked(self, admin_client, hannah):
+        admin_client.post("/settings/4/update", data={"value_type": "bool", "bool_value": "true"})
+        assert hannah._settings[4]["value"] is True
+
+    def test_update_setting_bool_type_unchecked_means_false(self, admin_client, hannah):
+        admin_client.post("/settings/4/update", data={"value_type": "bool"})
+        assert hannah._settings[4]["value"] is False
+
     def test_update_setting(self, admin_client, hannah):
         admin_client.post("/settings/1/update", data={"value": '["an"]'})
         assert hannah._settings[1]["value"] == ["an"]

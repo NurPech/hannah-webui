@@ -32,6 +32,9 @@ def update_setting(setting_id: int):
     if value_type == "text":
         text_value = request.form.get("text_value", "").replace("\r\n", "\n")
         value_json = json.dumps(text_value, ensure_ascii=False)
+    elif value_type == "bool":
+        # Eine nicht angehakte Checkbox wird vom Browser gar nicht gesendet → fehlt = false.
+        value_json = "true" if request.form.get("bool_value") == "true" else "false"
     elif value_type == "list":
         items = [v.strip() for v in request.form.getlist("list_item") if v.strip()]
         value_json = json.dumps(items, ensure_ascii=False)

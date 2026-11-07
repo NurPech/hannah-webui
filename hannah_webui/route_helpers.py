@@ -503,6 +503,11 @@ def _prepare_setting_row(s) -> dict:
     except (json.JSONDecodeError, TypeError):
         parsed = None
 
+    # bool vor allem anderen prüfen: json.loads("true") ist ein Python-bool, und bool ist
+    # in Python eine int-Unterklasse — hier explizit, damit es nie als "Erweitert" endet.
+    if isinstance(parsed, bool):
+        return {"setting": s, "value_type": "bool", "bool_value": parsed}
+
     if isinstance(parsed, str):
         return {"setting": s, "value_type": "text", "text_value": parsed}
 
